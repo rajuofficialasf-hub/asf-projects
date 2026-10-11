@@ -6,6 +6,8 @@ import '@testing-library/jest-dom/vitest';
 
 import type { ReactNode } from 'react';
 
+import { useState } from 'react';
+
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { it, expect, describe, afterEach, beforeAll } from 'vitest';
@@ -31,6 +33,17 @@ import {
   SelectField,
   LoadingState,
   SignInLayout,
+  Card,
+  Tabs,
+  Menu,
+  Badge,
+  Drawer,
+  Checkbox,
+  FileInput,
+  RadioGroup,
+  Pagination,
+  IconButton,
+  Breadcrumbs,
 } from './index';
 
 // ----------------------------------------------------------------------
@@ -309,3 +322,205 @@ describe('feedback', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('That email is already in use.');
   });
 });
+
+// ----------------------------------------------------------------------
+
+describe('pieces the admin added to the set', () => {
+  it('names a card section by its title and shows a step number', async () => {
+    renderInApp(
+      <Card title="Basics" description="Name and link" step="১" actions={<Button>Edit</Button>}>
+        <Text>Body</Text>
+      </Card>
+    );
+    const section = await screen.findByRole('region', { name: 'Basics' });
+    expect(within(section).getByRole('heading', { level: 2, name: 'Basics' })).toBeInTheDocument();
+    expect(within(section).getByText('১')).toHaveAttribute('aria-hidden', 'true');
+    expect(within(section).getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+  });
+
+  it('switches tabs and marks the selected one', async () => {
+    const user = userEvent.setup();
+    function Harness() {
+      const [tab, setTab] = useState('general');
+      return (
+        <>
+          <Tabs
+            label="Settings parts"
+            value={tab}
+            onChange={setTab}
+            tabs={[
+              { value: 'general', label: 'General' },
+              { value: 'fields', label: 'Fields' },
+            ]}
+          />
+          <Text>{`panel:${tab}`}</Text>
+        </>
+      );
+    }
+    renderInApp(<Harness />);
+    const list = await screen.findByRole('tablist', { name: 'Settings parts' });
+    expect(within(list).getByRole('tab', { name: 'General' })).toHaveAttribute('aria-selected', 'true');
+    await user.click(within(list).getByRole('tab', { name: 'Fields' }));
+    expect(within(list).getByRole('tab', { name: 'Fields' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByText('panel:fields')).toBeInTheDocument();
+  });
+
+  it('opens a drawer as a named dialog that closes on Esc and from its close button', async () => {
+    const user = userEvent.setup();
+    let closed = 0;
+    renderInApp(
+      <Drawer open title="Edit field" closeLabel="Close panel" onClose={() => (closed += 1)} actions={<Button>Save</Button>}>
+        <Text>Inside</Text>
+      </Drawer>
+    );
+    const dialog = await screen.findByRole('dialog', { name: 'Edit field' });
+    expect(within(dialog).getByText('Inside')).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    expect(closed).toBe(1);
+    await user.click(within(dialog).getByRole('button', { name: 'Close panel' }));
+    expect(closed).toBe(2);
+  });
+
+  it('renders badges and an icon button named by its label', async () => {
+    const user = userEvent.setup();
+    let clicks = 0;
+    renderInApp(
+      <>
+        <Badge tone="success">Published</Badge>
+        <IconButton icon="delete" label="Delete row" tone="danger" onClick={() => (clicks += 1)} />
+        <IconButton icon="edit" label="Edit row" disabled />
+      </>
+    );
+    expect(await screen.findByText('Published')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Delete row' }));
+    expect(clicks).toBe(1);
+    expect(screen.getByRole('button', { name: 'Edit row' })).toBeDisabled();
+  });
+
+  it('reports checkbox and radio changes, with accessible names and a radio group legend', async () => {
+    const user = userEvent.setup();
+    const changes: (string | boolean)[] = [];
+    renderInApp(
+      <>
+        <Checkbox label="All projects" hint="Every current and future project" checked={false} onChange={(v) => changes.push(v)} />
+        <Checkbox label="Locked" checked disabled onChange={() => {}} />
+        <RadioGroup
+          label="Role"
+          value="editor"
+          onChange={(v) => changes.push(v)}
+          options={[
+            { value: 'admin', label: 'Admin', hint: 'Every project' },
+            { value: 'editor', label: 'Editor' },
+            { value: 'main', label: 'Main admin', disabled: true },
+          ]}
+          error="Pick one"
+        />
+      </>
+    );
+    await user.click(await screen.findByRole('checkbox', { name: /All projects/ }));
+    expect(screen.getByRole('checkbox', { name: 'Locked' })).toBeDisabled();
+    const group = screen.getByRole('radiogroup');
+    expect(screen.getByRole('group', { name: 'Role' })).toBeInTheDocument();
+    expect(within(group).getByRole('radio', { name: 'Editor' })).toBeChecked();
+    expect(within(group).getByRole('radio', { name: 'Main admin' })).toBeDisabled();
+    await user.click(within(group).getByRole('radio', { name: /Admin\s*Every project/ }));
+    expect(changes).toEqual([true, 'admin']);
+    expect(screen.getByRole('alert')).toHaveTextContent('Pick one');
+  });
+
+  it('pages with previous, next and numbered buttons, disabled at the ends', async () => {
+    const user = userEvent.setup();
+    const pages: number[] = [];
+    renderInApp(
+      <Pagination
+        page={1}
+        totalPages={3}
+        onChange={(p) => pages.push(p)}
+        label="Pages"
+        summary="1-20 of 60"
+        prevLabel="Previous page"
+        nextLabel="Next page"
+        prevText="‹"
+        nextText="›"
+        pageLabel={(p) => `Page ${p}`}
+        formatPage={(p) => ['০', '১', '২', '৩'][p] ?? String(p)}
+      />
+    );
+    const nav = await screen.findByRole('navigation', { name: 'Pages' });
+    expect(within(nav).getByRole('button', { name: 'Previous page' })).toBeDisabled();
+    expect(within(nav).getByRole('button', { name: 'Page 1' })).toHaveAttribute('aria-current', 'page');
+    expect(within(nav).getByRole('button', { name: 'Page 2' })).toHaveTextContent('২');
+    await user.click(within(nav).getByRole('button', { name: 'Next page' }));
+    await user.click(within(nav).getByRole('button', { name: 'Page 3' }));
+    expect(pages).toEqual([2, 3]);
+    expect(screen.getByText('1-20 of 60')).toBeInTheDocument();
+  });
+
+  it('picks files through a real input found by its label, and ignores an empty pick', async () => {
+    const user = userEvent.setup();
+    const picked: string[][] = [];
+    renderInApp(
+      <FileInput label="Cover photo" buttonLabel="Choose photo" accept="image/*" hint="JPG or PNG" onFiles={(files) => picked.push(files.map((f) => f.name))} />
+    );
+    const input = await screen.findByLabelText('Cover photo');
+    expect(input).toHaveAttribute('type', 'file');
+    expect(input).toHaveAttribute('accept', 'image/*');
+    expect(input).toHaveAccessibleDescription('JPG or PNG');
+    await user.upload(input, new File(['x'], 'house.jpg', { type: 'image/jpeg' }));
+    expect(picked).toEqual([['house.jpg']]);
+    expect((input as HTMLInputElement).value).toBe('');
+  });
+
+  it('opens a menu, runs an action, and closes on Esc with focus back on its button', async () => {
+    const user = userEvent.setup();
+    let signedOut = 0;
+    renderInApp(
+      <Menu
+        label="Account"
+        header={<Text>amina@example.org</Text>}
+        items={[
+          { kind: 'link', label: 'Public site', to: '/' },
+          { kind: 'divider' },
+          { label: 'Sign out', tone: 'danger', onClick: () => (signedOut += 1) },
+        ]}
+      />
+    );
+    const button = await screen.findByRole('button', { name: 'Account' });
+    await user.click(button);
+    const menu = await screen.findByRole('menu');
+    expect(within(menu).getByText('amina@example.org')).toBeInTheDocument();
+    expect(within(menu).getByRole('menuitem', { name: 'Public site' })).toHaveAttribute('href', '/');
+    await user.keyboard('{Escape}');
+    await waitForGone(() => screen.queryByRole('menu'));
+    expect(button).toHaveFocus();
+    await user.click(button);
+    await user.click(await screen.findByRole('menuitem', { name: 'Sign out' }));
+    expect(signedOut).toBe(1);
+  });
+
+  it('shows breadcrumbs with links and the current page last', async () => {
+    renderInApp(<Breadcrumbs label="You are here" items={[{ label: 'Projects', to: '/admin/projects' }, { label: 'Housing' }]} />);
+    const nav = await screen.findByRole('navigation', { name: 'You are here' });
+    expect(within(nav).getByRole('link', { name: 'Projects' })).toHaveAttribute('href', '/admin/projects');
+    expect(within(nav).getByText('Housing')).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('draws a field error as an alert, a hidden label as the accessible name, and a page heading with breadcrumbs', async () => {
+    renderInApp(
+      <Page title="Settings" documentTitle={false} breadcrumbs={<Text>crumbs</Text>} badges={<Badge>Draft</Badge>}>
+        <TextField label="Search" hideLabel value="" onChange={() => {}} maxLength={10} />
+        <TextField label="Amount" value="" onChange={() => {}} error="Too big" prefix="৳" />
+      </Page>
+    );
+    expect(await screen.findByRole('heading', { level: 1, name: 'Settings' })).toBeInTheDocument();
+    expect(screen.getByText('crumbs')).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Search' })).toHaveAttribute('maxlength', '10');
+    expect(screen.getByRole('alert')).toHaveTextContent('Too big');
+    expect(screen.getByText('৳')).toBeInTheDocument();
+  });
+});
+
+async function waitForGone(query: () => HTMLElement | null) {
+  for (let i = 0; i < 50 && query(); i += 1) await new Promise((r) => setTimeout(r, 20));
+  expect(query()).toBeNull();
+}

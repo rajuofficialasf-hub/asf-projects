@@ -8,10 +8,14 @@ import { DashboardContent } from '../layouts/dashboard';
 
 // ----------------------------------------------------------------------
 
-export function Page({ title, description, actions, children }: PageProps) {
+export function Page({ title, description, actions, children, breadcrumbs, badges, documentTitle }: PageProps) {
+  const tabTitle = documentTitle ?? title;
   return (
     <DashboardContent>
-      <title>{title === CONFIG.appName ? title : `${title} | ${CONFIG.appName}`}</title>
+      {tabTitle !== false && (
+        <title>{tabTitle === CONFIG.appName ? tabTitle : `${tabTitle} | ${CONFIG.appName}`}</title>
+      )}
+      {breadcrumbs}
       <Box
         sx={{
           mb: { xs: 3, md: 5 },
@@ -22,14 +26,17 @@ export function Page({ title, description, actions, children }: PageProps) {
           justifyContent: 'space-between',
         }}
       >
-        <div>
-          <Typography variant="h4" component="h1">
-            {title}
-          </Typography>
+        <Box sx={{ minWidth: 0 }}>
+          <Box sx={{ gap: 1.5, display: 'flex', flexWrap: 'wrap', alignItems: 'center' }}>
+            <Typography variant="h4" component="h1">
+              {title}
+            </Typography>
+            {badges}
+          </Box>
           {description && (
             <Typography sx={{ mt: 1, color: 'text.secondary' }}>{description}</Typography>
           )}
-        </div>
+        </Box>
         {actions && <Box sx={{ gap: 1, display: 'flex', flexWrap: 'wrap' }}>{actions}</Box>}
       </Box>
       {children}

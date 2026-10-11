@@ -26,6 +26,21 @@ const ICONS: Record<IconName, IconifyName> = {
   success: 'solar:check-circle-bold',
   warning: 'solar:danger-triangle-bold',
   error: 'solar:danger-bold',
+  menu: 'ic:round-view-list',
+  more: 'eva:more-vertical-fill',
+  back: 'eva:arrow-ios-back-fill',
+  forward: 'eva:arrow-ios-forward-fill',
+  external: 'eva:external-link-fill',
+  view: 'solar:eye-bold',
+  image: 'solar:gallery-wide-bold',
+  refresh: 'solar:restart-bold',
+  check: 'eva:checkmark-fill',
+  lock: 'solar:lock-password-outline',
+  calendar: 'solar:calendar-date-bold',
+  list: 'solar:list-bold',
+  import: 'solar:import-bold',
+  export: 'solar:export-bold',
+  history: 'solar:clock-circle-bold',
 };
 
 export function Icon({ name, label, size = 20 }: IconProps) {

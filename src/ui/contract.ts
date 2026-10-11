@@ -70,7 +70,22 @@ export type IconName =
   | "info"
   | "success"
   | "warning"
-  | "error";
+  | "error"
+  | "menu"
+  | "more"
+  | "back"
+  | "forward"
+  | "external"
+  | "view"
+  | "image"
+  | "refresh"
+  | "check"
+  | "lock"
+  | "calendar"
+  | "list"
+  | "import"
+  | "export"
+  | "history";
 
 /** Status colours for alerts and toasts. */
 export type Tone = "info" | "success" | "warning" | "error";
@@ -105,6 +120,12 @@ export type PageProps = {
   /** Buttons next to the heading, for example "Add user". */
   actions?: ReactNode;
   children?: ReactNode;
+  /** Above the heading, for example Breadcrumbs. */
+  breadcrumbs?: ReactNode;
+  /** Small labels next to the heading, for example a Badge with the status. */
+  badges?: ReactNode;
+  /** The browser tab title. Defaults to `title`; false leaves document.title to the caller. */
+  documentTitle?: string | false;
 };
 
 /** The frame of the sign-in page. The form inside comes from the login pack. */
@@ -168,20 +189,78 @@ export type TextFieldProps = FieldBase & {
   value: string;
   onChange: (value: string) => void;
   onBlur?: () => void;
-  type?: "text" | "email" | "password" | "search" | "tel" | "url" | "number";
   autoComplete?: string;
   placeholder?: string;
   /** Several lines of text. */
   rows?: number;
+  type?: "text" | "email" | "password" | "search" | "tel" | "url" | "number" | "date";
+  maxLength?: number;
+  inputMode?: "text" | "numeric" | "decimal" | "tel" | "email" | "url" | "search";
+  readOnly?: boolean;
+  autoFocus?: boolean;
+  /** Hides the label visually; it stays the field's accessible name. */
+  hideLabel?: boolean;
+  /** Text or an icon inside the field, before the value (for example "৳"). */
+  prefix?: ReactNode;
+  size?: "small" | "medium";
 };
 
-export type SelectOption = { value: string; label: string };
+export type SelectOption = { value: string; label: string; disabled?: boolean };
 
 export type SelectFieldProps = FieldBase & {
   value: string;
   onChange: (value: string) => void;
   onBlur?: () => void;
   options: readonly SelectOption[];
+  hideLabel?: boolean;
+  size?: "small" | "medium";
+};
+
+/** A checkbox with its label. `hint` sits under the label. */
+export type CheckboxProps = {
+  label: ReactNode;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  name?: string;
+  hint?: ReactNode;
+  disabled?: boolean;
+  /** Some but not all of a group are checked. */
+  indeterminate?: boolean;
+};
+
+export type RadioOption = { value: string; label: ReactNode; hint?: ReactNode; disabled?: boolean };
+
+/** A labelled group of radio buttons (a fieldset with a legend). */
+export type RadioGroupProps = {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: readonly RadioOption[];
+  name?: string;
+  direction?: "row" | "column";
+  /** Hides the legend visually; it stays the group's accessible name. */
+  hideLabel?: boolean;
+  error?: string;
+  hint?: ReactNode;
+  disabled?: boolean;
+  /** Options drawn as bordered cards, for choices with a hint under each. */
+  look?: "plain" | "cards";
+};
+
+/**
+ * Picks files with a real, visually hidden <input type="file"> named by `label`, behind a button.
+ * `onFiles` gets the chosen files; the input is cleared after each pick so the same file can be picked again.
+ */
+export type FileInputProps = {
+  label: string;
+  buttonLabel: string;
+  onFiles: (files: File[]) => void;
+  accept?: string;
+  multiple?: boolean;
+  disabled?: boolean;
+  hint?: ReactNode;
+  /** "button" is a plain button; "dropzone" is a large area that also takes dropped files. */
+  look?: "button" | "dropzone";
 };
 
 // This app has no Form* pieces: the admin forms keep their own state code, and the app has no
@@ -202,6 +281,35 @@ export type DialogProps = {
 
 export type AlertProps = { tone: Tone; title?: string; children: ReactNode; action?: ReactNode };
 
+/** A side panel over the page (role dialog, named by `title`). Esc and the backdrop call onClose. */
+export type DrawerProps = {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  /** The close button's accessible name. */
+  closeLabel: string;
+  children: ReactNode;
+  actions?: ReactNode;
+  side?: "left" | "right";
+  width?: "small" | "medium" | "large";
+};
+
+export type MenuItemSpec =
+  | { kind?: "action"; label: string; onClick: () => void; icon?: IconName; tone?: "default" | "danger"; disabled?: boolean }
+  | { kind: "link"; label: string; to: string; icon?: IconName }
+  | { kind: "divider" };
+
+/** A button that opens a list of actions and links. */
+export type MenuProps = {
+  /** The button's accessible name. */
+  label: string;
+  /** What the button shows, for example an avatar; defaults to a "more" icon. */
+  trigger?: ReactNode;
+  /** Shown at the top of the open menu, for example the signed-in user's name. */
+  header?: ReactNode;
+  items: readonly MenuItemSpec[];
+};
+
 export type ToastOptions = { tone?: Tone };
 
 /** Shows short messages that disappear on their own. Use it in TanStack Query `onError`/`onSuccess`. */
@@ -220,7 +328,9 @@ export type EmptyStateProps = { title: string; description?: string; action?: Re
 
 export type DataTableColumn<Row> = {
   id: string;
-  header: string;
+  header: ReactNode;
+  /** The header as text, for the phone card layout when `header` is not a string. */
+  headerText?: string;
   cell: (row: Row) => ReactNode;
   align?: "left" | "center" | "right";
 };
@@ -236,6 +346,67 @@ export type DataTableProps<Row> = {
   loading?: boolean;
   emptyTitle?: string;
   emptyDescription?: string;
+  loadingLabel?: string;
+  /** Below 600px wide, draw each row as a card of "header: value" lines instead of a table. */
+  cardsOnPhones?: boolean;
+  /** Smaller rows. */
+  dense?: boolean;
+};
+
+/** A white surface that groups related content, with an optional heading and actions. */
+export type CardProps = {
+  children: ReactNode;
+  title?: string;
+  description?: ReactNode;
+  actions?: ReactNode;
+  /** The heading level of `title`. */
+  level?: 2 | 3;
+  /** "none" for content that brings its own padding, such as a table. */
+  padding?: "normal" | "none";
+  /** A number shown in a circle before the title, for numbered steps. */
+  step?: string;
+  tone?: "default" | "danger" | "warning";
+};
+
+/** A row of tabs. Panels are the caller's: render the panel for `value` under it. */
+export type TabsProps = {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  tabs: readonly { value: string; label: string }[];
+};
+
+export type BadgeProps = { children: ReactNode; tone?: "neutral" | "success" | "warning" | "error" | "info" };
+
+/** Page numbers with previous and next. Labels come from the app, so numbers can be shown in Bengali. */
+export type PaginationProps = {
+  page: number;
+  totalPages: number;
+  onChange: (page: number) => void;
+  disabled?: boolean;
+  /** The nav's accessible name. */
+  label: string;
+  /** For example "showing 1-20 of 120", announced politely. */
+  summary?: string;
+  prevLabel: string;
+  nextLabel: string;
+  prevText: string;
+  nextText: string;
+  /** The accessible name of a page button. */
+  pageLabel: (page: number) => string;
+  /** How a page number is written on its button. */
+  formatPage?: (page: number) => string;
+};
+
+export type BreadcrumbsProps = { label: string; items: readonly { label: string; to?: string }[] };
+
+/** An icon-only button. `label` is its accessible name and tooltip. */
+export type IconButtonProps = {
+  icon: IconName;
+  label: string;
+  onClick?: () => void;
+  disabled?: boolean;
+  tone?: "default" | "danger" | "primary";
 };
 
 // ---------------------------------------------------------------------------------------------
@@ -261,4 +432,15 @@ export type UiTemplate = {
   LoadingState: ComponentType<LoadingStateProps>;
   EmptyState: ComponentType<EmptyStateProps>;
   DataTable: <Row>(props: DataTableProps<Row>) => ReactNode;
+  Card: ComponentType<CardProps>;
+  Tabs: ComponentType<TabsProps>;
+  Drawer: ComponentType<DrawerProps>;
+  Badge: ComponentType<BadgeProps>;
+  Checkbox: ComponentType<CheckboxProps>;
+  RadioGroup: ComponentType<RadioGroupProps>;
+  Pagination: ComponentType<PaginationProps>;
+  FileInput: ComponentType<FileInputProps>;
+  Menu: ComponentType<MenuProps>;
+  Breadcrumbs: ComponentType<BreadcrumbsProps>;
+  IconButton: ComponentType<IconButtonProps>;
 };
