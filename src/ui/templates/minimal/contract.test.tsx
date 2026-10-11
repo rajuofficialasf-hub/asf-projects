@@ -11,7 +11,7 @@ import { useState } from 'react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { it, expect, describe, afterEach, beforeAll } from 'vitest';
-import { render, screen, cleanup, within } from '@testing-library/react';
+import { render, screen, cleanup, within, waitFor, fireEvent } from '@testing-library/react';
 
 import {
   Icon,
@@ -45,6 +45,7 @@ import {
   IconButton,
   Breadcrumbs,
 } from './index';
+import { pageItems } from './components/pagination';
 
 // ----------------------------------------------------------------------
 
@@ -471,6 +472,15 @@ describe('pieces the admin added to the set', () => {
     expect((input as HTMLInputElement).value).toBe('');
   });
 
+  it('applies accept to dropped files too, as the picker does', async () => {
+    const picked: string[][] = [];
+    renderInApp(<FileInput look="dropzone" multiple label="Sheet" buttonLabel="Choose" accept=".csv,image/*" onFiles={(files) => picked.push(files.map((f) => f.name))} />);
+    const zone = (await screen.findByRole('button', { name: 'Choose' })).parentElement!;
+    const files = [new File(['a'], 'list.CSV'), new File(['b'], 'notes.pdf', { type: 'application/pdf' }), new File(['c'], 'p.png', { type: 'image/png' })];
+    fireEvent.drop(zone, { dataTransfer: { files } });
+    expect(picked).toEqual([['list.CSV', 'p.png']]);
+  });
+
   it('opens a menu, runs an action, and closes on Esc with focus back on its button', async () => {
     const user = userEvent.setup();
     let signedOut = 0;
@@ -491,7 +501,7 @@ describe('pieces the admin added to the set', () => {
     expect(within(menu).getByText('amina@example.org')).toBeInTheDocument();
     expect(within(menu).getByRole('menuitem', { name: 'Public site' })).toHaveAttribute('href', '/');
     await user.keyboard('{Escape}');
-    await waitForGone(() => screen.queryByRole('menu'));
+    await waitFor(() => expect(screen.queryByRole('menu')).not.toBeInTheDocument());
     expect(button).toHaveFocus();
     await user.click(button);
     await user.click(await screen.findByRole('menuitem', { name: 'Sign out' }));
@@ -520,7 +530,96 @@ describe('pieces the admin added to the set', () => {
   });
 });
 
-async function waitForGone(query: () => HTMLElement | null) {
-  for (let i = 0; i < 50 && query(); i += 1) await new Promise((r) => setTimeout(r, 20));
-  expect(query()).toBeNull();
-}
+// ----------------------------------------------------------------------
+
+describe('details of the added pieces', () => {
+  it('lists page numbers with gaps around the current page', () => {
+    expect(pageItems(10, 20)).toEqual([1, '…', 9, 10, 11, '…', 20]);
+    expect(pageItems(1, 20)).toEqual([1, 2, 3, 4, '…', 20]);
+    expect(pageItems(20, 20)).toEqual([1, '…', 17, 18, 19, 20]);
+    expect(pageItems(2, 5)).toEqual([1, 2, 3, 4, 5]);
+  });
+
+  it('keeps one dropped file when multiple is off, and takes none while disabled', async () => {
+    const picked: string[][] = [];
+    const { rerender } = render(
+      <UiProvider>
+        <FileInput look="dropzone" label="Photo" buttonLabel="Choose" onFiles={(f) => picked.push(f.map((x) => x.name))} />
+      </UiProvider>
+    );
+    const zone = screen.getByRole('button', { name: 'Choose' }).parentElement!;
+    fireEvent.drop(zone, { dataTransfer: { files: [new File(['a'], 'a.jpg'), new File(['b'], 'b.jpg')] } });
+    expect(picked).toEqual([['a.jpg']]);
+    rerender(
+      <UiProvider>
+        <FileInput look="dropzone" disabled label="Photo" buttonLabel="Choose" onFiles={(f) => picked.push(f.map((x) => x.name))} />
+      </UiProvider>
+    );
+    fireEvent.drop(screen.getByRole('button', { name: 'Choose' }).parentElement!, { dataTransfer: { files: [new File(['c'], 'c.jpg')] } });
+    expect(picked).toEqual([['a.jpg']]);
+  });
+
+  describe('data table on a phone', () => {
+    const original = window.matchMedia;
+    afterEach(() => {
+      window.matchMedia = original;
+    });
+    const phoneWidth = () => {
+      window.matchMedia = (query: string) =>
+        ({
+          matches: query.includes('max-width'),
+          media: query,
+          onchange: null,
+          addListener: () => {},
+          removeListener: () => {},
+          addEventListener: () => {},
+          removeEventListener: () => {},
+          dispatchEvent: () => false,
+        }) satisfies MediaQueryList;
+    };
+
+    it('draws each row as a card of header and value pairs, with node headers named by headerText', async () => {
+      phoneWidth();
+      renderInApp(
+        <DataTable
+          label="Members"
+          cardsOnPhones
+          rows={[{ id: 'm1', name: 'Amina' }]}
+          columns={[
+            { id: 'name', header: 'Name', cell: (row: Member) => row.name },
+            { id: 'pick', header: <span>☑</span>, headerText: 'Select', cell: () => 'yes' },
+          ]}
+          getRowId={(row) => row.id}
+        />
+      );
+      const region = await screen.findByRole('region', { name: 'Members' });
+      expect(screen.queryByRole('table')).not.toBeInTheDocument();
+      const card = within(region).getByRole('listitem');
+      expect(within(card).getAllByRole('term')).toHaveLength(2);
+      expect(within(card).getByText('Name')).toBeInTheDocument();
+      expect(within(card).getByText('Amina')).toBeInTheDocument();
+      expect(within(card).getByText('Select')).toBeInTheDocument();
+    });
+
+    it('shows the loading label and the empty card on a phone', async () => {
+      phoneWidth();
+      const { rerender } = renderInApp(
+        <DataTable label="Members" cardsOnPhones loading loadingLabel="Loading members" rows={[]} columns={columns} getRowId={(row) => row.id} />
+      );
+      expect(await screen.findByRole('status')).toHaveTextContent('Loading members');
+      rerender(
+        <UiProvider>
+          <DataTable label="Members" cardsOnPhones rows={[]} columns={columns} getRowId={(row) => row.id} emptyTitle="No members yet" />
+        </UiProvider>
+      );
+      expect(await screen.findByText('No members yet')).toBeInTheDocument();
+    });
+  });
+
+  it('uses small rows when dense, and the loading label in the table', async () => {
+    renderInApp(<DataTable label="Members" dense loading loadingLabel="Loading members" rows={[]} columns={columns} getRowId={(row) => row.id} />);
+    const table = await screen.findByRole('table', { name: 'Members' });
+    expect(within(table).getByRole('columnheader', { name: 'Name' }).className).toMatch(/MuiTableCell-sizeSmall/);
+    expect(within(table).getByRole('status')).toHaveTextContent('Loading members');
+  });
+});

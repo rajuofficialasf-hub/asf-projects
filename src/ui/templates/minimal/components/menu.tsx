@@ -47,7 +47,8 @@ export function Menu({ label, trigger, header, items }: MenuProps) {
         )}
         {header && <Divider component="li" role="none" />}
         {items.map((item, index) => {
-          if (item.kind === 'divider') return <Divider key={`divider-${index}`} component="li" role="none" />;
+          const key = `${index}-${item.kind ?? 'action'}`;
+          if (item.kind === 'divider') return <Divider key={key} component="li" role="none" />;
           const icon = item.icon && (
             <ListItemIcon>
               <Icon name={item.icon} />
@@ -55,7 +56,7 @@ export function Menu({ label, trigger, header, items }: MenuProps) {
           );
           if (item.kind === 'link') {
             return (
-              <MenuItem key={item.label} component={RouterLink} href={item.to} onClick={close} sx={{ minHeight: 44 }}>
+              <MenuItem key={key} component={RouterLink} href={item.to} onClick={close} sx={{ minHeight: 44 }}>
                 {icon}
                 {item.label}
               </MenuItem>
@@ -63,7 +64,7 @@ export function Menu({ label, trigger, header, items }: MenuProps) {
           }
           return (
             <MenuItem
-              key={item.label}
+              key={key}
               disabled={item.disabled}
               onClick={() => {
                 close();

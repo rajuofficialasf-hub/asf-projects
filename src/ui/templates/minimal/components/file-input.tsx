@@ -10,6 +10,24 @@ import { Icon } from './icon';
 
 // ----------------------------------------------------------------------
 
+/** Whether a file fits an `accept` list (".csv", "image/*", "text/csv"), as the file picker filters. */
+export function matchesAccept(file: File, accept?: string): boolean {
+  if (!accept) return true;
+  const name = file.name.toLowerCase();
+  const type = file.type.toLowerCase();
+  return accept
+    .split(',')
+    .map((part) => part.trim().toLowerCase())
+    .filter(Boolean)
+    .some((rule) =>
+      rule.startsWith('.')
+        ? name.endsWith(rule)
+        : rule.endsWith('/*')
+          ? type.startsWith(rule.slice(0, -1))
+          : type === rule
+    );
+}
+
 const hiddenInput = {
   clip: 'rect(0 0 0 0)',
   clipPath: 'inset(50%)',
@@ -39,8 +57,9 @@ export function FileInput({
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
 
+  // Dropped files skip the picker's filter, so `accept` is applied here for both paths.
   const take = (list: FileList | null) => {
-    const files = list ? Array.from(list) : [];
+    const files = (list ? Array.from(list) : []).filter((file) => matchesAccept(file, accept));
     if (files.length) onFiles(multiple ? files : files.slice(0, 1));
   };
 

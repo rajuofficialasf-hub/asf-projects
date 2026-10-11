@@ -48,7 +48,7 @@ export function DataTable<Row>({
                   {columns.map((column) => (
                     <Box key={column.id} sx={{ display: 'contents' }}>
                       <Typography component="dt" variant="caption" sx={{ color: 'text.secondary', pt: 0.25 }}>
-                        {column.headerText ?? (typeof column.header === 'string' ? column.header : '')}
+                        {column.headerText ?? column.header}
                       </Typography>
                       <Typography component="dd" variant="body2" sx={{ m: 0, minWidth: 0, overflowWrap: 'anywhere' }}>
                         {column.cell(row)}

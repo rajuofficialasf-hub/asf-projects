@@ -52,7 +52,7 @@ export function TextField({
       onBlur={onBlur}
       slotProps={{
         htmlInput: { maxLength, inputMode, readOnly, ...(hideLabel && { 'aria-label': label }) },
-        inputLabel: (type === 'date' || placeholder) ? { shrink: true } : {},
+        inputLabel: type === 'date' || placeholder || prefix !== undefined ? { shrink: true } : {},
         formHelperText: helperProps(error),
         ...(prefix !== undefined && {
           input: { startAdornment: <InputAdornment position="start">{prefix}</InputAdornment> },
