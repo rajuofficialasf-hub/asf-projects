@@ -103,6 +103,17 @@ From here the CLI runs as `npm --prefix server run admin -- …`. If the `api` c
 
 A draft project's pages are shown only to admins (with a yellow "খসড়া" banner); a visitor gets "not found".
 
+### The admin UI
+
+The admin panel (`/admin/login` and `/admin/*`) is drawn with the Minimal template (MUI) behind the org component set in `src/ui/`; the public site keeps its own Tailwind components and never loads MUI.
+
+- **Import from `@/ui` only.** Admin pages, layouts and widgets use the pieces in `src/ui/contract.ts` (`Page`, `Card`, `Grid`, `Stack`, `Text`, `Button`, `TextField`, `SelectField`, `DataTable`, `Dialog`, `Drawer`, `Tabs` and the rest). Admin-only widgets built on them (confirm dialog, photo field, location picker, field inputs, filters) are in `src/features/admin/ui/`. Never import `@mui/*`, `@emotion/*` or `minimal-shared` outside `src/ui/templates/minimal/` (RE-UI-01, RE-UI-02).
+- **A piece is missing?** Add its props to `src/ui/contract.ts`, build it in `src/ui/templates/minimal/components/`, export it from that folder's `index.ts`, and test it in `src/ui/templates/minimal/contract.test.tsx`; then use it (RE-UI-04). Keep props plain (no `sx`, no MUI types) and labels passed in by the app, so the template stays language-neutral.
+- **Keep what tests and assistive tech rely on.** Selects are native, file inputs are real inputs named by their label, dialogs and drawers are named by their title, field errors are `role="alert"`, controls are at least 44px.
+- **The whole admin is one lazy chunk** (`src/features/admin/layout/AdminApp.tsx`, routed as `admin/*` outside `SiteLayout`), so the public bundle stays MUI-free.
+- **Guards.** `npm run lint` fails on a template import outside `src/ui/templates/`, and on any `@/ui` import from public code (`.oxlintrc.json`). `npm run check:prod-bundle` fails if MUI or Emotion reaches a public chunk.
+- **Next to Tailwind.** MUI's CSS variables carry the `mui` prefix and the template's global styles live in `UiProvider` (removed on unmount), so nothing reaches the public pages after an admin visit. The template's changes from the kit copy are listed in `src/ui/templates/minimal/UPSTREAM.md`.
+
 ## 3. Add a feature end to end
 
 Work through these steps in order. The worked example is user management (`/admin/users`): the `editor` role and the main admin's users page. Open its files next to this list.

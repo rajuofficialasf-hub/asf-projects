@@ -284,7 +284,7 @@ export function ProjectWizardPage() {
                   value: k,
                   label: (
                     <Stack direction="row" gap={1} align="center">
-                      {/* রঙের নমুনা: সেটে রঙিন টুকরো নেই, তাই রেজিস্ট্রির Tailwind গ্রেডিয়েন্টই রাখা হলো */}
+                      {/* রঙের নমুনা: পাবলিক হোম-কার্ডের আসল গ্রেডিয়েন্ট (রেজিস্ট্রির Tailwind ক্লাস), তাই পাবলিক চেহারাতেই */}
                       <span className={`h-7 w-7 rounded-md bg-gradient-to-br ${ACCENTS[k].gradient}`} aria-hidden="true" />
                       {pick(ACCENTS[k].label_bn, ACCENTS[k].label_en)}
                     </Stack>

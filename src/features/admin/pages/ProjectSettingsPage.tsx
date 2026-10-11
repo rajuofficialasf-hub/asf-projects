@@ -350,7 +350,16 @@ export function ProjectSettingsPage() {
                     look="cards"
                     value={form.accent}
                     onChange={(k) => set('accent', k)}
-                    options={(Object.keys(ACCENTS) as (keyof typeof ACCENTS)[]).map((k) => ({ value: k, label: pick(ACCENTS[k].label_bn, ACCENTS[k].label_en) }))}
+                    options={(Object.keys(ACCENTS) as (keyof typeof ACCENTS)[]).map((k) => ({
+                      value: k,
+                      label: (
+                        <Stack direction="row" gap={1} align="center">
+                          {/* রঙের নমুনা: পাবলিক হোম-কার্ডের আসল গ্রেডিয়েন্ট (রেজিস্ট্রির Tailwind ক্লাস), তাই পাবলিক চেহারাতেই */}
+                          <span className={`h-7 w-7 rounded-md bg-gradient-to-br ${ACCENTS[k].gradient}`} aria-hidden="true" />
+                          {pick(ACCENTS[k].label_bn, ACCENTS[k].label_en)}
+                        </Stack>
+                      ),
+                    }))}
                   />
                 </Card>
 

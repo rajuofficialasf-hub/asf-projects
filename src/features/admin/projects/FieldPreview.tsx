@@ -2,8 +2,10 @@ import { gn, lt, t } from '@/i18n'
 import type { Project } from '@/backend'
 import { fieldSpec, resolveFields, type FieldDef, type FieldValue } from '@/features/projects/fields'
 import { toBanglaNumber } from '@/lib/banglaNumber'
-import { card } from '../ui/styles'
 import { MAX_TABLE_COLUMNS, tableColumns } from './fieldRules'
+
+/** পাবলিক সাইটের সাদা কার্ড: প্রিভিউ ইচ্ছা করে পাবলিক চেহারাতেই দেখায় */
+const card = 'rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6'
 
 /** নমুনা মান (দেখানোর জন্য) — নাম/ঠিকানা আসল সাইটের মতোই বাংলায় থাকে, ভূগোল gn() দিয়ে */
 const SAMPLE = {
