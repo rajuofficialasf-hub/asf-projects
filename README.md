@@ -1,18 +1,20 @@
-# As-Sunnah Foundation — Project Platform
+<p align="center">বিসমিল্লাহির রাহমানির রাহিম</p>
 
-A public site that lists each project's beneficiaries (housing, self-reliance, skill-based entrepreneurs and more), with an admin panel for records, photos and projects. New projects are created from the admin panel, with no code.
+# আস-সুন্নাহ ফাউন্ডেশন — প্রকল্প-প্ল্যাটফর্ম
 
-Technical details are in [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md).
+একটি পাবলিক সাইট, যেখানে প্রতিটি প্রকল্পের উপকারভোগীদের তালিকা থাকে (ঘর নির্মাণ, স্বাবলম্বী, দক্ষতা ভিত্তিক উদ্যোক্তা ও আরও অনেক)। সাথে আছে এডমিন প্যানেল, যেখান থেকে রেকর্ড, ছবি ও প্রকল্প পরিচালনা করা যায়। নতুন প্রকল্প এডমিন প্যানেল থেকেই খোলা যায়, কোড লিখতে হয় না।
 
-## What you need
+টেকনিক্যাল বিস্তারিত আছে [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) ফাইলে।
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/), installed and running. This is all you need to run the app.
-- [git](https://git-scm.com/downloads), to get the code.
-- [Claude Code](https://claude.com/claude-code), to add features.
+## যা লাগবে
 
-## 1. Run the app
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/), ইনস্টল করা ও চালু অবস্থায়। অ্যাপ চালাতে শুধু এটুকুই লাগে।
+- [git](https://git-scm.com/downloads), কোড নামানোর জন্য।
+- [Claude Code](https://claude.com/claude-code), নতুন ফিচার যোগ করার জন্য।
 
-In a terminal:
+## ১. অ্যাপ চালান
+
+টার্মিনালে লিখুন:
 
 ```bash
 git clone https://github.com/rajuofficialasf-hub/house-construction.git
@@ -20,78 +22,88 @@ cd house-construction
 docker compose up
 ```
 
-The first start takes a few minutes. When the log shows `housing API listening`, open http://localhost:5173. You'll see sample projects and records.
+প্রথমবার চালু হতে কয়েক মিনিট লাগে। লগে `housing API listening` দেখা গেলে http://localhost:5173 খুলুন। কিছু নমুনা প্রকল্প ও রেকর্ড দেখতে পাবেন।
 
-To stop, press `Ctrl+C` in that terminal. Next time, just run `docker compose up`.
+বন্ধ করতে ওই টার্মিনালে `Ctrl+C` চাপুন। পরের বার শুধু `docker compose up` চালালেই হবে।
 
-## 2. Create your login
+### টার্মিনাল খোলা না রেখে চালাতে
 
-There is no sign-up page; logins are created with a command. While the app is running, open a second terminal in the same folder and run this, with your own email and name:
+শেষে `-d` দিলে অ্যাপ পেছনে (background) চলে, টার্মিনাল বন্ধ করলেও অ্যাপ বন্ধ হয় না:
+
+```bash
+docker compose up -d
+```
+
+এভাবে চালালে লগ টার্মিনালে আসে না। `housing API listening` এসেছে কি না দেখতে `docker compose logs -f api` চালান; লগ দেখা শেষ হলে `Ctrl+C` চাপুন, অ্যাপ চলতেই থাকবে। অ্যাপ বন্ধ করতে প্রকল্পের ফোল্ডারে `docker compose down` চালান। এতে আপনার ডেটা মোছে না।
+
+## ২. নিজের লগইন তৈরি করুন
+
+এখানে সাইন-আপ পাতা নেই; লগইন তৈরি হয় কমান্ড দিয়ে। অ্যাপ চালু থাকা অবস্থায় একই ফোল্ডারে আরেকটি টার্মিনাল খুলুন (`-d` দিয়ে চালালে আগের টার্মিনালেই হবে), তারপর নিজের ইমেইল ও নাম বসিয়ে এটি চালান:
 
 ```bash
 docker compose exec api npm run admin -- create --email you@example.org --name "Your Name" --role main_admin
 ```
 
-It asks for a password twice. Nothing shows while you type; that's normal. Don't use a real password; pick one just for this. A line saying `.env not found` is harmless.
+কমান্ডটি দুবার পাসওয়ার্ড চাইবে। টাইপ করার সময় স্ক্রিনে কিছুই দেখা যাবে না, এটাই স্বাভাবিক। আসল পাসওয়ার্ড দেবেন না; শুধু এই কাজের জন্য আলাদা একটি বেছে নিন। `.env not found` লেখা একটি লাইন আসতে পারে, তাতে কোনো সমস্যা নেই।
 
-Then log in at http://localhost:5173/admin/login.
+এরপর http://localhost:5173/admin/login -এ গিয়ে লগইন করুন।
 
-### Roles
+### ভূমিকা
 
-Every login has one of three roles, set with `--role`:
+প্রতিটি লগইনের তিনটি ভূমিকার যেকোনো একটি থাকে, যা `--role` দিয়ে ঠিক করা হয়:
 
-| Role | Can do |
+| ভূমিকা | যা করতে পারেন |
 |---|---|
-| `main_admin` | Everything, including deleting and managing other logins on the Users page. Only one login can be the main admin. |
-| `admin` | Work on every project: add and edit records, import, change project settings. Can't delete. |
-| `editor` | Add and fill in records only in the projects the main admin gives it. Can't delete or change settings. |
+| `main_admin` (মূল এডমিন) | সব কাজ, এর মধ্যে মোছা আর ইউজার পাতায় অন্যদের লগইন পরিচালনাও আছে। মূল এডমিন একজনই হতে পারেন। |
+| `admin` (এডমিন) | সব প্রকল্পে কাজ: রেকর্ড যোগ ও এডিট, ইম্পোর্ট, প্রকল্পের সেটিং বদল। মুছতে পারেন না। |
+| `editor` (প্রকল্পের ইউজার) | মূল এডমিন যেসব প্রকল্প দেন, শুধু সেগুলোতে রেকর্ড যোগ করা ও তথ্য ভরা। মোছা বা সেটিং বদলানো পারেন না। |
 
-On a new database, make yourself `main_admin`. If someone already is, use `--role admin`, or ask the main admin to change your role. The main admin can change roles and give an editor its projects on the Users page (http://localhost:5173/admin/users).
+নতুন ডেটাবেসে নিজেকে `main_admin` করুন। কেউ আগে থেকেই মূল এডমিন থাকলে `--role admin` দিন, অথবা মূল এডমিনকে আপনার ভূমিকা বদলে দিতে বলুন। মূল এডমিন ইউজার পাতা (http://localhost:5173/admin/users) থেকে ভূমিকা বদলাতে আর প্রকল্পের ইউজারকে প্রকল্প দিতে পারেন।
 
-## 3. Add features with Claude Code
+## ৩. Claude Code দিয়ে ফিচার যোগ করুন
 
-1. The first time, install the As-Sunnah plugin in Claude Code. Its repo is private, so you need read access to `forhad-h/assunnah-engineering` on GitHub first. Claude Code works without the plugin, but the `/ae-…` commands below won't be there.
+1. প্রথমবার Claude Code-এ As-Sunnah প্লাগইনটি ইনস্টল করুন। এর রিপো প্রাইভেট, তাই আগে GitHub-এ `forhad-h/assunnah-engineering` রিপোতে read access লাগবে। প্লাগইন ছাড়াও Claude Code চলে, তবে নিচের `/ae-…` কমান্ডগুলো পাবেন না।
 
    ```
    /plugin marketplace add forhad-h/assunnah-engineering
    /plugin install assunnah-engineering@assunnah
    ```
 
-2. Run `claude` in the project folder. Claude reads the project's rules by itself ([CLAUDE.md](CLAUDE.md)).
+2. প্রকল্পের ফোল্ডারে `claude` চালান। Claude নিজেই প্রকল্পের নিয়মগুলো পড়ে নেয় ([CLAUDE.md](CLAUDE.md))।
 
-3. Say what you want in plain words, in English or Bangla. For example: "I want to search the records list by mobile number."
+3. কী চান, সহজ ভাষায় বলুন, ইংরেজি বা বাংলায়। যেমন: “রেকর্ডের তালিকায় মোবাইল নম্বর দিয়ে খুঁজতে চাই।”
 
-4. For bigger work, go in this order:
-   - `/ae-brainstorm`: decide what to build
-   - `/ae-plan`: plan how to build it
-   - `/ae-work`: build it, with tests and review
+4. বড় কাজে এই ক্রমে এগোন:
+   - `/ae-brainstorm`: কী বানাবেন, তা ঠিক করুন
+   - `/ae-plan`: কীভাবে বানাবেন, তার পরিকল্পনা করুন
+   - `/ae-work`: টেস্ট ও রিভিউসহ বানান
 
-   For small changes, just ask. Claude runs the tests itself.
+   ছোট বদলের জন্য সরাসরি বললেই হবে। টেস্ট Claude নিজেই চালায়।
 
-5. When it's done, check it yourself in the browser. Then ask Claude to commit. Work on your own branch, and never push straight to `main`.
+5. কাজ শেষ হলে ব্রাউজারে নিজে একবার দেখে নিন। তারপর Claude-কে কমিট করতে বলুন। নিজের ব্রাঞ্চে কাজ করুন, আর কখনো সরাসরি `main`-এ পুশ করবেন না।
 
-## If something goes wrong
+## সমস্যা হলে
 
-- **"Cannot connect to the Docker daemon"**: start Docker Desktop.
-- **"port is already allocated"** or **"ports are not available … bind: An attempt was made to access a socket in a way forbidden"**: something else is using port 5173, 3001, 5432 or 8333. Often it's a PostgreSQL installed on your computer, which uses 5432. Either stop it, or move the app to a free port: create a file named `.env` in the project folder with one line per port you move, then run `docker compose up` again:
+- **"Cannot connect to the Docker daemon"**: Docker Desktop চালু করুন।
+- **"port is already allocated"** বা **"ports are not available … bind: An attempt was made to access a socket in a way forbidden"**: 5173, 3001, 5432 বা 8333 পোর্ট অন্য কিছু ব্যবহার করছে। প্রায়ই সেটি আপনার কম্পিউটারে ইনস্টল করা PostgreSQL, যা 5432 পোর্ট নেয়। হয় সেটি বন্ধ করুন, নয়তো অ্যাপটিকে কোনো খালি পোর্টে সরিয়ে নিন: প্রকল্পের ফোল্ডারে `.env` নামে একটি ফাইল বানান, যে পোর্ট সরাবেন তার জন্য এক লাইন করে লিখুন, তারপর আবার `docker compose up` চালান:
 
   ```
   DB_PORT=5433
   ```
 
-  The other ports move the same way: `WEB_PORT`, `API_PORT` and `S3_PORT`. Git ignores `.env`, so it stays on your computer. If you move `WEB_PORT`, open the app on that port instead of 5173. If you move `DB_PORT` and also run the server outside Docker, use the same port in `server/.env`.
-- **`set: Illegal option -` in the `web` or `api` log (Windows)**: git saved the shell scripts with Windows line endings. The repo's `.gitattributes` prevents this on a new clone. In a clone made before that, run these commands in Git Bash in the project folder, then `docker compose down -v` and `docker compose up`:
+  বাকি পোর্টও একইভাবে সরানো যায়: `WEB_PORT`, `API_PORT` ও `S3_PORT`। git `.env` ফাইলটি উপেক্ষা করে, তাই এটি শুধু আপনার কম্পিউটারেই থাকে। `WEB_PORT` সরালে 5173-এর বদলে সেই পোর্টে অ্যাপ খুলুন। `DB_PORT` সরানোর পাশাপাশি সার্ভার Docker-এর বাইরে চালালে `server/.env` ফাইলেও একই পোর্ট দিন।
+- **`web` বা `api` লগে `set: Illegal option -` (Windows)**: git শেল স্ক্রিপ্টগুলো Windows-এর লাইন এন্ডিংয়ে সেভ করেছে। রিপোর `.gitattributes` নতুন ক্লোনে এটা হতে দেয় না। তার আগে করা ক্লোনে প্রকল্পের ফোল্ডারে Git Bash খুলে এই কমান্ডগুলো চালান, তারপর `docker compose down -v` ও `docker compose up` চালান:
 
   ```bash
   git pull
   rm scripts/*.sh server/db/docker-init/*.sh
   git checkout -- scripts server/db
   ```
-- **Start over from scratch**: `docker compose down -v`. This deletes the database and uploaded photos. The next `docker compose up` loads the sample data again, and you create your login again.
-- If you're stuck, show the error message to Claude and ask.
+- **একদম শুরু থেকে আবার**: `docker compose down -v` চালান। এতে ডেটাবেস ও আপলোড করা ছবি মুছে যায়। পরের `docker compose up` নমুনা ডেটা আবার লোড করবে, আর আপনাকে লগইনও আবার তৈরি করতে হবে।
+- আটকে গেলে এরর মেসেজটি Claude-কে দেখিয়ে জিজ্ঞেস করুন।
 
-## More to read
+## আরও পড়ুন
 
-- [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md): the technical guide (structure, pages, adding a feature step by step, tests, CI)
-- [docs/ADMIN_GUIDE.md](docs/ADMIN_GUIDE.md): how to use the admin panel (in Bangla)
-- [docs/README.md](docs/README.md): index of all docs
+- [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md): টেকনিক্যাল গাইড, ইংরেজিতে (কাঠামো, পাতা, ধাপে ধাপে ফিচার যোগ, টেস্ট, CI)
+- [docs/ADMIN_GUIDE.md](docs/ADMIN_GUIDE.md): এডমিন প্যানেল কীভাবে চালাবেন (বাংলায়)
+- [docs/README.md](docs/README.md): সব ডকুমেন্টের সূচি
