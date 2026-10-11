@@ -1,8 +1,8 @@
 import { lt, t } from '@/i18n'
 import { useState } from 'react'
 import type { Project } from '@/backend'
-import { ConfirmDialog } from '@/features/housing/components/ConfirmDialog'
-import { inputClass } from '../ui/styles'
+import { Alert, Stack, Text, TextField } from '@/ui'
+import { ConfirmDialog } from '../ui/ConfirmDialog'
 
 /**
  * মোছার আগে নিশ্চিতকরণ: প্রকল্পের বাংলা নাম হুবহু টাইপ করলে তবেই "মুছুন" চালু হয়, অপ্রকাশের ডায়ালগের
@@ -37,18 +37,11 @@ export function DeleteProjectDialog({
       onConfirm={onConfirm}
       onCancel={onCancel}
     >
-      <div className="space-y-3 text-sm text-slate-700">
-        <p>{t('প্রকল্পটি, এর ফিল্ডগুলো আর কভার ছবি মুছে যাবে। এটি ফেরানো যায় না।')}</p>
-        <label className="block">
-          <span className="mb-1 block font-medium">{t('নিশ্চিত করতে প্রকল্পের নাম লিখুন: {name}', { name })}</span>
-          <input className={inputClass} value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off" />
-        </label>
-        {error && (
-          <p role="alert" className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-red-800">
-            {error}
-          </p>
-        )}
-      </div>
+      <Stack gap={2}>
+        <Text size="small">{t('প্রকল্পটি, এর ফিল্ডগুলো আর কভার ছবি মুছে যাবে। এটি ফেরানো যায় না।')}</Text>
+        <TextField label={t('নিশ্চিত করতে প্রকল্পের নাম লিখুন: {name}', { name })} value={typed} onChange={setTyped} autoComplete="off" />
+        {error && <Alert tone="error">{error}</Alert>}
+      </Stack>
     </ConfirmDialog>
   )
 }
