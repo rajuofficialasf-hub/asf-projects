@@ -19,6 +19,7 @@ export function TextField({
   error,
   hint,
   required,
+  requiredMark = true,
   disabled,
   type = 'text',
   autoComplete,
@@ -37,9 +38,8 @@ export function TextField({
   const listId = useId();
   const hasList = !!suggestions?.length;
   const adornments = {
-    ...(prefix !== undefined && { startAdornment: <InputAdornment position="start">{prefix}</InputAdornment> }),
-    ...(suffix !== undefined &&
-      suffix !== null &&
+    ...(prefix != null && { startAdornment: <InputAdornment position="start">{prefix}</InputAdornment> }),
+    ...(suffix != null &&
       suffix !== false && {
         endAdornment: (
           <InputAdornment position="end" aria-live="polite">
@@ -76,9 +76,12 @@ export function TextField({
           ...(hasList && { list: listId }),
           ...(hideLabel && { 'aria-label': label }),
         },
-        inputLabel: type === 'date' || placeholder || prefix !== undefined ? { shrink: true } : {},
+        inputLabel: {
+          ...((type === 'date' || placeholder || prefix !== undefined) && { shrink: true }),
+          ...(!requiredMark && { required: false }),
+        },
         formHelperText: helperProps(error),
-        ...(Object.keys(adornments).length > 0 && { input: adornments }),
+        input: adornments,
       }}
     />
   );
@@ -109,6 +112,7 @@ export function SelectField({
   error,
   hint,
   required,
+  requiredMark = true,
   disabled,
   hideLabel,
   size = 'medium',
@@ -130,7 +134,7 @@ export function SelectField({
       slotProps={{
         select: { native: true },
         htmlInput: hideLabel ? { 'aria-label': label } : {},
-        inputLabel: { shrink: true },
+        inputLabel: { shrink: true, ...(!requiredMark && { required: false }) },
         formHelperText: helperProps(error),
       }}
     >

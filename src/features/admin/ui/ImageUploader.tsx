@@ -51,7 +51,7 @@ export function ImageUploader({ items, onAdd, onRemove, multiple = true, disable
       />
 
       {showList && items.length > 0 && (
-        <Stack gap={1}>
+        <Stack gap={1} role="list">
           {items.map((it) => (
             <UploadRow key={it.id} item={it} onRemove={onRemove && it.status === 'pending' ? () => onRemove(it.id) : undefined} />
           ))}
@@ -64,7 +64,7 @@ export function ImageUploader({ items, onAdd, onRemove, multiple = true, disable
 /** একটি ফাইলের সারি: প্রিভিউ, নাম, আকার, প্রগ্রেস, বার্তা, অবস্থা */
 export function UploadRow({ item: it, onRemove }: { item: UploadItem; onRemove?: () => void }) {
   return (
-    <Stack direction="row" gap={1.5} align="center">
+    <Stack direction="row" gap={1.5} align="center" role="listitem">
       <img src={it.previewUrl} alt="" width={56} height={56} style={{ width: 56, height: 56, flexShrink: 0, objectFit: 'cover', borderRadius: 8 }} />
       <div style={{ minWidth: 0, flex: 1 }}>
         <Text size="small">{it.file.name}</Text>

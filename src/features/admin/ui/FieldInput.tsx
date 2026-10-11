@@ -4,7 +4,7 @@ import { TextField, type TextFieldProps } from '@/ui'
 
 interface Props {
   def: FieldDef
-  /** ঘরের লেবেল (অ্যাক্সেসিবল নামও); আবশ্যক হলে ডাকার জায়গা নিজেই " *" জুড়ে দেয়, তাই এখানে আলাদা তারকা নেই */
+  /** ঘরের লেবেল (অ্যাক্সেসিবল নামও); আবশ্যক হলে ডাকার জায়গা নিজেই " *" জুড়ে দেয়, তাই দ্বিতীয় তারকা দেখায় না */
   label: string
   /** ফর্মের লেখা (fieldSpec(type).toInput দিয়ে বানানো) */
   value: string
@@ -22,7 +22,7 @@ interface Props {
  * টাকায় পাশে সাথে সাথে "৳ ১,২০,০০০"।
  */
 export function FieldInput({ def, label, value, onChange, error, hint, disabled, suggestions }: Props) {
-  const base: TextFieldProps = { label, value, onChange, error, hint, disabled }
+  const base: TextFieldProps = { label, value, onChange, error, hint, disabled, required: def.required, requiredMark: false }
   switch (def.type) {
     case 'long_text':
       return <TextField {...base} rows={3} maxLength={def.max_length ?? 2000} />

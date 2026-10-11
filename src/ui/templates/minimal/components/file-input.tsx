@@ -12,22 +12,25 @@ import { Icon } from './icon';
 
 /**
  * Whether a file fits an `accept` list (".csv", "image/*", "text/csv"), as the file picker filters. A file
- * whose type the browser cannot tell passes the type rules, as it does in the picker.
+ * whose type the browser cannot tell passes a list of type rules only; when the list names extensions,
+ * the name must match one.
  */
 export function matchesAccept(file: File, accept?: string): boolean {
   if (!accept) return true;
   const name = file.name.toLowerCase();
   const type = file.type.toLowerCase();
-  return accept
+  const rules = accept
     .split(',')
     .map((part) => part.trim().toLowerCase())
-    .filter(Boolean)
-    .some((rule) =>
-      rule.startsWith('.')
-        ? name.endsWith(rule)
-        : !type ||
-          (rule.endsWith('/*') ? type.startsWith(rule.slice(0, -1)) : type === rule)
-    );
+    .filter(Boolean);
+  if (!type && !rules.some((rule) => rule.startsWith('.'))) return true;
+  return rules.some((rule) =>
+    rule.startsWith('.')
+      ? name.endsWith(rule)
+      : rule.endsWith('/*')
+        ? type.startsWith(rule.slice(0, -1))
+        : type === rule
+  );
 }
 
 const hiddenInput = {

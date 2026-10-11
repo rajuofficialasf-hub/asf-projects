@@ -49,6 +49,7 @@ import {
   ProgressBar,
 } from './index';
 import { pageItems } from './components/pagination';
+import { matchesAccept } from './components/file-input';
 
 // ----------------------------------------------------------------------
 
@@ -480,12 +481,13 @@ describe('pieces the admin added to the set', () => {
   it('applies accept to dropped files too, as the picker does', async () => {
     const picked: string[][] = [];
     renderInApp(<FileInput look="dropzone" multiple label="Sheet" buttonLabel="Choose" accept=".csv,image/*" onFiles={(files) => picked.push(files.map((f) => f.name))} />);
-    const zone = (await screen.findByText('Choose')).closest('label')!;
+    const zone = await screen.findByLabelText('Sheet');
     const files = [new File(['a'], 'list.CSV'), new File(['b'], 'notes.pdf', { type: 'application/pdf' }), new File(['c'], 'p.png', { type: 'image/png' })];
     fireEvent.drop(zone, { dataTransfer: { files } });
     expect(picked).toEqual([['list.CSV', 'p.png']]);
-    fireEvent.drop(zone, { dataTransfer: { files: [new File(['d'], 'unknown-type')] } });
-    expect(picked).toEqual([['list.CSV', 'p.png'], ['unknown-type']]);
+    // With an extension rule in the list, a file of unknown type must match by name.
+    fireEvent.drop(zone, { dataTransfer: { files: [new File(['d'], 'unknown-type'), new File(['e'], 'more.csv')] } });
+    expect(picked).toEqual([['list.CSV', 'p.png'], ['more.csv']]);
   });
 
   it('opens a menu, runs an action, and closes on Esc with focus back on its button', async () => {
@@ -666,6 +668,19 @@ describe('details of the added pieces', () => {
     expect(pageItems(2, 5)).toEqual([1, 2, 3, 4, 5]);
   });
 
+  it('lets a file of unknown type through a list of type rules only', () => {
+    expect(matchesAccept(new File(['x'], 'photo'), 'image/jpeg,image/png')).toBe(true);
+    expect(matchesAccept(new File(['x'], 'notes.pdf', { type: 'application/pdf' }), 'image/jpeg,image/png')).toBe(false);
+    expect(matchesAccept(new File(['x'], 'list'), '.csv,text/csv')).toBe(false);
+  });
+
+  it('marks a field required without a second star when its label carries one', async () => {
+    renderInApp(<TextField label="Name *" required requiredMark={false} value="" onChange={() => {}} />);
+    const input = await screen.findByRole('textbox', { name: 'Name *' });
+    expect(input).toBeRequired();
+    expect(document.querySelector('label')?.textContent).toBe('Name *');
+  });
+
   it('keeps one dropped file when multiple is off, and takes none while disabled', async () => {
     const picked: string[][] = [];
     const { rerender } = render(
@@ -673,7 +688,7 @@ describe('details of the added pieces', () => {
         <FileInput look="dropzone" label="Photo" buttonLabel="Choose" onFiles={(f) => picked.push(f.map((x) => x.name))} />
       </UiProvider>
     );
-    const zone = screen.getByText('Choose').closest('label')!;
+    const zone = screen.getByLabelText('Photo');
     fireEvent.drop(zone, { dataTransfer: { files: [new File(['a'], 'a.jpg'), new File(['b'], 'b.jpg')] } });
     expect(picked).toEqual([['a.jpg']]);
     rerender(
@@ -681,7 +696,7 @@ describe('details of the added pieces', () => {
         <FileInput look="dropzone" disabled label="Photo" buttonLabel="Choose" onFiles={(f) => picked.push(f.map((x) => x.name))} />
       </UiProvider>
     );
-    fireEvent.drop(screen.getByText('Choose').closest('label')!, { dataTransfer: { files: [new File(['c'], 'c.jpg')] } });
+    fireEvent.drop(screen.getByLabelText('Photo'), { dataTransfer: { files: [new File(['c'], 'c.jpg')] } });
     expect(picked).toEqual([['a.jpg']]);
   });
 

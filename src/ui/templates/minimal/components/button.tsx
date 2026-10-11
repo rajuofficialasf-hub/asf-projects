@@ -27,6 +27,8 @@ function lookProps({ variant = 'primary', startIcon, fullWidth }: Look): MuiLook
       return { ...base, variant: 'contained', color: 'error' };
     case 'text':
       return { ...base, variant: 'text', color: 'inherit' };
+    case 'danger-text':
+      return { ...base, variant: 'text', color: 'error' };
   }
 }
 
@@ -38,7 +40,7 @@ export function Button({ children, onClick, type = 'button', disabled, loading, 
       onClick={onClick}
       disabled={disabled}
       autoFocus={autoFocus}
-      {...(size === 'small' && { size: 'small' as const, sx: { minHeight: 36 } })}
+      {...(size === 'small' && { size: 'small' as const, sx: { minHeight: 44 } })}
       loading={loading ?? null}
     >
       {children}

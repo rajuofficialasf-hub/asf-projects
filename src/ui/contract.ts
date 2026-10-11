@@ -161,6 +161,8 @@ export type StackProps = {
   wrap?: boolean;
   /** Space inside the edges. */
   padding?: SpaceStep;
+  /** A list of items (role list), or one item in such a list. */
+  role?: "list" | "listitem";
 };
 
 export type HeadingProps = { children: ReactNode; level?: 2 | 3 | 4 };
@@ -173,7 +175,7 @@ export type IconProps = { name: IconName; label?: string; size?: number };
 // ---------------------------------------------------------------------------------------------
 // Actions
 
-type ButtonLook = { variant?: "primary" | "secondary" | "text" | "danger"; startIcon?: IconName; fullWidth?: boolean };
+type ButtonLook = { variant?: "primary" | "secondary" | "text" | "danger" | "danger-text"; startIcon?: IconName; fullWidth?: boolean };
 
 export type ButtonProps = ButtonLook & {
   children: ReactNode;
@@ -201,6 +203,8 @@ type FieldBase = {
   /** Help text under the field when there is no error. */
   hint?: string;
   required?: boolean;
+  /** false: the label already shows its own mark ("Name *"), so no second star; the field is still announced as required. */
+  requiredMark?: boolean;
   disabled?: boolean;
 };
 

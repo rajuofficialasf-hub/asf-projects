@@ -74,7 +74,7 @@ export function PhotoField({ kind, label, record, item, onChange, onDeleteExisti
               </Text>
               {onDeleteExisting && (
                 <div>
-                  <Button variant="text" size="small" onClick={onDeleteExisting}>
+                  <Button variant="danger-text" size="small" onClick={onDeleteExisting}>
                     {t('এই ছবি মুছুন')}
                   </Button>
                 </div>

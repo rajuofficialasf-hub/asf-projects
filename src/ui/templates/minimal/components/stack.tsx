@@ -7,11 +7,12 @@ import MuiStack from '@mui/material/Stack';
 const ALIGN = { start: 'flex-start', center: 'center', end: 'flex-end', stretch: 'stretch' } as const;
 const JUSTIFY = { start: 'flex-start', center: 'center', end: 'flex-end', between: 'space-between' } as const;
 
-export function Stack({ children, direction = 'column', gap = 2, align, justify, wrap, padding }: StackProps) {
+export function Stack({ children, direction = 'column', gap = 2, align, justify, wrap, padding, role }: StackProps) {
   return (
     <MuiStack
       direction={direction}
       spacing={0}
+      role={role}
       sx={{
         gap,
         ...(padding !== undefined && { p: padding }),

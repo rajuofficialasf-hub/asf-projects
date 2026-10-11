@@ -29,6 +29,7 @@ function show(d: FieldDef, value = '', extra: { suggestions?: string[] } = {}) {
 describe('admin field input', () => {
   it('keeps the label as given (no second required star) and passes typed text through', async () => {
     const changes = show(def({ required: true }))
+    expect(screen.getByRole('textbox', { name: 'ঘর *' })).toBeRequired()
     await userEvent.type(screen.getByRole('textbox', { name: 'ঘর *' }), 'ক')
     expect(changes).toEqual(['ক'])
     expect(document.querySelector('label')?.textContent).toBe('ঘর *')
