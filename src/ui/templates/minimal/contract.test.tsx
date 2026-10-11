@@ -556,6 +556,22 @@ describe('living next to the public site', () => {
     expect(document.documentElement.hasAttribute('dir')).toBe(false);
     expect(document.documentElement.hasAttribute('data-color-scheme')).toBe(false);
   });
+
+  it('still takes the <html> marks away after a remount, as a language switch does', async () => {
+    const view = renderInApp(<Text key="bn">admin</Text>);
+    await screen.findByText('admin');
+    // A new provider tree replaces the old one, the way LanguageProvider's key change does.
+    view.rerender(
+      <UiProvider key="en">
+        <Text>admin en</Text>
+      </UiProvider>
+    );
+    await screen.findByText('admin en');
+    expect(document.documentElement.hasAttribute('data-color-scheme')).toBe(true);
+    view.unmount();
+    expect(document.documentElement.hasAttribute('dir')).toBe(false);
+    expect(document.documentElement.hasAttribute('data-color-scheme')).toBe(false);
+  });
 });
 
 describe('details of the added pieces', () => {

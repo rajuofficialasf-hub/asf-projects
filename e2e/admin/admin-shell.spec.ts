@@ -85,4 +85,29 @@ test('the admin has its own shell: no public main menu, and its own language swi
   await expect(page).toHaveURL(/\/admin$/)
   await page.getByRole('group', { name: 'Language' }).getByRole('button', { name: 'বাং', exact: true }).click()
   await expect(page.locator('html')).toHaveAttribute('lang', 'bn')
+
+  // After a language switch remounts the admin, leaving it still gives the public site a clean <html>.
+  await (await accountAction(page, 'পাবলিক সাইট দেখুন')).click()
+  await expect(page.getByRole('navigation', { name: 'প্রধান মেনু' })).toBeVisible()
+  await expect(page.locator('html')).not.toHaveAttribute('data-color-scheme', /.*/)
+  await expect(page.locator('html')).not.toHaveAttribute('dir', /.*/)
+})
+
+test('an unknown admin address shows "not found" with a way home, without asking for a login', async ({ page }) => {
+  await page.goto('/admin/no-such-page')
+  await expect(page.getByRole('heading', { name: 'পেইজটি পাওয়া যায়নি' })).toBeVisible()
+  await expect(page).toHaveURL(/\/admin\/no-such-page$/)
+  await page.getByRole('link', { name: 'হোম পেইজে যান' }).click()
+  await expect(page).toHaveURL(/\/$/)
+})
+
+test('a failed logout says why and keeps the admin open', async ({ page }) => {
+  await loginAs(page, MOCK_ADMIN, '/admin')
+  await page.route('**/api/v1/auth/logout', (route) =>
+    route.fulfill({ status: 500, contentType: 'application/json', body: '{"error":{"code":"INTERNAL_ERROR","message":"লগআউট করা যায়নি"}}' }),
+  )
+  await (await accountAction(page, 'লগআউট')).click()
+  await expect(page.getByRole('alert').filter({ hasText: /\S/ })).toBeVisible()
+  await expect(page).toHaveURL(/\/admin$/)
+  await expect(accountMenu(page)).toBeVisible()
 })

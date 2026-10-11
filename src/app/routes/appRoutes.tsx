@@ -67,10 +67,10 @@ function leafRoute(p: Project) {
 }
 
 /**
- * এডমিন (পরিকল্পনা §৪.২): `/admin/*` (লগইনসহ) একটি lazy চাংক — নিজের লেআউট ও রাউট AdminApp-এ, পাবলিক হেডার-ফুটারের
+ * এডমিন (docs/plans/2026-10-06-1224-refactor-complete-move-to-own-stack-plan.md §৪.২): `/admin/*` (লগইনসহ) একটি lazy চাংক — নিজের লেআউট ও রাউট AdminApp-এ, পাবলিক হেডার-ফুটারের
  * বাইরে, যাতে এডমিনের UI টেমপ্লেট (MUI) পাবলিক বান্ডলে না আসে। URL আগের মতোই (`/admin/records/semi_pucca`)।
  */
 export const adminRoute = <Route key="admin" path="admin/*" element={<Lazy><LazyAdminApp /></Lazy>} />
 
-/** পুরনো `/housing/admin/*` লিংক নতুনে রিডাইরেক্ট (§৪.৩) */
+/** পুরনো `/housing/admin/*` লিংক নতুনে রিডাইরেক্ট (একই পরিকল্পনার §৪.৩) */
 export const legacyAdminRoute = <Route key="legacy-admin" path="housing/admin/*" element={<LegacyAdminRedirect />} />

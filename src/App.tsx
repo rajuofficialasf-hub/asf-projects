@@ -9,7 +9,7 @@ import { LanguageProvider } from '@/i18n'
 import { HomePage } from '@/pages/HomePage'
 
 /**
- * সাইটের রুট টেবিল (পরিকল্পনা §৪): `/admin/*` নিজের লেআউটে (SiteLayout-এর বাইরে); বাকি সব SiteLayout-এ — স্থির রাউট
+ * সাইটের রুট টেবিল (docs/plans/2026-10-06-1224-refactor-complete-move-to-own-stack-plan.md §৪): `/admin/*` নিজের লেআউটে (SiteLayout-এর বাইরে); বাকি সব SiteLayout-এ — স্থির রাউট
  * (`/`, পুরনো `/housing/admin/*`), রেজিস্ট্রি থেকে তৈরি প্রকল্পের রাউট, আর `*` = ConfigAwareNotFound। LanguageProvider ভাষা বদলালে সব remount করে (রেজিস্ট্রি মডিউলে থাকে, হারায় না)।
  */
 export default function App() {

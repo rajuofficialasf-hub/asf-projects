@@ -2,7 +2,7 @@ import '../global.css';
 
 import type { UiProviderProps } from '@/ui/contract';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 
 import { themeConfig, ThemeProvider } from '../theme';
 import { ToastProvider } from './toast';
@@ -12,6 +12,30 @@ import { defaultSettings, SettingsProvider } from './settings';
 import GlobalStyles from '@mui/material/GlobalStyles';
 
 // ----------------------------------------------------------------------
+
+// The theme marks <html> with its direction and colour scheme. Leaving the admin must give the public
+// pages <html> as it was, so the marks the page had before any provider mounted are read once, and the
+// rest are taken off when the last provider unmounts. A language switch remounts the provider (the old
+// one's cleanup runs before the new one's effects), which this survives.
+let pageMarks: { dir: boolean; scheme: boolean } | null = null;
+let mountedProviders = 0;
+
+function useHtmlMarksCleanup() {
+  pageMarks ??= {
+    dir: document.documentElement.hasAttribute('dir'),
+    scheme: document.documentElement.hasAttribute('data-color-scheme'),
+  };
+  useEffect(() => {
+    mountedProviders += 1;
+    return () => {
+      mountedProviders -= 1;
+      if (mountedProviders > 0 || !pageMarks) return;
+      const html = document.documentElement;
+      if (!pageMarks.dir) html.removeAttribute('dir');
+      if (!pageMarks.scheme) html.removeAttribute('data-color-scheme');
+    };
+  }, []);
+}
 
 /**
  * The element baselines the starter put in global.css. They live here so Emotion removes them when the
@@ -37,20 +61,7 @@ const baseline = (
  * no settings drawer, so the settings stay at their defaults.
  */
 export function UiProvider({ children }: UiProviderProps) {
-  // The theme marks <html> with its direction and colour scheme; take the marks off on unmount so the
-  // pages outside this provider see <html> as it was.
-  // Read during the first render: the theme's effects run before this component's and add the marks.
-  const [had] = useState(() => ({
-    dir: document.documentElement.hasAttribute('dir'),
-    scheme: document.documentElement.hasAttribute('data-color-scheme'),
-  }));
-  useEffect(() => {
-    const html = document.documentElement;
-    return () => {
-      if (!had.dir) html.removeAttribute('dir');
-      if (!had.scheme) html.removeAttribute('data-color-scheme');
-    };
-  }, [had]);
+  useHtmlMarksCleanup();
 
   return (
     <SettingsProvider defaultSettings={defaultSettings}>
