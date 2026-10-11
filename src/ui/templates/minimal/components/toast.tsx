@@ -1,6 +1,6 @@
 import type { Tone, ToastApi } from '@/ui/contract';
 
-import { useMemo, useState, useCallback } from 'react';
+import { useRef, useMemo, useState, useCallback } from 'react';
 
 import MuiAlert from '@mui/material/Alert';
 import Snackbar from '@mui/material/Snackbar';
@@ -17,9 +17,10 @@ const AUTO_HIDE_MS = 6000;
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [current, setCurrent] = useState<ToastMessage | null>(null);
   const [open, setOpen] = useState(false);
+  const nextId = useRef(0);
 
   const show = useCallback<ToastApi['show']>((message, options) => {
-    setCurrent({ id: Date.now(), message, tone: options?.tone ?? 'info' });
+    setCurrent({ id: (nextId.current += 1), message, tone: options?.tone ?? 'info' });
     setOpen(true);
   }, []);
 

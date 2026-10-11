@@ -160,6 +160,12 @@ describe('actions and fields', () => {
     expect(screen.getByRole('button', { name: /Save/ })).toBeDisabled();
   });
 
+  it('draws buttons at least 44px high, the smallest touch target on phones', async () => {
+    renderInApp(<Button>Save</Button>);
+    const button = await screen.findByRole('button', { name: 'Save' });
+    expect(getComputedStyle(button).minHeight).toBe('44px');
+  });
+
   it('ties text and select fields to their labels, and shows their errors', async () => {
     const user = userEvent.setup();
     const changes: string[] = [];

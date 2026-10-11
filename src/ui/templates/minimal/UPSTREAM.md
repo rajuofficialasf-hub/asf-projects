@@ -57,5 +57,8 @@ Copied from the assunnah-engineering kit 0.16.0 (`skills/ae-new-app/kit/template
 - `components/ui-provider.tsx`: no `SettingsDrawer` (one light theme); `components/settings/drawer/` is removed.
 - `components/fields.tsx`: `SelectField` renders a native select (`slotProps.select.native`), so phones show their own picker and tests see a real `<select>`.
 - `components/logo/logo.tsx`: the foundation's logo (`CONFIG.logoUrl`) linking to `CONFIG.homePath` (`/admin`), in place of the starter's drawn mark.
+- `theme/core/components/button.tsx`: the `medium` size is 44px high (was 36px), the admin's smallest touch target on phones.
+- `components/iconify/iconify.tsx`: an icon outside the bundled sets draws nothing instead of loading from the Iconify API.
+- `components/toast.tsx`: toast ids come from a counter, so two toasts in the same millisecond still get their own Snackbar.
 - `global-config.ts`: `appName`, `logoUrl`, `homePath` for this app.
 - Lint: `.oxlintrc.json` (`no-restricted-imports`) replaces the kit's `eslint.config.js` rule (RE-UI-05), and also keeps `@/ui` out of public code. `scripts/check-prod-bundle.mjs` fails if MUI or Emotion reaches a public chunk.

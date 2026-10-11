@@ -20,14 +20,11 @@ export type IconifyProps = React.ComponentProps<typeof IconRoot> &
 export function Iconify({ className, icon, width = 20, height, sx, ...other }: IconifyProps) {
   const uniqueId = useId();
 
+  // An icon outside the bundled sets would be fetched from the Iconify API, a third-party request
+  // from the admin. Draw nothing instead, so every icon must be registered offline.
   if (!allIconNames.includes(icon)) {
-    console.warn(
-      [
-        `Icon "${icon}" is currently loaded online, which may cause flickering effects.`,
-        `To ensure a smoother experience, please register your icon collection for offline use.`,
-        `More information is available at: https://docs.minimals.cc/icons/`,
-      ].join('\n')
-    );
+    console.warn(`Icon "${icon}" is not in the bundled icon sets (icon-sets.ts); it is not drawn.`);
+    return null;
   }
 
   registerIcons();

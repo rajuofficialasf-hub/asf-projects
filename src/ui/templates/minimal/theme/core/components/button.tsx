@@ -23,7 +23,8 @@ const allColors = [...baseColors, ...colorKeys.palette, ...colorKeys.common] as 
 
 const DIMENSIONS: Record<'small' | 'medium' | 'large' | 'xLarge', CSSObject> = {
   small: { '--padding-y': '4px', '--padding-x': '8px', minHeight: 30, lineHeight: 22 / 13 },
-  medium: { '--padding-y': '6px', '--padding-x': '12px', minHeight: 36, lineHeight: 24 / 14 },
+  // 44px: the smallest touch target the admin allows on phones.
+  medium: { '--padding-y': '10px', '--padding-x': '14px', minHeight: 44, lineHeight: 24 / 14 },
   large: { '--padding-y': '8px', '--padding-x': '16px', minHeight: 48, lineHeight: 26 / 15 },
   xLarge: { minHeight: 56 },
 };
