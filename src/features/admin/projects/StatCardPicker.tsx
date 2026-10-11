@@ -2,7 +2,7 @@ import { lt, t } from '@/i18n'
 import { useState } from 'react'
 import type { GeoLevel, Project, StatCardDef, StatCardKind } from '@/backend'
 import { newCardId, suggestCard } from '@/features/projects/stats/statCards'
-import { secondaryButton, selectClass } from '../ui/styles'
+import { Button, RadioGroup, SelectField, Stack, Text } from '@/ui'
 
 const KINDS: { kind: StatCardKind; label: string; hint: string }[] = [
   { kind: 'count', label: 'গণনা', hint: 'মোট রেকর্ড (উপকারভোগী)' },
@@ -35,51 +35,37 @@ export function StatCardPicker({ project, cards, onAdd, disabled }: { project: P
   }
 
   return (
-    <div className="rounded-xl border border-dashed border-slate-300 p-4">
-      <p className="text-sm font-semibold text-slate-800">{t('নতুন কার্ড')}</p>
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        {kinds.map((k) => (
-          <label key={k.kind} className={`flex min-h-11 cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 text-sm ${kind === k.kind ? 'border-brand-600 bg-brand-50' : 'border-slate-200'}`}>
-            <input type="radio" name="card-kind" className="mt-0.5 h-4 w-4 accent-brand-700" checked={kind === k.kind} onChange={() => setKind(k.kind)} />
-            <span>
-              <span className="block font-medium text-slate-900">{t(k.label)}</span>
-              <span className="block text-xs text-slate-500">{t(k.hint)}</span>
-            </span>
-          </label>
-        ))}
-      </div>
-      <div className="mt-3 flex flex-wrap items-end gap-3">
+    <Stack gap={2}>
+      <RadioGroup
+        label={t('নতুন কার্ড')}
+        name="card-kind"
+        look="cards"
+        direction="row"
+        value={kind}
+        onChange={(v) => setKind(v as StatCardKind)}
+        options={kinds.map((k) => ({ value: k.kind, label: t(k.label), hint: t(k.hint) }))}
+      />
+      <Stack direction="row" gap={2} align="end" wrap>
         {kind === 'geo' && (
-          <label className="text-sm">
-            <span className="mb-1 block font-medium text-slate-700">{t('স্তর')}</span>
-            <select className={selectClass} value={level} onChange={(e) => setLevel(e.target.value as GeoLevel)}>
-              {levels.map((l) => (
-                <option key={l} value={l}>
-                  {t({ division: 'বিভাগ', district: 'জেলা', upazila: 'উপজেলা', union: 'ইউনিয়ন' }[l])}
-                </option>
-              ))}
-            </select>
-          </label>
+          <SelectField
+            label={t('স্তর')}
+            value={level}
+            onChange={(v) => setLevel(v as GeoLevel)}
+            options={levels.map((l) => ({ value: l, label: t({ division: 'বিভাগ', district: 'জেলা', upazila: 'উপজেলা', union: 'ইউনিয়ন' }[l]) }))}
+          />
         )}
         {(kind === 'sum' || kind === 'distinct') &&
           (options.length ? (
-            <label className="text-sm">
-              <span className="mb-1 block font-medium text-slate-700">{t('ফিল্ড')}</span>
-              <select className={selectClass} value={chosen?.key ?? ''} onChange={(e) => setFieldKey(e.target.value)}>
-                {options.map((f) => (
-                  <option key={f.key} value={f.key}>
-                    {lt(f, 'label')}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <SelectField label={t('ফিল্ড')} value={chosen?.key ?? ''} onChange={(v) => setFieldKey(v)} options={options.map((f) => ({ value: f.key, label: lt(f, 'label') }))} />
           ) : (
-            <p className="text-sm text-amber-800">{kind === 'sum' ? t('আগে একটি টাকা বা সংখ্যার পাবলিক ফিল্ড যোগ করুন ("ফিল্ড" ট্যাব)।') : t('আগে একটি ক্যাটাগরি পাবলিক ফিল্ড যোগ করুন ("ফিল্ড" ট্যাব)।')}</p>
+            <Text size="small" tone="warning">
+              {kind === 'sum' ? t('আগে একটি টাকা বা সংখ্যার পাবলিক ফিল্ড যোগ করুন ("ফিল্ড" ট্যাব)।') : t('আগে একটি ক্যাটাগরি পাবলিক ফিল্ড যোগ করুন ("ফিল্ড" ট্যাব)।')}
+            </Text>
           ))}
-        <button type="button" className={secondaryButton} disabled={!canAdd} onClick={add}>
-          <span aria-hidden="true">+</span> {t('কার্ড যোগ করুন')}
-        </button>
-      </div>
-    </div>
+        <Button variant="secondary" startIcon="add" disabled={!canAdd} onClick={add}>
+          {t('কার্ড যোগ করুন')}
+        </Button>
+      </Stack>
+    </Stack>
   )
 }

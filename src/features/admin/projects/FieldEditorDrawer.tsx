@@ -1,11 +1,10 @@
 import { lt, pick, t } from '@/i18n'
-import { useEffect, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { FIELD_TYPES, getProjectsApi, type FieldType, type Project, type ProjectField, type ProjectFieldInput, type ProjectFieldPatch } from '@/backend'
 import { FIELD_VALUE_SPECS } from '@/features/projects/fields'
 import { formatBanglaNumber, toBanglaNumber } from '@/lib/banglaNumber'
 import { parseBanglaNumber } from '@/lib/money'
-import { Field } from '../ui/Field'
-import { inputClass, primaryButton, secondaryButton, selectClass, textareaClass } from '../ui/styles'
+import { Alert, Button, Checkbox, Drawer, FieldGroup, Grid, RadioGroup, SelectField, Stack, Text, TextField } from '@/ui'
 import { MAX_TABLE_COLUMNS, SENSITIVE_LABEL, fieldKeyError, fieldKeyFrom, tableColumns } from './fieldRules'
 import { friendlyProjectError } from './projectRules'
 
@@ -96,17 +95,6 @@ export function FieldEditorDrawer({
   const [error, setError] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !busy && onClose()
-    document.addEventListener('keydown', onKey)
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = prev
-    }
-  }, [busy, onClose])
-
   const locked = !!field && (usage ?? 0) > 0
   const others = project.fields.filter((f) => f.id !== field?.id)
   const takenKeys = others.map((f) => f.key)
@@ -187,110 +175,90 @@ export function FieldEditorDrawer({
   }
 
   const check = (k: 'required' | 'show_in_table' | 'show_in_card' | 'show_in_detail' | 'filterable' | 'searchable' | 'fill_down', label: string, opts: { disabled?: boolean; hint?: string } = {}) => (
-    <label className={`flex min-h-11 items-start gap-2 rounded-md px-1 py-2 text-sm ${opts.disabled ? 'text-slate-400' : 'text-slate-700'}`}>
-      <input type="checkbox" className="mt-0.5 h-4 w-4 accent-brand-700" checked={f[k]} disabled={opts.disabled} onChange={(e) => set(k, e.target.checked)} />
-      <span>
-        {label}
-        {opts.hint && <span className="block text-xs text-slate-500">{opts.hint}</span>}
-      </span>
-    </label>
+    <Checkbox label={label} hint={opts.hint} checked={f[k]} disabled={opts.disabled} onChange={(checked) => set(k, checked)} />
   )
 
-  return (
-    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label={field ? t('ফিল্ড সম্পাদনা') : t('নতুন ফিল্ড')}>
-      <button type="button" className="absolute inset-0 bg-slate-900/40" aria-label={t('বন্ধ করুন')} onClick={() => !busy && onClose()} />
-      <form onSubmit={(e) => void save(e)} noValidate className="absolute inset-y-0 right-0 flex w-full max-w-xl flex-col bg-white shadow-xl">
-        <div className="flex items-center justify-between gap-2 border-b border-slate-200 px-5 py-3">
-          <h2 className="text-lg font-bold text-slate-900">{field ? t('ফিল্ড সম্পাদনা: {name}', { name: lt(field, 'label') }) : t('নতুন ফিল্ড')}</h2>
-          <button type="button" onClick={onClose} disabled={busy} className="inline-flex h-11 w-11 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100" aria-label={t('বন্ধ করুন')}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5" aria-hidden="true">
-              <path strokeLinecap="round" d="M6 18 18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+  // Esc, ব্যাকড্রপ ও বন্ধ-বাটন: কাজ চলাকালে বন্ধ হয় না
+  const close = () => !busy && onClose()
 
-        <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
+  return (
+    <Drawer open onClose={close} title={field ? t('ফিল্ড সম্পাদনা: {name}', { name: lt(field, 'label') }) : t('নতুন ফিল্ড')} closeLabel={t('বন্ধ করুন')} width="large">
+      <form onSubmit={(e) => void save(e)} noValidate>
+        <Stack gap={3}>
           {locked && (
-            <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            <Text size="small" tone="warning">
               {t('{n}টি রেকর্ডে মান আছে — key, ধরন ও পাবলিক/গোপন বদলানো যায় না।', { n: formatBanglaNumber(usage ?? 0) })}
-            </p>
+            </Text>
           )}
 
-          <Field label={t('ধরন')} help={f.type === 'category' ? t('শীটের কলামে যা লেখা থাকবে, সেটাই ক্যাটাগরি — আলাদা অপশন-তালিকা বানাতে হয় না। একই লেখা = একই ক্যাটাগরি।') : undefined}>
-            {(p) => (
-              <select {...p} className={selectClass} value={f.type} disabled={locked} onChange={(e) => set('type', e.target.value as FieldType)}>
-                {FIELD_TYPES.map((ty) => (
-                  <option key={ty} value={ty}>
-                    {pick(FIELD_VALUE_SPECS[ty].label_bn, FIELD_VALUE_SPECS[ty].label_en)}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Field>
+          <SelectField
+            label={t('ধরন')}
+            hint={f.type === 'category' ? t('শীটের কলামে যা লেখা থাকবে, সেটাই ক্যাটাগরি — আলাদা অপশন-তালিকা বানাতে হয় না। একই লেখা = একই ক্যাটাগরি।') : undefined}
+            value={f.type}
+            disabled={locked}
+            onChange={(v) => set('type', v as FieldType)}
+            options={FIELD_TYPES.map((ty) => ({ value: ty, label: pick(FIELD_VALUE_SPECS[ty].label_bn, FIELD_VALUE_SPECS[ty].label_en) }))}
+          />
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label={t('লেবেল (বাংলা)')} required error={submitted ? errors.label_bn : null}>
-              {(p) => <input {...p} className={inputClass} value={form.label_bn} onChange={(e) => set('label_bn', e.target.value)} maxLength={120} placeholder={t('যেমন উপকরণের নাম')} />}
-            </Field>
-            <Field label={t('লেবেল (ইংরেজি)')} error={errors.label_en} help={!f.label_en.trim() ? t('খালি থাকলে ইংরেজি মোডে বাংলা দেখাবে') : undefined}>
-              {(p) => <input {...p} className={inputClass} value={form.label_en} onChange={(e) => set('label_en', e.target.value)} maxLength={120} placeholder="Item name" />}
-            </Field>
-            <Field label={t('সাহায্য-লেখা (বাংলা)')} error={errors.help} help={t('ফর্মে ঘরের নিচে ছোট করে')}>
-              {(p) => <textarea {...p} rows={2} className={textareaClass} value={form.help_bn} onChange={(e) => set('help_bn', e.target.value)} maxLength={300} />}
-            </Field>
-            <Field label={t('সাহায্য-লেখা (ইংরেজি)')}>
-              {(p) => <textarea {...p} rows={2} className={textareaClass} value={form.help_en} onChange={(e) => set('help_en', e.target.value)} maxLength={300} />}
-            </Field>
-          </div>
+          <Grid columns={{ xs: 1, sm: 2 }} gap={2}>
+            <TextField
+              label={t('লেবেল (বাংলা)')}
+              required
+              error={(submitted ? errors.label_bn : null) ?? undefined}
+              value={form.label_bn}
+              onChange={(v) => set('label_bn', v)}
+              maxLength={120}
+              placeholder={t('যেমন উপকরণের নাম')}
+            />
+            <TextField
+              label={t('লেবেল (ইংরেজি)')}
+              error={errors.label_en ?? undefined}
+              hint={!f.label_en.trim() ? t('খালি থাকলে ইংরেজি মোডে বাংলা দেখাবে') : undefined}
+              value={form.label_en}
+              onChange={(v) => set('label_en', v)}
+              maxLength={120}
+              placeholder="Item name"
+            />
+            <TextField label={t('সাহায্য-লেখা (বাংলা)')} error={errors.help ?? undefined} hint={t('ফর্মে ঘরের নিচে ছোট করে')} rows={2} value={form.help_bn} onChange={(v) => set('help_bn', v)} maxLength={300} />
+            <TextField label={t('সাহায্য-লেখা (ইংরেজি)')} rows={2} value={form.help_en} onChange={(v) => set('help_en', v)} maxLength={300} />
+          </Grid>
 
-          <Field
+          <TextField
             label="key"
-            error={submitted || keyTouched ? errors.key : null}
-            help={locked ? t('ডাটা আছে — বদলানো যায় না।') : t('লেবেল থেকে নিজে তৈরি হয় (ইংরেজি না থাকলে বাংলা থেকে)। ডাটা আসার পর আর বদলানো যায় না।')}
-          >
-            {(p) => (
-              <input
-                {...p}
-                className={`${inputClass} font-mono`}
-                value={key}
-                disabled={locked}
-                onChange={(e) => {
-                  setKeyTouched(true)
-                  set('key', e.target.value.toLowerCase())
-                }}
-                maxLength={40}
-              />
-            )}
-          </Field>
+            error={(submitted || keyTouched ? errors.key : null) ?? undefined}
+            hint={locked ? t('ডাটা আছে — বদলানো যায় না।') : t('লেবেল থেকে নিজে তৈরি হয় (ইংরেজি না থাকলে বাংলা থেকে)। ডাটা আসার পর আর বদলানো যায় না।')}
+            value={key}
+            disabled={locked}
+            onChange={(v) => {
+              setKeyTouched(true)
+              set('key', v.toLowerCase())
+            }}
+            maxLength={40}
+          />
 
-          <fieldset className="space-y-2">
-            <legend className="mb-1 text-sm font-medium text-slate-700">{t('কে দেখবে')}</legend>
-            {(['public', 'admin'] as const).map((v) => (
-              <label key={v} className={`flex min-h-11 items-start gap-2 rounded-md border px-3 py-2 text-sm ${f.visibility === v ? 'border-brand-600 bg-brand-50' : 'border-slate-200'}`}>
-                <input
-                  type="radio"
-                  name="vis"
-                  className="mt-0.5 h-4 w-4 accent-brand-700"
-                  checked={f.visibility === v}
-                  disabled={locked || f.type === 'phone'}
-                  onChange={() => set('visibility', v)}
-                />
-                <span>
-                  {v === 'public' ? t('পাবলিক — সবাই দেখবে') : t('🔒 শুধু-এডমিন (গোপন) — পাবলিক সাইট, টেবিল, ফিল্টার, এক্সপোর্টের পাবলিক অংশে কখনো নয়')}
-                </span>
-              </label>
-            ))}
-            {f.type === 'phone' && <p className="text-xs text-slate-500">{t('মোবাইল নম্বর সবসময় শুধু-এডমিন।')}</p>}
-            {sensitive && (
-              <p role="alert" className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm font-medium text-red-800">
-                {t('এটি গোপন তথ্য মনে হচ্ছে (ফোন/মোবাইল/NID) — "শুধু-এডমিন" করুন। ডাটা আসার পর আর বদলানো যাবে না।')}
-              </p>
+          <Stack gap={1}>
+            <RadioGroup
+              label={t('কে দেখবে')}
+              name="vis"
+              look="cards"
+              value={f.visibility}
+              disabled={locked || f.type === 'phone'}
+              onChange={(v) => set('visibility', v as Form['visibility'])}
+              options={(['public', 'admin'] as const).map((v) => ({
+                value: v,
+                label: v === 'public' ? t('পাবলিক — সবাই দেখবে') : t('🔒 শুধু-এডমিন (গোপন) — পাবলিক সাইট, টেবিল, ফিল্টার, এক্সপোর্টের পাবলিক অংশে কখনো নয়'),
+              }))}
+            />
+            {f.type === 'phone' && (
+              <Text size="caption" tone="muted">
+                {t('মোবাইল নম্বর সবসময় শুধু-এডমিন।')}
+              </Text>
             )}
-          </fieldset>
+            {sensitive && <Alert tone="error">{t('এটি গোপন তথ্য মনে হচ্ছে (ফোন/মোবাইল/NID) — "শুধু-এডমিন" করুন। ডাটা আসার পর আর বদলানো যাবে না।')}</Alert>}
+          </Stack>
 
-          <fieldset>
-            <legend className="mb-1 text-sm font-medium text-slate-700">{t('কোথায় দেখাবে ও কীভাবে কাজ করবে')}</legend>
-            <div className="grid sm:grid-cols-2">
+          <FieldGroup legend={t('কোথায় দেখাবে ও কীভাবে কাজ করবে')}>
+            <Grid columns={{ xs: 1, sm: 2 }} gap={0}>
               {check('required', t('আবশ্যক'))}
               {check('show_in_detail', t('বিস্তারিত পাতায়'))}
               {check('show_in_table', t('টেবিলে (ডেস্কটপ)'), {
@@ -301,45 +269,43 @@ export function FieldEditorDrawer({
               {check('filterable', t('ফিল্টারে'), { disabled: f.visibility === 'admin' || !FILTERABLE.includes(f.type), hint: f.type === 'category' ? t('ডাটায় থাকা মানগুলো ড্রপডাউনে') : undefined })}
               {check('searchable', t('নামের সাথে সার্চে'), { disabled: f.visibility === 'admin' || !SEARCHABLE.includes(f.type) })}
               {check('fill_down', t('ইম্পোর্টে ফিল-ডাউন'), { hint: t('শীটে খালি ঘরে উপরের সারির মান') })}
-            </div>
-          </fieldset>
+            </Grid>
+          </FieldGroup>
 
           {TEXTY.includes(f.type) && (
-            <Field label={t('সর্বোচ্চ দৈর্ঘ্য (অক্ষর)')} error={errors.max_length} help={t('খালি = ডিফল্ট ({n})', { n: toBanglaNumber(f.type === 'long_text' ? 2000 : f.type === 'category' ? 100 : 500) })}>
-              {(p) => <input {...p} className={inputClass} inputMode="numeric" value={form.max_length} onChange={(e) => set('max_length', e.target.value)} />}
-            </Field>
+            <TextField
+              label={t('সর্বোচ্চ দৈর্ঘ্য (অক্ষর)')}
+              error={errors.max_length ?? undefined}
+              hint={t('খালি = ডিফল্ট ({n})', { n: toBanglaNumber(f.type === 'long_text' ? 2000 : f.type === 'category' ? 100 : 500) })}
+              inputMode="numeric"
+              value={form.max_length}
+              onChange={(v) => set('max_length', v)}
+            />
           )}
           {NUMERIC.includes(f.type) && (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label={t('সর্বনিম্ন মান')} error={errors.min}>
-                {(p) => <input {...p} className={inputClass} inputMode="decimal" value={form.min_value} onChange={(e) => set('min_value', e.target.value)} />}
-              </Field>
-              <Field label={t('সর্বোচ্চ মান')} error={errors.max}>
-                {(p) => <input {...p} className={inputClass} inputMode="decimal" value={form.max_value} onChange={(e) => set('max_value', e.target.value)} />}
-              </Field>
-            </div>
+            <Grid columns={{ xs: 1, sm: 2 }} gap={2}>
+              <TextField label={t('সর্বনিম্ন মান')} error={errors.min ?? undefined} inputMode="decimal" value={form.min_value} onChange={(v) => set('min_value', v)} />
+              <TextField label={t('সর্বোচ্চ মান')} error={errors.max ?? undefined} inputMode="decimal" value={form.max_value} onChange={(v) => set('max_value', v)} />
+            </Grid>
           )}
-          <Field label={t('ইম্পোর্টে শীটের বিকল্প শিরোনাম')} help={t('কমা দিয়ে আলাদা, যেমন: টাকার পরিমাণ, অনুদান, amount — শীটের কলামের নাম এর কোনোটি হলে নিজে মিলবে')}>
-            {(p) => <input {...p} className={inputClass} value={form.import_aliases} onChange={(e) => set('import_aliases', e.target.value)} />}
-          </Field>
-        </div>
+          <TextField
+            label={t('ইম্পোর্টে শীটের বিকল্প শিরোনাম')}
+            hint={t('কমা দিয়ে আলাদা, যেমন: টাকার পরিমাণ, অনুদান, amount — শীটের কলামের নাম এর কোনোটি হলে নিজে মিলবে')}
+            value={form.import_aliases}
+            onChange={(v) => set('import_aliases', v)}
+          />
 
-        <div className="border-t border-slate-200 px-5 py-3">
-          {error && (
-            <p role="alert" className="mb-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-              {error}
-            </p>
-          )}
-          <div className="flex flex-wrap gap-3">
-            <button type="submit" className={primaryButton} disabled={busy || (submitted && hasErrors)}>
+          {error && <Alert tone="error">{error}</Alert>}
+          <Stack direction="row" gap={1.5} wrap>
+            <Button type="submit" disabled={busy || (submitted && hasErrors)}>
               {busy ? t('সংরক্ষণ হচ্ছে…') : field ? t('সংরক্ষণ করুন') : t('ফিল্ড যোগ করুন')}
-            </button>
-            <button type="button" className={secondaryButton} onClick={onClose} disabled={busy}>
+            </Button>
+            <Button variant="secondary" onClick={onClose} disabled={busy}>
               {t('বাতিল')}
-            </button>
-          </div>
-        </div>
+            </Button>
+          </Stack>
+        </Stack>
       </form>
-    </div>
+    </Drawer>
   )
 }

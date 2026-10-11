@@ -1,10 +1,8 @@
 import { lt, pick, t } from '@/i18n'
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
+import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { getHousingApi, getProjectsApi, HousingApiError, type Project, type ProjectPatch, type ProjectStats } from '@/backend'
-import { useToast } from '@/components/useToast'
 import { ACCENTS, projectPath, refreshProjects } from '@/features/projects/registry'
-import { NotFoundPage } from '@/pages/NotFoundPage'
 import { formatBanglaNumber } from '@/lib/banglaNumber'
 import { useDocumentTitle } from '@/lib/useDocumentTitle'
 import { isMainAdmin, useAdminUser } from '../adminUser'
@@ -15,9 +13,9 @@ import { UnpublishDialog } from '../projects/UnpublishDialog'
 import { CoverUpload } from '../projects/CoverUpload'
 import { FieldsTab } from '../projects/tabs/FieldsTab'
 import { StatsTab } from '../projects/tabs/StatsTab'
+import { AdminNotFound } from '../ui/AdminNotFound'
 import { Badge } from '../ui/Badge'
-import { Field } from '../ui/Field'
-import { card, inputClass, primaryButton, secondaryButton, selectClass, textareaClass } from '../ui/styles'
+import { Alert, Breadcrumbs, Button, Card, Checkbox, Grid, LinkButton, LoadingState, Page, RadioGroup, SelectField, Stack, Tabs, Text, TextField, useToast } from '@/ui'
 
 type Tab = 'general' | 'fields' | 'stats' | 'photos' | 'display'
 
@@ -94,21 +92,15 @@ export function ProjectSettingsPage() {
 
   if (loadError) {
     return (
-      <section className="px-4 py-8 sm:px-6">
-        <p role="alert" className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-          {loadError.message}
-        </p>
-      </section>
+      <Page title={t('প্রকল্পের সেটিংস')} documentTitle={false}>
+        <Alert tone="error">{loadError.message}</Alert>
+      </Page>
     )
   }
   if (!all) {
-    return (
-      <section className="px-4 py-8 sm:px-6" aria-busy="true">
-        <div className="h-64 animate-pulse rounded-2xl bg-slate-200" />
-      </section>
-    )
+    return <LoadingState label={t('লোড হচ্ছে…')} />
   }
-  if (!project || !form) return <NotFoundPage />
+  if (!project || !form) return <AdminNotFound />
 
   const allowed: readonly Tab[] = project.is_group ? ['general', 'stats'] : ['general', 'fields', 'stats', 'photos', 'display']
   const tab: Tab = allowed.find((x) => x === sp.get('tab')) ?? 'general'
@@ -200,7 +192,7 @@ export function ProjectSettingsPage() {
   }
 
   const TAB_LABELS: Record<Tab, string> = { general: t('সাধারণ'), fields: t('ফিল্ড'), stats: t('পরিসংখ্যান'), photos: t('ছবি'), display: t('প্রদর্শন') }
-  const tabs = allowed.map((id) => ({ id, label: TAB_LABELS[id] }))
+  const tabs = allowed.map((id) => ({ value: id, label: TAB_LABELS[id] }))
   /** ফিল্ড/পরিসংখ্যান ট্যাব নিজে সংরক্ষণ করে — তার পরে সাইটের রেজিস্ট্রি ও এই পাতা নতুন করে */
   const changed = async () => {
     await refreshProjects({ includeDrafts: true })
@@ -208,303 +200,251 @@ export function ProjectSettingsPage() {
   }
 
   return (
-    <section className="px-4 py-8 sm:px-6">
-      <p className="text-sm text-slate-500">
-        <Link to="/admin/projects" className="hover:text-brand-700">
-          {t('প্রকল্পসমূহ')}
-        </Link>{' '}
-        / {lt(project, 'name')}
-      </p>
-
-      {/* ---------- শিরোনাম, অবস্থা, প্রকাশ ---------- */}
-      <div className={`${card} mt-3`}>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-bold text-slate-900">{lt(project, 'name')}</h1>
-              {project.is_published ? <Badge tone="green">{t('প্রকাশিত')}</Badge> : <Badge tone="amber">{t('খসড়া')}</Badge>}
-              {project.is_group && <Badge tone="blue">{t('গ্রুপ')}</Badge>}
-            </div>
-            <p className="mt-1 text-sm text-slate-500">
-              <span className="font-mono">{projectPath(project, all)}</span> · key <span className="font-mono">{project.key}</span> ·{' '}
-              {t('{n}টি রেকর্ড', { n: formatBanglaNumber(records) })}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link to={projectPath(project, all)} className={secondaryButton}>
-              {project.is_published ? t('পাবলিক পেইজ') : t('প্রিভিউ')}
-            </Link>
-            {project.is_published ? (
-              <button type="button" className={secondaryButton} disabled={busy || dirty} onClick={askUnpublish} title={dirty ? t('আগে পরিবর্তন সংরক্ষণ করুন') : undefined}>
-                {t('অপ্রকাশ করুন')}
-              </button>
-            ) : (
-              <button
-                type="button"
-                className={primaryButton}
-                disabled={busy || dirty || check.blocking.length > 0}
-                onClick={() => void setPublished(true)}
-                title={dirty ? t('আগে পরিবর্তন সংরক্ষণ করুন') : check.blocking.join(' · ') || undefined}
-              >
-                {t('প্রকাশ করুন')}
-              </button>
-            )}
-          </div>
-        </div>
+    <Page
+      title={lt(project, 'name')}
+      documentTitle={false}
+      breadcrumbs={<Breadcrumbs label={t('প্রকল্পসমূহ')} items={[{ label: t('প্রকল্পসমূহ'), to: '/admin/projects' }, { label: lt(project, 'name') }]} />}
+      badges={
+        <>
+          {project.is_published ? <Badge tone="green">{t('প্রকাশিত')}</Badge> : <Badge tone="amber">{t('খসড়া')}</Badge>}
+          {project.is_group && <Badge tone="blue">{t('গ্রুপ')}</Badge>}
+        </>
+      }
+      description={`${projectPath(project, all)} · key ${project.key} · ${t('{n}টি রেকর্ড', { n: formatBanglaNumber(records) })}`}
+      actions={
+        <>
+          {/* ---------- প্রকাশ ---------- */}
+          <LinkButton to={projectPath(project, all)} variant="secondary">
+            {project.is_published ? t('পাবলিক পেইজ') : t('প্রিভিউ')}
+          </LinkButton>
+          {project.is_published ? (
+            <Button variant="secondary" disabled={busy || dirty} title={dirty ? t('আগে পরিবর্তন সংরক্ষণ করুন') : undefined} onClick={askUnpublish}>
+              {t('অপ্রকাশ করুন')}
+            </Button>
+          ) : (
+            <Button disabled={busy || dirty || check.blocking.length > 0} title={dirty ? t('আগে পরিবর্তন সংরক্ষণ করুন') : check.blocking.join(' · ') || undefined} onClick={() => void setPublished(true)}>
+              {t('প্রকাশ করুন')}
+            </Button>
+          )}
+        </>
+      }
+    >
+      <Stack gap={3}>
         {(check.blocking.length > 0 || check.warnings.length > 0) && (
-          <div className="mt-4 space-y-1 text-sm">
+          <Stack gap={0.5}>
             {!project.is_published &&
               check.blocking.map((b) => (
-                <p key={b} className="text-red-700">
+                <Text key={b} size="small" tone="error">
                   ✕ {b}
-                </p>
+                </Text>
               ))}
             {check.warnings.map((w) => (
-              <p key={w} className="text-amber-800">
+              <Text key={w} size="small" tone="warning">
                 ⚠ {w}
-              </p>
+              </Text>
             ))}
-          </div>
+          </Stack>
         )}
-      </div>
 
-      {conflict && (
-        <div role="alert" className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <span>{t('অন্য কেউ এর মধ্যে প্রকল্পটি বদলেছেন। আপনার পরিবর্তন সংরক্ষিত হয়নি — নতুন অবস্থা এনে আবার করুন।')}</span>
-          <button type="button" className={secondaryButton} onClick={() => void reload()}>
-            {t('নতুন অবস্থা আনুন')}
-          </button>
-        </div>
-      )}
-
-      {/* ---------- ট্যাব ---------- */}
-      <div role="tablist" aria-label={t('সেটিংসের অংশ')} className="mt-6 flex gap-1 overflow-x-auto border-b border-slate-200">
-        {tabs.map((x) => (
-          <button
-            key={x.id}
-            type="button"
-            role="tab"
-            aria-selected={tab === x.id}
-            onClick={() => setSp((prev) => {
-              const n = new URLSearchParams(prev)
-              n.set('tab', x.id)
-              return n
-            }, { replace: true })}
-            className={`min-h-11 shrink-0 border-b-2 px-4 text-sm font-medium ${tab === x.id ? 'border-brand-700 text-brand-800' : 'border-transparent text-slate-600 hover:text-brand-700'}`}
+        {conflict && (
+          <Alert
+            tone="warning"
+            action={
+              <Button variant="secondary" onClick={() => void reload()}>
+                {t('নতুন অবস্থা আনুন')}
+              </Button>
+            }
           >
-            {x.label}
-          </button>
-        ))}
-      </div>
+            {t('অন্য কেউ এর মধ্যে প্রকল্পটি বদলেছেন। আপনার পরিবর্তন সংরক্ষিত হয়নি — নতুন অবস্থা এনে আবার করুন।')}
+          </Alert>
+        )}
 
-      {tab === 'fields' && (
-        <div className="mt-5">
-          <FieldsTab key={project.updated_at + project.fields.length} project={project} blocked={dirty} onChanged={changed} />
-        </div>
-      )}
-      {tab === 'stats' && (
-        <div className="mt-5 max-w-5xl">
-          <StatsTab key={project.updated_at} project={project} stats={stats} blocked={dirty} onChanged={changed} />
-        </div>
-      )}
-      {tab !== 'fields' && tab !== 'stats' && (
-      <form onSubmit={(e) => void save(e)} noValidate className="mt-5 max-w-3xl space-y-5">
-        {tab === 'general' && (
-          <>
-            <div className={`${card} space-y-4`}>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label={t('বাংলা নাম')} required error={errors.name_bn}>
-                  {(p) => <input {...p} className={inputClass} value={form.name_bn} onChange={(e) => set('name_bn', e.target.value)} maxLength={120} />}
-                </Field>
-                <Field label={t('ইংরেজি নাম')} required error={errors.name_en}>
-                  {(p) => <input {...p} className={inputClass} value={form.name_en} onChange={(e) => set('name_en', e.target.value)} maxLength={120} />}
-                </Field>
-                <Field label={t('ছোট বর্ণনা (বাংলা)')} help={t('হোমের কার্ডে')} error={errors.summary_bn}>
-                  {(p) => <textarea {...p} rows={2} className={textareaClass} value={form.summary_bn} onChange={(e) => set('summary_bn', e.target.value)} maxLength={300} />}
-                </Field>
-                <Field label={t('ছোট বর্ণনা (ইংরেজি)')} error={errors.summary_en}>
-                  {(p) => <textarea {...p} rows={2} className={textareaClass} value={form.summary_en} onChange={(e) => set('summary_en', e.target.value)} maxLength={300} />}
-                </Field>
-                <Field label={t('পরিচিতি (বাংলা)')} help={t('প্রকল্পের পেইজে, নামের নিচে')} error={errors.description_bn}>
-                  {(p) => <textarea {...p} rows={4} className={textareaClass} value={form.description_bn} onChange={(e) => set('description_bn', e.target.value)} maxLength={2000} />}
-                </Field>
-                <Field label={t('পরিচিতি (ইংরেজি)')} error={errors.description_en}>
-                  {(p) => <textarea {...p} rows={4} className={textareaClass} value={form.description_en} onChange={(e) => set('description_en', e.target.value)} maxLength={2000} />}
-                </Field>
-                <Field label={t('একক শব্দ (বাংলা)')} help={t('যেমন "ঘর", "উপকারভোগী" — মানচিত্র ও পরিসংখ্যানে')} error={errors.unit_bn}>
-                  {(p) => <input {...p} className={inputClass} value={form.unit_bn} onChange={(e) => set('unit_bn', e.target.value)} maxLength={40} />}
-                </Field>
-                <Field label={t('একক শব্দ (ইংরেজি)')} error={errors.unit_en}>
-                  {(p) => <input {...p} className={inputClass} value={form.unit_en} onChange={(e) => set('unit_en', e.target.value)} maxLength={40} />}
-                </Field>
-              </div>
-            </div>
+        {/* ---------- ট্যাব ---------- */}
+        <Tabs
+          label={t('সেটিংসের অংশ')}
+          value={tab}
+          tabs={tabs}
+          onChange={(id) => setSp((prev) => {
+            const n = new URLSearchParams(prev)
+            n.set('tab', id)
+            return n
+          }, { replace: true })}
+        />
 
-            <div className={`${card} space-y-4`}>
-              <Field
-                label={t('URL অংশ (slug)')}
-                required
-                error={errors.slug}
-                help={project.is_published ? t('প্রকাশিত প্রকল্পের URL বদলানো যায় না (শেয়ার করা লিংক ভাঙবে) — আগে অপ্রকাশ করতে হবে।') : t('পেইজের ঠিকানা: {url}', { url: projectPath({ ...project, slug: form.slug, parent_key: form.parent_key }, all) })}
-              >
-                {(p) => <input {...p} className={`${inputClass} font-mono`} value={form.slug} disabled={project.is_published} onChange={(e) => set('slug', e.target.value.toLowerCase())} maxLength={60} />}
-              </Field>
-              {!project.is_group && (
-                <Field label={t('অবস্থান')} help={project.is_published ? t('প্রকাশিত প্রকল্পের অবস্থান বদলানো যায় না।') : undefined}>
-                  {(p) => (
-                    <select {...p} className={selectClass} value={form.parent_key ?? ''} disabled={project.is_published} onChange={(e) => set('parent_key', e.target.value || null)}>
-                      <option value="">{t('একক প্রকল্প (কোনো গ্রুপে নয়)')}</option>
-                      {groups.map((g) => (
-                        <option key={g.key} value={g.key}>
-                          {t('উপ-প্রকল্প: {name}', { name: lt(g, 'name') })}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </Field>
-              )}
-              {!project.is_group && form.file_prefix !== null && (
-                <Field label={t('ছবির ফাইল-প্রিফিক্স')} error={errors.file_prefix} help={t('উদাহরণ (সিরিয়াল ১২): {example}', { example: photoNameExample(form.file_prefix, form.photo_mode) })}>
-                  {(p) => <input {...p} className={`${inputClass} font-mono`} value={form.file_prefix ?? ''} onChange={(e) => set('file_prefix', e.target.value.toLowerCase())} maxLength={16} />}
-                </Field>
-              )}
-              {!project.is_group && (
-                <Field label={t('ঠিকানা কোন স্তর পর্যন্ত')}>
-                  {(p) => (
-                    <select {...p} className={selectClass} value={form.geo_depth} onChange={(e) => set('geo_depth', e.target.value as Project['geo_depth'])}>
-                      <option value="upazila">{t('উপজেলা পর্যন্ত')}</option>
-                      <option value="union">{t('ইউনিয়ন পর্যন্ত (ইউনিয়ন আবশ্যক নয়)')}</option>
-                    </select>
-                  )}
-                </Field>
-              )}
-              <label className="inline-flex min-h-11 items-center gap-2 text-sm">
-                <input type="checkbox" className="h-4 w-4 accent-brand-700" checked={form.show_on_home} onChange={(e) => set('show_on_home', e.target.checked)} />
-                {t('হোম পেইজে কার্ড দেখান')}
-              </label>
-            </div>
+        {tab === 'fields' && <FieldsTab key={project.updated_at + project.fields.length} project={project} blocked={dirty} onChanged={changed} />}
+        {tab === 'stats' && <StatsTab key={project.updated_at} project={project} stats={stats} blocked={dirty} onChanged={changed} />}
+        {tab !== 'fields' && tab !== 'stats' && (
+        <form onSubmit={(e) => void save(e)} noValidate>
+          <Stack gap={3}>
+            {tab === 'general' && (
+              <>
+                <Card>
+                  <Grid columns={{ xs: 1, sm: 2 }} gap={2}>
+                    <TextField label={t('বাংলা নাম')} required error={errors.name_bn ?? undefined} value={form.name_bn} onChange={(v) => set('name_bn', v)} maxLength={120} />
+                    <TextField label={t('ইংরেজি নাম')} required error={errors.name_en ?? undefined} value={form.name_en} onChange={(v) => set('name_en', v)} maxLength={120} />
+                    <TextField label={t('ছোট বর্ণনা (বাংলা)')} hint={t('হোমের কার্ডে')} error={errors.summary_bn ?? undefined} rows={2} value={form.summary_bn} onChange={(v) => set('summary_bn', v)} maxLength={300} />
+                    <TextField label={t('ছোট বর্ণনা (ইংরেজি)')} error={errors.summary_en ?? undefined} rows={2} value={form.summary_en} onChange={(v) => set('summary_en', v)} maxLength={300} />
+                    <TextField label={t('পরিচিতি (বাংলা)')} hint={t('প্রকল্পের পেইজে, নামের নিচে')} error={errors.description_bn ?? undefined} rows={4} value={form.description_bn} onChange={(v) => set('description_bn', v)} maxLength={2000} />
+                    <TextField label={t('পরিচিতি (ইংরেজি)')} error={errors.description_en ?? undefined} rows={4} value={form.description_en} onChange={(v) => set('description_en', v)} maxLength={2000} />
+                    <TextField label={t('একক শব্দ (বাংলা)')} hint={t('যেমন "ঘর", "উপকারভোগী" — মানচিত্র ও পরিসংখ্যানে')} error={errors.unit_bn ?? undefined} value={form.unit_bn} onChange={(v) => set('unit_bn', v)} maxLength={40} />
+                    <TextField label={t('একক শব্দ (ইংরেজি)')} error={errors.unit_en ?? undefined} value={form.unit_en} onChange={(v) => set('unit_en', v)} maxLength={40} />
+                  </Grid>
+                </Card>
 
-            <div className={`${card} space-y-4`}>
-              <p className="text-sm font-medium text-slate-700">{t('রং')}</p>
-              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t('রং')}>
-                {(Object.keys(ACCENTS) as (keyof typeof ACCENTS)[]).map((k) => (
-                  <button
-                    key={k}
-                    type="button"
-                    role="radio"
-                    aria-checked={form.accent === k}
-                    onClick={() => set('accent', k)}
-                    className={`inline-flex min-h-11 items-center gap-2 rounded-lg border px-3 text-sm ${form.accent === k ? 'border-brand-600 ring-1 ring-brand-600' : 'border-slate-200'}`}
-                  >
-                    <span className={`h-7 w-7 rounded-md bg-gradient-to-br ${ACCENTS[k].gradient}`} aria-hidden="true" />
-                    {pick(ACCENTS[k].label_bn, ACCENTS[k].label_en)}
-                  </button>
-                ))}
-              </div>
-            </div>
+                <Card>
+                  <Stack gap={2}>
+                    <TextField
+                      label={t('URL অংশ (slug)')}
+                      required
+                      error={errors.slug ?? undefined}
+                      hint={project.is_published ? t('প্রকাশিত প্রকল্পের URL বদলানো যায় না (শেয়ার করা লিংক ভাঙবে) — আগে অপ্রকাশ করতে হবে।') : t('পেইজের ঠিকানা: {url}', { url: projectPath({ ...project, slug: form.slug, parent_key: form.parent_key }, all) })}
+                      mono
+                      value={form.slug}
+                      disabled={project.is_published}
+                      onChange={(v) => set('slug', v.toLowerCase())}
+                      maxLength={60}
+                    />
+                    {!project.is_group && (
+                      <SelectField
+                        label={t('অবস্থান')}
+                        hint={project.is_published ? t('প্রকাশিত প্রকল্পের অবস্থান বদলানো যায় না।') : undefined}
+                        value={form.parent_key ?? ''}
+                        disabled={project.is_published}
+                        onChange={(v) => set('parent_key', v || null)}
+                        options={[
+                          { value: '', label: t('একক প্রকল্প (কোনো গ্রুপে নয়)') },
+                          ...groups.map((g) => ({ value: g.key, label: t('উপ-প্রকল্প: {name}', { name: lt(g, 'name') }) })),
+                        ]}
+                      />
+                    )}
+                    {!project.is_group && form.file_prefix !== null && (
+                      <TextField
+                        label={t('ছবির ফাইল-প্রিফিক্স')}
+                        error={errors.file_prefix ?? undefined}
+                        hint={t('উদাহরণ (সিরিয়াল ১২): {example}', { example: photoNameExample(form.file_prefix, form.photo_mode) })}
+                        mono
+                        value={form.file_prefix ?? ''}
+                        onChange={(v) => set('file_prefix', v.toLowerCase())}
+                        maxLength={16}
+                      />
+                    )}
+                    {!project.is_group && (
+                      <SelectField
+                        label={t('ঠিকানা কোন স্তর পর্যন্ত')}
+                        value={form.geo_depth}
+                        onChange={(v) => set('geo_depth', v as Project['geo_depth'])}
+                        options={[
+                          { value: 'upazila', label: t('উপজেলা পর্যন্ত') },
+                          { value: 'union', label: t('ইউনিয়ন পর্যন্ত (ইউনিয়ন আবশ্যক নয়)') },
+                        ]}
+                      />
+                    )}
+                    <Checkbox label={t('হোম পেইজে কার্ড দেখান')} checked={form.show_on_home} onChange={(checked) => set('show_on_home', checked)} />
+                  </Stack>
+                </Card>
 
-            <CoverUpload project={project} blocked={dirty} onChanged={changed} />
+                <Card>
+                  <RadioGroup
+                    label={t('রং')}
+                    direction="row"
+                    look="cards"
+                    value={form.accent}
+                    onChange={(k) => set('accent', k)}
+                    options={(Object.keys(ACCENTS) as (keyof typeof ACCENTS)[]).map((k) => ({ value: k, label: pick(ACCENTS[k].label_bn, ACCENTS[k].label_en) }))}
+                  />
+                </Card>
 
-            {mainAdmin && (
-              <div className="rounded-2xl border border-red-200 bg-white p-5 shadow-sm sm:p-6">
-                <h2 className="text-base font-semibold text-red-800">{t('বিপজ্জনক অংশ')}</h2>
-                <p className="mt-1 text-sm text-slate-600">{t('শুধু খালি, অপ্রকাশিত প্রকল্প মোছা যায়। মুছলে আর ফেরানো যায় না।')}</p>
-                <div className="mt-4 flex flex-wrap items-center gap-3">
-                  <button
-                    type="button"
-                    className={`${secondaryButton} border-red-300 text-red-700 hover:border-red-500 hover:text-red-800`}
-                    disabled={busy || dirty || blocker !== null}
-                    title={dirty ? t('আগে পরিবর্তন সংরক্ষণ করুন') : (blocker ?? undefined)}
-                    aria-describedby={dirty || blocker ? 'delete-project-hint' : undefined}
-                    onClick={openDelete}
-                  >
-                    {t('প্রকল্প মুছুন')}
-                  </button>
-                  {/* A disabled button takes no focus and its title is never read out, so the reason is visible text linked to it. */}
-                  {dirty ? (
-                    <p id="delete-project-hint" className="text-sm text-amber-800">
-                      {t('আগে পরিবর্তন সংরক্ষণ করুন')}
-                    </p>
-                  ) : (
-                    blocker && (
-                      <p id="delete-project-hint" className="text-sm text-red-700">
-                        {blocker}
-                      </p>
-                    )
-                  )}
-                </div>
-              </div>
+                <CoverUpload project={project} blocked={dirty} onChanged={changed} />
+
+                {mainAdmin && (
+                  <Card tone="danger" title={t('বিপজ্জনক অংশ')} description={t('শুধু খালি, অপ্রকাশিত প্রকল্প মোছা যায়। মুছলে আর ফেরানো যায় না।')}>
+                    <Stack direction="row" gap={1.5} align="center" wrap>
+                      <Button variant="danger" disabled={busy || dirty || blocker !== null} title={dirty ? t('আগে পরিবর্তন সংরক্ষণ করুন') : (blocker ?? undefined)} onClick={openDelete}>
+                        {t('প্রকল্প মুছুন')}
+                      </Button>
+                      {/* A disabled button takes no focus and its title is never read out, so the reason is visible text next to it. */}
+                      {dirty ? (
+                        <Text size="small" tone="warning">
+                          {t('আগে পরিবর্তন সংরক্ষণ করুন')}
+                        </Text>
+                      ) : (
+                        blocker && (
+                          <Text size="small" tone="error">
+                            {blocker}
+                          </Text>
+                        )
+                      )}
+                    </Stack>
+                  </Card>
+                )}
+              </>
             )}
-          </>
-        )}
 
-        {tab === 'photos' && (
-          <div className={`${card} space-y-4`}>
-            <Field label={t('ছবি মোড')} help={t('ছবিসহ রেকর্ড থাকলে "শুধু পরের ছবি" বা "ছবি নেই" করা যায় না — ডাটাবেস সংখ্যাসহ জানাবে।')}>
-              {(p) => (
-                <select {...p} className={selectClass} value={form.photo_mode} onChange={(e) => set('photo_mode', e.target.value as Project['photo_mode'])}>
-                  <option value="before_after">{t('আগে-পরে (দুটি ছবি, তুলনাসহ)')}</option>
-                  <option value="after_only">{t('শুধু পরের ছবি (একটি)')}</option>
-                  <option value="none">{t('ছবি নেই')}</option>
-                </select>
-              )}
-            </Field>
-            {form.photo_mode === 'before_after' && (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label={t('পূর্বের ছবির লেবেল (বাংলা)')} error={errors.prev_label_bn}>
-                  {(p) => <input {...p} className={inputClass} value={form.prev_label_bn} onChange={(e) => set('prev_label_bn', e.target.value)} maxLength={60} placeholder={t('যেমন পূর্বের ঘর')} />}
-                </Field>
-                <Field label={t('পূর্বের ছবির লেবেল (ইংরেজি)')} error={errors.prev_label_en}>
-                  {(p) => <input {...p} className={inputClass} value={form.prev_label_en} onChange={(e) => set('prev_label_en', e.target.value)} maxLength={60} placeholder="Before" />}
-                </Field>
-              </div>
+            {tab === 'photos' && (
+              <Card>
+                <Stack gap={2}>
+                  <SelectField
+                    label={t('ছবি মোড')}
+                    hint={t('ছবিসহ রেকর্ড থাকলে "শুধু পরের ছবি" বা "ছবি নেই" করা যায় না — ডাটাবেস সংখ্যাসহ জানাবে।')}
+                    value={form.photo_mode}
+                    onChange={(v) => set('photo_mode', v as Project['photo_mode'])}
+                    options={[
+                      { value: 'before_after', label: t('আগে-পরে (দুটি ছবি, তুলনাসহ)') },
+                      { value: 'after_only', label: t('শুধু পরের ছবি (একটি)') },
+                      { value: 'none', label: t('ছবি নেই') },
+                    ]}
+                  />
+                  {form.photo_mode === 'before_after' && (
+                    <Grid columns={{ xs: 1, sm: 2 }} gap={2}>
+                      <TextField label={t('পূর্বের ছবির লেবেল (বাংলা)')} error={errors.prev_label_bn ?? undefined} value={form.prev_label_bn} onChange={(v) => set('prev_label_bn', v)} maxLength={60} placeholder={t('যেমন পূর্বের ঘর')} />
+                      <TextField label={t('পূর্বের ছবির লেবেল (ইংরেজি)')} error={errors.prev_label_en ?? undefined} value={form.prev_label_en} onChange={(v) => set('prev_label_en', v)} maxLength={60} placeholder="Before" />
+                    </Grid>
+                  )}
+                  {form.photo_mode !== 'none' && (
+                    <Grid columns={{ xs: 1, sm: 2 }} gap={2}>
+                      <TextField label={t('বর্তমান ছবির লেবেল (বাংলা)')} error={errors.current_label_bn ?? undefined} value={form.current_label_bn} onChange={(v) => set('current_label_bn', v)} maxLength={60} placeholder={t('যেমন উপকরণসহ ছবি')} />
+                      <TextField label={t('বর্তমান ছবির লেবেল (ইংরেজি)')} error={errors.current_label_en ?? undefined} value={form.current_label_en} onChange={(v) => set('current_label_en', v)} maxLength={60} placeholder="Photo with the item" />
+                    </Grid>
+                  )}
+                </Stack>
+              </Card>
             )}
-            {form.photo_mode !== 'none' && (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label={t('বর্তমান ছবির লেবেল (বাংলা)')} error={errors.current_label_bn}>
-                  {(p) => <input {...p} className={inputClass} value={form.current_label_bn} onChange={(e) => set('current_label_bn', e.target.value)} maxLength={60} placeholder={t('যেমন উপকরণসহ ছবি')} />}
-                </Field>
-                <Field label={t('বর্তমান ছবির লেবেল (ইংরেজি)')} error={errors.current_label_en}>
-                  {(p) => <input {...p} className={inputClass} value={form.current_label_en} onChange={(e) => set('current_label_en', e.target.value)} maxLength={60} placeholder="Photo with the item" />}
-                </Field>
-              </div>
+
+            {tab === 'display' && (
+              <Card>
+                <Stack gap={2}>
+                  <Checkbox label={t('তালিকা পেইজে মানচিত্র দেখান')} checked={form.display.show_map !== false} onChange={(checked) => set('display', { ...form.display, show_map: checked })} />
+                  <SelectField
+                    label={t('টেবিলে ঠিকানার কলাম')}
+                    value={form.display.geo_columns ?? 'split'}
+                    onChange={(v) => set('display', { ...form.display, geo_columns: v as 'split' | 'merged' })}
+                    options={[
+                      { value: 'split', label: t('আলাদা (বিভাগ, জেলা, উপজেলা আলাদা কলামে)') },
+                      { value: 'merged', label: t('একসাথে (এক কলামে)') },
+                    ]}
+                  />
+                </Stack>
+              </Card>
             )}
-          </div>
-        )}
 
-        {tab === 'display' && (
-          <div className={`${card} space-y-4`}>
-            <label className="inline-flex min-h-11 items-center gap-2 text-sm">
-              <input type="checkbox" className="h-4 w-4 accent-brand-700" checked={form.display.show_map !== false} onChange={(e) => set('display', { ...form.display, show_map: e.target.checked })} />
-              {t('তালিকা পেইজে মানচিত্র দেখান')}
-            </label>
-            <Field label={t('টেবিলে ঠিকানার কলাম')}>
-              {(p) => (
-                <select {...p} className={selectClass} value={form.display.geo_columns ?? 'split'} onChange={(e) => set('display', { ...form.display, geo_columns: e.target.value as 'split' | 'merged' })}>
-                  <option value="split">{t('আলাদা (বিভাগ, জেলা, উপজেলা আলাদা কলামে)')}</option>
-                  <option value="merged">{t('একসাথে (এক কলামে)')}</option>
-                </select>
+            {serverError && <Alert tone="error">{serverError}</Alert>}
+            <Stack direction="row" gap={1.5} align="center" wrap>
+              <Button type="submit" disabled={busy || !dirty || hasErrors}>
+                {busy ? t('সংরক্ষণ হচ্ছে…') : t('সংরক্ষণ করুন')}
+              </Button>
+              <Button variant="secondary" disabled={busy || !dirty} onClick={() => setForm(pickEditable(project))}>
+                {t('পরিবর্তন বাতিল')}
+              </Button>
+              {dirty && (
+                <Text size="small" tone="warning" inline>
+                  {t('সংরক্ষণ হয়নি এমন পরিবর্তন আছে')}
+                </Text>
               )}
-            </Field>
-          </div>
+            </Stack>
+          </Stack>
+        </form>
         )}
-
-        {serverError && (
-          <p role="alert" className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-            {serverError}
-          </p>
-        )}
-        <div className="flex flex-wrap items-center gap-3">
-          <button type="submit" className={primaryButton} disabled={busy || !dirty || hasErrors}>
-            {busy ? t('সংরক্ষণ হচ্ছে…') : t('সংরক্ষণ করুন')}
-          </button>
-          <button type="button" className={secondaryButton} disabled={busy || !dirty} onClick={() => setForm(pickEditable(project))}>
-            {t('পরিবর্তন বাতিল')}
-          </button>
-          {dirty && <span className="text-sm text-amber-800">{t('সংরক্ষণ হয়নি এমন পরিবর্তন আছে')}</span>}
-        </div>
-      </form>
-      )}
+      </Stack>
 
       {confirmUnpublish && (
         <UnpublishDialog project={project} projects={all} records={records} busy={busy} onCancel={() => setConfirmUnpublish(false)} onConfirm={() => void setPublished(false)} />
@@ -512,6 +452,6 @@ export function ProjectSettingsPage() {
       {confirmDelete && (
         <DeleteProjectDialog project={project} busy={busy} error={deleteError} onCancel={() => setConfirmDelete(false)} onConfirm={() => void removeProject()} />
       )}
-    </section>
+    </Page>
   )
 }
