@@ -259,7 +259,7 @@ The admin panel was built screen by screen in plain Tailwind, sitting under the 
 ## Progress
 - **Branch:** `revamp/admin-ui`
 - **Updated:** 2026-10-11 15:12
-- **Next:** C3 review of U3 (scope c9893e3~1..HEAD), then U4 (admin versions of the shared widgets).
-- **Reviewed through:** C2 at 1022e1b
+- **Next:** U4: admin versions of the shared widgets in `src/features/admin/ui/`.
+- **Reviewed through:** C3 at 5397d26
 - **Uncommitted:** none
 - **Notes:** public baseline screenshots are in `.ae/shots/before/` (mock backend, `node .ae/shots/capture.mjs <base> <dir>`), for U10. The template's lazy CSS stays on the page after unmount, so `global.css` has no element rules (UPSTREAM.md, "This app"). U3: the admin's routes live in a lazy `AdminApp` (`admin/*` descendant routes) so `appRoutes.tsx` imports no `@/ui`; an unknown `/admin/...` path shows the admin's not-found screen without needing a login. The admin top bar carries its own `ভাষা` toggle (the public header's language switch would otherwise be lost) and an account menu (`অ্যাকাউন্ট মেনু`) holding "পাবলিক সাইট দেখুন" and "লগআউট"; e2e helpers `accountMenu()`/`logout()` in `e2e/support/auth.ts`. MUI's CSS variables now use the `mui` prefix: with the kit's empty prefix, MUI's `--spacing` overwrote Tailwind v4's and doubled every Tailwind size inside the admin. A Vite dev server's first cold start after the new dependencies logged one failed dynamic import of `AdminApp`; it did not recur. U2: the wizard's numbered sections use `Card` with `step` instead of a separate Stepper piece. `Drawer` takes a `closeLabel`, so the template stays language-neutral. C1: kit `medium` buttons were 36px (fixed to 44px); an icon outside the bundled sets would have called the Iconify API (now draws nothing). Pre-existing dev-only advisory: `adm-zip` through `mapshaper`. The user asked to go straight from planning into implementation without the start question.
