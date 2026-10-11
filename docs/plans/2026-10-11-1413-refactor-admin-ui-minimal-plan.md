@@ -259,7 +259,7 @@ The admin panel was built screen by screen in plain Tailwind, sitting under the 
 ## Progress
 - **Branch:** `revamp/admin-ui`
 - **Updated:** 2026-10-11 14:50
-- **Next:** C2 review of U2, then U3 (admin shell, routing, sign-in).
-- **Reviewed through:** C1 at 3fac289 (e2e mock 55/57, admin-rest 79/80, skips only)
+- **Next:** U3: admin routes move into a lazy `AdminApp` with descendant routes (`admin/*`), so nothing in `appRoutes.tsx` statically imports `@/ui`.
+- **Reviewed through:** C2 at 1022e1b
 - **Uncommitted:** none
 - **Notes:** public baseline screenshots are in `.ae/shots/before/` (mock backend, `node .ae/shots/capture.mjs <base> <dir>`), for U10. The template's lazy CSS stays on the page after unmount, so `global.css` has no element rules (UPSTREAM.md, "This app"). U2: the wizard's numbered sections use `Card` with `step` instead of a separate Stepper piece. `Drawer` takes a `closeLabel`, so the template stays language-neutral. C1: kit `medium` buttons were 36px (fixed to 44px); an icon outside the bundled sets would have called the Iconify API (now draws nothing). Pre-existing dev-only advisory: `adm-zip` through `mapshaper`. The user asked to go straight from planning into implementation without the start question.
