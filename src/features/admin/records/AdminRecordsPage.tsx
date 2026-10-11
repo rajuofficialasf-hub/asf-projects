@@ -1,20 +1,21 @@
 import { lt, t as tr } from '@/i18n'
 import { useCallback, useMemo, useState } from 'react'
-import { Link, NavLink, useParams, useSearchParams } from 'react-router'
+import { useParams, useSearchParams } from 'react-router'
 import { useDocumentTitle } from '@/lib/useDocumentTitle'
-import { useToast } from '@/components/useToast'
 import { formatBanglaNumber, toBanglaNumber } from '@/lib/banglaNumber'
 import { DEFAULT_LIST_ORDER, DEFAULT_PAGE_SIZE, getHousingApi, HousingApiError, type HousingRecord, type ListParams, type Project } from '@/backend'
 import { useProjects } from '@/features/projects/registry'
 import { downloadText } from '@/features/housing/utils/csvExport'
-import { ConfirmDialog } from '@/features/housing/components/ConfirmDialog'
-import { ErrorNotice } from '@/features/housing/components/ErrorNotice'
-import { HousingFilters } from '@/features/housing/components/HousingFilters'
-import { Pagination } from '@/features/housing/components/Pagination'
+import { RecordFilters } from '../ui/RecordFilters'
 import { useHousingList } from '@/features/housing/hooks/useHousingList'
 import { applyFiltersToSearchParams, filtersEqual, filtersFromSearchParams, hasActiveFilters, type HousingFilters as Filters } from '@/features/housing/utils/filters'
 import { adminPath, useRecordProjectByKey } from '@/features/housing/utils/housingProjects'
-import { NotFoundPage } from '@/pages/NotFoundPage'
+import { Button, Card, EmptyState, Grid, LinkButton, LoadingState, Page, RadioGroup, SelectField, Stack, Text, useToast } from '@/ui'
+import { AdminNotFound } from '../ui/AdminNotFound'
+import { Badge } from '../ui/Badge'
+import { ConfirmDialog } from '../ui/ConfirmDialog'
+import { ErrorNotice } from '../ui/ErrorNotice'
+import { Pagination } from '../ui/Pagination'
 import { AdminRecordsTable } from './AdminRecordsTable'
 import { canEditProject, isMainAdmin, useAdminUser } from '../adminUser'
 import { CategoryValuesPanel } from './CategoryValuesPanel'
@@ -32,7 +33,7 @@ const ascii = (s: string) => s.replace(/[০-৯]/g, (d) => String('০১২৩
 export function AdminRecordsPage() {
   const { key } = useParams()
   const project = useRecordProjectByKey(key)
-  if (!project) return <NotFoundPage />
+  if (!project) return <AdminNotFound />
   return <RecordsManager key={project.key} project={project} />
 }
 
@@ -202,125 +203,99 @@ function RecordsManager({ project }: { project: Project }) {
   }
 
   return (
-    <section className="container-page py-8 sm:py-10">
-      {/* ---------- ট্যাব + যোগ ---------- */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        {tabs.length > 1 ? (
-          <nav aria-label={tr('প্রকল্প')} className="inline-flex rounded-lg border border-slate-300 bg-white p-1">
-            {tabs.map((p) => (
-              <NavLink
-                key={p.key}
-                to={adminPath(p.key)}
-                className={({ isActive }) => `rounded-md px-4 py-1.5 text-sm font-medium ${isActive ? 'bg-brand-700 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
-              >
-                {lt(p, 'name')}
-              </NavLink>
-            ))}
+    <Page
+      title={tr('{title} — রেকর্ড', { title: lt(project, 'name') })}
+      documentTitle={false}
+      description={tr('খোঁজার বক্সে শুধু সংখ্যা লিখলে সিরিয়াল ধরে খুঁজবে; নাম লিখলে নামে।')}
+      badges={!project.is_published && <Badge tone="amber">{tr('খসড়া')}</Badge>}
+      breadcrumbs={
+        // একই গ্রুপের প্রকল্পের ট্যাব — শিরোনামের উপরে, আগের মতো
+        tabs.length > 1 && (
+          <nav aria-label={tr('প্রকল্প')}>
+            <Stack direction="row" wrap gap={1}>
+              {tabs.map((p) => (
+                <LinkButton key={p.key} to={adminPath(p.key)} variant={p.key === projectType ? 'primary' : 'secondary'} current={p.key === projectType}>
+                  {lt(p, 'name')}
+                </LinkButton>
+              ))}
+            </Stack>
           </nav>
-        ) : (
-          <span />
-        )}
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={startExport}
-            disabled={!!exporting}
-            className="inline-flex h-10 items-center gap-1.5 rounded-md border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 hover:border-brand-400 hover:text-brand-700 disabled:opacity-60"
-            title={tr('সব রেকর্ড সিরিয়াল, নাম, ঠিকানা ও ছবির লিঙ্কসহ CSV')}
-          >
-            {exporting ? tr('এক্সপোর্ট {status}', { status: exporting }) : tr('সিরিয়াল সহ এক্সপোর্ট (CSV)')}
-          </button>
-          <Link to={`/admin/import?project=${encodeURIComponent(projectType)}`} className="inline-flex h-10 items-center rounded-md border border-brand-600 px-4 text-sm font-medium text-brand-700 hover:bg-brand-50">
-            {tr('বাল্ক ইম্পোর্ট')}
-          </Link>
-          <Link
-            to={adminPath(projectType, 'new')}
-            className="inline-flex h-10 items-center gap-1.5 rounded-md bg-brand-700 px-4 text-sm font-semibold text-white hover:bg-brand-600"
-          >
-            <span aria-hidden="true">+</span> {tr('নতুন যোগ করুন')}
-          </Link>
-        </div>
-      </div>
-
-      <h1 className="mt-6 text-2xl font-bold text-slate-900">
-        {tr('{title} — রেকর্ড', { title: lt(project, 'name') })}
-        {!project.is_published && <span className="ml-2 rounded-full bg-amber-100 px-2.5 py-0.5 align-middle text-xs font-semibold text-amber-900">{tr('খসড়া')}</span>}
-      </h1>
-      <p className="mt-1 text-sm text-slate-500">{tr('খোঁজার বক্সে শুধু সংখ্যা লিখলে সিরিয়াল ধরে খুঁজবে; নাম লিখলে নামে।')}</p>
-
-      <div className="mt-4">
-        <HousingFilters projectType={projectType} value={filters} onChange={setFilters} />
-      </div>
-      {catFilters.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-          {catFilters.map((f) => {
-            const id = `ff-${f.key}`
-            const values = usage?.[f.key] ?? []
-            const cur = fieldFilters[f.key] ?? ''
-            return (
-              <div key={f.key} className="min-w-48">
-                <label htmlFor={id} className="mb-1 block text-xs font-medium text-slate-600">
-                  {lt(f, 'label')}
-                </label>
-                <select id={id} value={cur} onChange={(e) => setFieldFilter(f.key, e.target.value)} className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-800 shadow-sm">
-                  <option value="">{tr('সব')}</option>
-                  {cur && !values.some((v) => v.value === cur) && <option value={cur}>{cur}</option>}
-                  {values.map((v) => (
-                    <option key={v.value} value={v.value}>
-                      {v.value} ({formatBanglaNumber(v.n)})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {categoryFields(project).length > 0 && (
-        <div className="mt-3">
-          <CategoryValuesPanel project={project} usage={usage} onChanged={refresh} />
-        </div>
-      )}
-
-      {/* ---------- বাল্ক টুলবার ---------- */}
-      {selectedCount > 0 && (
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-200 bg-brand-50 px-4 py-2 text-sm">
-          <span className="font-medium text-brand-900">{tr('{n} টি নির্বাচিত', { n: formatBanglaNumber(selectedCount) })}</span>
-          <div className="flex gap-2">
-            <button type="button" onClick={() => setSelected(new Set())} className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-slate-700 hover:bg-slate-50">
-              {tr('নির্বাচন বাতিল')}
-            </button>
-            {mainAdmin && (
-              <button type="button" onClick={askDeleteSelected} className="rounded-md bg-red-600 px-3 py-1.5 font-semibold text-white hover:bg-red-700">
-                {tr('নির্বাচিতগুলো মুছুন')}
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {list.status === 'error' && (
-        <div className="mt-4">
-          <ErrorNotice title={tr('তালিকা লোড করা যায়নি')} error={list.error} />
-        </div>
-      )}
-      {list.status !== 'error' && !data && (
-        <div className="mt-4 animate-pulse space-y-2" aria-busy="true">
-          {Array.from({ length: 6 }, (_, i) => (
-            <div key={i} className="h-12 rounded-lg bg-slate-200" />
-          ))}
-        </div>
-      )}
-      {data && (
+        )
+      }
+      actions={
         <>
-          {data.meta.total === 0 ? (
-            <p className="mt-4 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500">
-              {active ? tr('কোনো তথ্য পাওয়া যায়নি।') : tr('এখনো কোনো রেকর্ড নেই — "নতুন যোগ করুন" দিয়ে শুরু করুন।')}
-            </p>
-          ) : (
-            <>
-              <div className="mt-4">
+          <Button variant="secondary" startIcon="download" onClick={startExport} disabled={!!exporting} title={tr('সব রেকর্ড সিরিয়াল, নাম, ঠিকানা ও ছবির লিঙ্কসহ CSV')}>
+            {exporting ? tr('এক্সপোর্ট {status}', { status: exporting }) : tr('সিরিয়াল সহ এক্সপোর্ট (CSV)')}
+          </Button>
+          <LinkButton to={`/admin/import?project=${encodeURIComponent(projectType)}`} variant="secondary" startIcon="import">
+            {tr('বাল্ক ইম্পোর্ট')}
+          </LinkButton>
+          <LinkButton to={adminPath(projectType, 'new')} startIcon="add">
+            {tr('নতুন যোগ করুন')}
+          </LinkButton>
+        </>
+      }
+    >
+      <Stack gap={2}>
+        <RecordFilters projectType={projectType} value={filters} onChange={setFilters} />
+        {catFilters.length > 0 && (
+          <Card>
+            <Grid columns={{ xs: 1, sm: 2, md: 3 }}>
+              {catFilters.map((f) => {
+                const values = usage?.[f.key] ?? []
+                const cur = fieldFilters[f.key] ?? ''
+                return (
+                  <SelectField
+                    key={f.key}
+                    label={lt(f, 'label')}
+                    size="small"
+                    value={cur}
+                    onChange={(v) => setFieldFilter(f.key, v)}
+                    options={[
+                      { value: '', label: tr('সব') },
+                      ...(cur && !values.some((v) => v.value === cur) ? [{ value: cur, label: cur }] : []),
+                      ...values.map((v) => ({ value: v.value, label: `${v.value} (${formatBanglaNumber(v.n)})` })),
+                    ]}
+                  />
+                )
+              })}
+            </Grid>
+          </Card>
+        )}
+
+        {categoryFields(project).length > 0 && <CategoryValuesPanel project={project} usage={usage} onChanged={refresh} />}
+
+        {/* ---------- বাল্ক টুলবার ---------- */}
+        {selectedCount > 0 && (
+          <Card>
+            <Stack direction="row" wrap align="center" justify="between" gap={1.5}>
+              <Text size="small" weight="medium">
+                {tr('{n} টি নির্বাচিত', { n: formatBanglaNumber(selectedCount) })}
+              </Text>
+              <Stack direction="row" gap={1}>
+                <Button variant="secondary" size="small" onClick={() => setSelected(new Set())}>
+                  {tr('নির্বাচন বাতিল')}
+                </Button>
+                {mainAdmin && (
+                  <Button variant="danger" size="small" onClick={askDeleteSelected}>
+                    {tr('নির্বাচিতগুলো মুছুন')}
+                  </Button>
+                )}
+              </Stack>
+            </Stack>
+          </Card>
+        )}
+
+        {list.status === 'error' && <ErrorNotice title={tr('তালিকা লোড করা যায়নি')} error={list.error} />}
+        {list.status !== 'error' && !data && <LoadingState label={tr('লোড হচ্ছে…')} />}
+        {data && (
+          <>
+            {data.meta.total === 0 ? (
+              <Card>
+                <EmptyState title={active ? tr('কোনো তথ্য পাওয়া যায়নি।') : tr('এখনো কোনো রেকর্ড নেই — "নতুন যোগ করুন" দিয়ে শুরু করুন।')} />
+              </Card>
+            ) : (
+              <>
                 <AdminRecordsTable
                   project={project}
                   layout={layout}
@@ -333,14 +308,12 @@ function RecordsManager({ project }: { project: Project }) {
                   onToggleAll={toggleAll}
                   onDelete={mainAdmin ? (r) => setPending([r]) : undefined}
                 />
-              </div>
-              <div className="mt-5">
                 <Pagination meta={data.meta} onPageChange={goToPage} disabled={list.status === 'loading'} />
-              </div>
-            </>
-          )}
-        </>
-      )}
+              </>
+            )}
+          </>
+        )}
+      </Stack>
 
       <ConfirmDialog
         open={pending !== null}
@@ -352,19 +325,23 @@ function RecordsManager({ project }: { project: Project }) {
         onCancel={() => setPending(null)}
       >
         {pending && (
-          <>
-            <ul className="max-h-40 list-disc overflow-y-auto pl-5">
+          <Stack gap={1.5}>
+            <Stack role="list" gap={0.5}>
               {pending.slice(0, 10).map((r) => (
-                <li key={r.id}>
-                  {tr('সিরিয়াল {n} — {name}', { n: toBanglaNumber(r.serial_no), name: r.name })}
-                </li>
+                <Stack key={r.id} role="listitem">
+                  <Text size="small">{tr('সিরিয়াল {n} — {name}', { n: toBanglaNumber(r.serial_no), name: r.name })}</Text>
+                </Stack>
               ))}
-              {pending.length > 10 && <li>{tr('… আরও {n} টি', { n: formatBanglaNumber(pending.length - 10) })}</li>}
-            </ul>
-            <p className="mt-3 rounded-md border border-red-200 bg-red-50 p-2 text-red-800">
+              {pending.length > 10 && (
+                <Stack role="listitem">
+                  <Text size="small">{tr('… আরও {n} টি', { n: formatBanglaNumber(pending.length - 10) })}</Text>
+                </Stack>
+              )}
+            </Stack>
+            <Text size="small" tone="error">
               {tr('রেকর্ড ও তার ছবি স্টোরেজ থেকে মুছে যাবে। সিরিয়াল পুনরায় ব্যবহার হবে না। এটি ফেরানো যাবে না।')}
-            </p>
-          </>
+            </Text>
+          </Stack>
         )}
       </ConfirmDialog>
 
@@ -376,14 +353,18 @@ function RecordsManager({ project }: { project: Project }) {
         onConfirm={() => void exportCsv(withPrivate)}
         onCancel={() => setExportAsk(false)}
       >
-        <p className="text-sm text-slate-700">{tr('এই প্রকল্পে শুধু-এডমিন (গোপন) ফিল্ড আছে, যেমন মোবাইল নম্বর।')}</p>
-        {[false, true].map((v) => (
-          <label key={String(v)} className="mt-2 flex min-h-11 items-start gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm">
-            <input type="radio" name="export-private" checked={withPrivate === v} onChange={() => setWithPrivate(v)} className="mt-0.5 h-4 w-4 accent-brand-700" />
-            <span>{v ? tr('🔒 গোপন কলামসহ — ফাইলের নামে "-private"; ফাইলটি কাউকে পাঠাবেন না') : tr('গোপন কলাম ছাড়া (সাধারণ)')}</span>
-          </label>
-        ))}
+        <RadioGroup
+          label={tr('এই প্রকল্পে শুধু-এডমিন (গোপন) ফিল্ড আছে, যেমন মোবাইল নম্বর।')}
+          name="export-private"
+          look="cards"
+          value={String(withPrivate)}
+          onChange={(v) => setWithPrivate(v === 'true')}
+          options={[false, true].map((v) => ({
+            value: String(v),
+            label: v ? tr('🔒 গোপন কলামসহ — ফাইলের নামে "-private"; ফাইলটি কাউকে পাঠাবেন না') : tr('গোপন কলাম ছাড়া (সাধারণ)'),
+          }))}
+        />
       </ConfirmDialog>
-    </section>
+    </Page>
   )
 }
