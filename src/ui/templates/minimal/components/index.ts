@@ -26,3 +26,4 @@ export { Breadcrumbs } from './breadcrumbs';
 export { Checkbox, RadioGroup } from './choice';
 export { ToggleGroup } from './toggle-group';
 export { FieldGroup, ProgressBar } from './field-group';
+export { Grid, StatList, TextLink, Disclosure } from './layout-pieces';

@@ -167,7 +167,22 @@ export type StackProps = {
 
 export type HeadingProps = { children: ReactNode; level?: 2 | 3 | 4 };
 
-export type TextProps = { children: ReactNode; tone?: "default" | "muted" | "error"; size?: "body" | "small" };
+export type TextProps = {
+  children: ReactNode;
+  tone?: "default" | "muted" | "error" | "warning" | "success";
+  size?: "body" | "small" | "caption";
+  weight?: "regular" | "medium" | "bold";
+  /** Fixed-width letters, for keys and codes. */
+  mono?: boolean;
+  /** Digits of equal width, for numbers in columns. */
+  tabular?: boolean;
+  /** One line, cut with an ellipsis; `title` shows the whole text on hover. */
+  truncate?: boolean;
+  title?: string;
+  /** Inside a line of other text (a span), not a paragraph of its own. */
+  inline?: boolean;
+  align?: "start" | "center" | "end";
+};
 
 /** Decorative unless `label` is given, which makes it an image with that name. */
 export type IconProps = { name: IconName; label?: string; size?: number };
@@ -401,6 +416,10 @@ export type CardProps = {
   padding?: "normal" | "none";
   /** A number shown in a circle before the title, for numbered steps. */
   step?: string;
+  /** A small line above the title, for example the kind of item. */
+  eyebrow?: string;
+  /** A coloured bar on the left, for example to mark a child item under its parent. */
+  accent?: boolean;
   tone?: "default" | "danger" | "warning";
 };
 
@@ -411,6 +430,24 @@ export type TabsProps = {
   onChange: (value: string) => void;
   tabs: readonly { value: string; label: string }[];
 };
+
+/** A responsive grid. `columns` per screen width; it falls back to the next smaller width given. */
+export type GridProps = {
+  children: ReactNode;
+  columns?: { xs?: 1 | 2 | 3 | 4; sm?: 1 | 2 | 3 | 4; md?: 1 | 2 | 3 | 4; lg?: 1 | 2 | 3 | 4 | 5 | 6 };
+  gap?: SpaceStep;
+};
+
+/** Small labelled figures in a row (a description list). */
+export type StatListProps = {
+  items: readonly { label: string; value: ReactNode; tone?: "default" | "warning" }[];
+};
+
+/** A link to a route inside the app, styled as text. */
+export type TextLinkProps = { to: string; children: ReactNode };
+
+/** A summary line that shows or hides more content (a native details element). */
+export type DisclosureProps = { summary: ReactNode; children: ReactNode; defaultOpen?: boolean };
 
 export type BadgeProps = { children: ReactNode; tone?: "neutral" | "success" | "warning" | "error" | "info" };
 
@@ -489,5 +526,9 @@ export type UiTemplate = {
   IconButton: ComponentType<IconButtonProps>;
   ToggleGroup: ComponentType<ToggleGroupProps>;
   FieldGroup: ComponentType<FieldGroupProps>;
+  Grid: ComponentType<GridProps>;
+  StatList: ComponentType<StatListProps>;
+  TextLink: ComponentType<TextLinkProps>;
+  Disclosure: ComponentType<DisclosureProps>;
   ProgressBar: ComponentType<ProgressBarProps>;
 };

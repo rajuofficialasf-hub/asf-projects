@@ -18,6 +18,8 @@ export function Card({
   level = 2,
   padding = 'normal',
   step,
+  eyebrow,
+  accent,
   tone = 'default',
 }: CardProps) {
   const titleId = useId();
@@ -28,6 +30,7 @@ export function Card({
       aria-labelledby={title ? titleId : undefined}
       sx={{
         ...(TONE_BORDER[tone] && { border: 1, borderColor: TONE_BORDER[tone] }),
+        ...(accent && { borderLeft: { md: 4 }, borderLeftColor: { md: 'primary.light' } }),
       }}
     >
       {hasHeader && (
@@ -64,8 +67,13 @@ export function Card({
               </Box>
             )}
             <Box sx={{ minWidth: 0 }}>
+              {eyebrow && (
+                <Typography variant="caption" component="p" sx={{ color: 'text.disabled' }}>
+                  {eyebrow}
+                </Typography>
+              )}
               {title && (
-                <Typography id={titleId} variant={level === 2 ? 'h6' : 'subtitle1'} component={`h${level}`}>
+                <Typography id={titleId} variant={level === 2 ? 'h6' : 'subtitle1'} component={`h${level}`} noWrap title={title}>
                   {title}
                 </Typography>
               )}

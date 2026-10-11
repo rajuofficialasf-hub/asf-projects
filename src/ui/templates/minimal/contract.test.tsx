@@ -47,6 +47,10 @@ import {
   ToggleGroup,
   FieldGroup,
   ProgressBar,
+  Grid,
+  StatList,
+  TextLink,
+  Disclosure,
 } from './index';
 import { pageItems } from './components/pagination';
 import { matchesAccept } from './components/file-input';
@@ -581,6 +585,30 @@ describe('living next to the public site', () => {
 });
 
 describe('details of the added pieces', () => {
+  it('lays out a grid, labelled figures, a text link and a disclosure', async () => {
+    const user = userEvent.setup();
+    renderInApp(
+      <Grid columns={{ xs: 1, md: 3 }}>
+        <StatList items={[{ label: 'Records', value: '১২' }, { label: 'Photos left', value: '৩', tone: 'warning' }]} />
+        <TextLink to="/admin/activity">See all</TextLink>
+        <Disclosure summary="More">
+          <Text>Hidden part</Text>
+        </Disclosure>
+        <Text mono truncate title="semi_pucca">
+          semi_pucca
+        </Text>
+      </Grid>
+    );
+    expect(await screen.findByText('Records')).toBeInTheDocument();
+    expect(screen.getByText('Records').tagName).toBe('DT');
+    expect(screen.getByText('১২').tagName).toBe('DD');
+    expect(screen.getByRole('link', { name: 'See all' })).toHaveAttribute('href', '/admin/activity');
+    expect(screen.getByText('Hidden part')).not.toBeVisible();
+    await user.click(screen.getByText('More'));
+    expect(screen.getByText('Hidden part')).toBeVisible();
+    expect(screen.getByTitle('semi_pucca')).toBeInTheDocument();
+  });
+
   it('groups fields under a legend, disables them together, and shows progress', async () => {
     renderInApp(
       <>
