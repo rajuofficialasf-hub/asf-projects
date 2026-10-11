@@ -54,6 +54,7 @@ export function NavItem({
   return (
     <ItemRoot
       aria-label={title}
+      aria-current={active && !hasChild ? 'page' : undefined}
       {...ownerState}
       {...navItem.baseProps}
       className={mergeClasses([navSectionClasses.item.root, className], {

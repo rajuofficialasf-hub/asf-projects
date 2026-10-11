@@ -12,7 +12,6 @@ import { Logo } from '@/ui/templates/minimal/components/logo';
 
 import { AuthSplitSection } from './section';
 import { AuthSplitContent } from './content';
-import { SettingsButton } from '../components/settings-button';
 import { MainSection, LayoutSection, HeaderSection } from '../core';
 
 // ----------------------------------------------------------------------
@@ -27,6 +26,8 @@ export type AuthSplitLayoutProps = LayoutBaseProps & {
     header?: HeaderSectionProps;
     main?: MainSectionProps;
     section?: AuthSplitSectionProps;
+    /** Right side of the header, for example a language switch. */
+    headerActions?: React.ReactNode;
     content?: AuthSplitContentProps;
   };
 };
@@ -51,14 +52,14 @@ export function AuthSplitLayout({
       ),
       leftArea: (
         <>
-          {/** @slot Logo */}
-          <Logo />
+          {/** @slot Logo: before sign-in, home is the public site */}
+          <Logo href="/" />
         </>
       ),
       rightArea: (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 1.5 } }}>
-          {/** @slot Settings button */}
-          <SettingsButton />
+          {/** @slot Header actions */}
+          {slotProps?.headerActions}
         </Box>
       ),
     };

@@ -1,18 +1,13 @@
 import { Route } from 'react-router'
 import type { Project } from '@/backend'
 import { childrenOf, topLevelProjects } from '@/features/projects/registry'
-import { RequireAdmin } from '@/features/housing/components/RequireAdmin'
 import { GroupLandingPage } from '@/features/projects/landing/GroupLandingPage'
 import { ProjectListPage } from '@/features/projects/list/ProjectListPage'
-import { HousingLoginPage } from '@/features/housing/pages/HousingLoginPage'
 import {
   Lazy,
   LazyProjectDetailPage,
 } from '@/features/housing/pages/lazyPages'
-import { LazyAdminDashboardPage, LazyAdminUsersPage, LazyAdminProjectsPage, LazyActivityPage, LazyAdminRecordsPage, LazyImportPage, LazyPhotoBulkPage, LazyProjectSettingsPage, LazyProjectWizardPage, LazyRecordFormPage } from '@/features/admin/pages/lazyAdminPages'
-import { RoleGate } from '@/features/admin/layout/RoleGate'
-
-const SETTINGS_ROLES = ['main_admin', 'admin'] as const
+import { LazyAdminApp } from '@/features/admin/layout/lazyAdminApp'
 import { ProjectFrame } from './ProjectFrame'
 import { LegacyAdminRedirect } from './routeGuards'
 
@@ -72,24 +67,10 @@ function leafRoute(p: Project) {
 }
 
 /**
- * এডমিন (পরিকল্পনা §৪.২): URL এ স্থায়ী key (`/admin/records/semi_pucca`), সব পেইজ lazy।
- * পুরনো `/housing/admin/*` লিংক নতুনে রিডাইরেক্ট (§৪.৩)।
+ * এডমিন (পরিকল্পনা §৪.২): `/admin/*` (লগইনসহ) একটি lazy চাংক — নিজের লেআউট ও রাউট AdminApp-এ, পাবলিক হেডার-ফুটারের
+ * বাইরে, যাতে এডমিনের UI টেমপ্লেট (MUI) পাবলিক বান্ডলে না আসে। URL আগের মতোই (`/admin/records/semi_pucca`)।
  */
-export const adminRoutes = [
-  <Route key="admin-login" path="admin/login" element={<HousingLoginPage />} />,
-  <Route key="admin" path="admin" element={<RequireAdmin />}>
-    <Route index element={<Lazy><LazyAdminDashboardPage /></Lazy>} />
-    {/* প্রকল্পের সেটিংস: মূল এডমিন ও সাধারণ এডমিন; প্রকল্পের ইউজার (editor) নয় */}
-    <Route path="projects" element={<RoleGate allow={SETTINGS_ROLES}><Lazy><LazyAdminProjectsPage /></Lazy></RoleGate>} />
-    <Route path="projects/new" element={<RoleGate allow={SETTINGS_ROLES}><Lazy><LazyProjectWizardPage /></Lazy></RoleGate>} />
-    <Route path="projects/:key" element={<RoleGate allow={SETTINGS_ROLES}><Lazy><LazyProjectSettingsPage /></Lazy></RoleGate>} />
-    <Route path="users" element={<RoleGate allow={['main_admin']}><Lazy><LazyAdminUsersPage /></Lazy></RoleGate>} />
-    <Route path="records/:key" element={<Lazy><LazyAdminRecordsPage /></Lazy>} />
-    <Route path="records/:key/new" element={<Lazy><LazyRecordFormPage mode="new" /></Lazy>} />
-    <Route path="records/:key/:serial/edit" element={<Lazy><LazyRecordFormPage mode="edit" /></Lazy>} />
-    <Route path="import" element={<Lazy><LazyImportPage /></Lazy>} />
-    <Route path="photos" element={<Lazy><LazyPhotoBulkPage /></Lazy>} />
-    <Route path="activity" element={<Lazy><LazyActivityPage /></Lazy>} />
-  </Route>,
-  <Route key="legacy-admin" path="housing/admin/*" element={<LegacyAdminRedirect />} />,
-]
+export const adminRoute = <Route key="admin" path="admin/*" element={<Lazy><LazyAdminApp /></Lazy>} />
+
+/** পুরনো `/housing/admin/*` লিংক নতুনে রিডাইরেক্ট (§৪.৩) */
+export const legacyAdminRoute = <Route key="legacy-admin" path="housing/admin/*" element={<LegacyAdminRedirect />} />

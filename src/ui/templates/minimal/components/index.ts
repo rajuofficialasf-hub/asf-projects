@@ -24,3 +24,4 @@ export { Pagination } from './pagination';
 export { IconButton } from './icon-button';
 export { Breadcrumbs } from './breadcrumbs';
 export { Checkbox, RadioGroup } from './choice';
+export { ToggleGroup } from './toggle-group';

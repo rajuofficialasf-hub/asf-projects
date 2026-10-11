@@ -9,14 +9,24 @@ import { AuthSplitLayout } from '../layouts/auth-split';
 // ----------------------------------------------------------------------
 
 /** The starter's split sign-in layout. The form inside comes from the login pack. */
-export function SignInLayout({ title, description, children }: SignInLayoutProps) {
+export function SignInLayout({
+  title,
+  description,
+  children,
+  asideTitle = CONFIG.appName,
+  asideSubtitle,
+  headerActions,
+  documentTitle,
+}: SignInLayoutProps) {
+  const tabTitle = documentTitle ?? title;
   return (
     <AuthSplitLayout
       slotProps={{
-        section: { title: CONFIG.appName, subtitle: 'Sign in to continue.' },
+        section: { title: asideTitle, subtitle: asideSubtitle ?? '' },
+        headerActions,
       }}
     >
-      <title>{`${title} | ${CONFIG.appName}`}</title>
+      {tabTitle !== false && <title>{`${tabTitle} | ${CONFIG.appName}`}</title>}
       <Box sx={{ mb: 5, gap: 1.5, display: 'flex', flexDirection: 'column' }}>
         <Typography variant="h5" component="h1">
           {title}

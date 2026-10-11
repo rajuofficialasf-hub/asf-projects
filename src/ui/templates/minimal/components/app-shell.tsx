@@ -17,11 +17,13 @@ function toNavItem(item: NavItem): NavItemData {
     path: item.to,
     icon: item.icon ? <Icon name={item.icon} size={24} /> : undefined,
     children: item.children?.map(toNavItem),
+    // Like a router NavLink: current on its own path and below it, unless `exact`.
+    deepMatch: !item.exact,
   };
 }
 
 /** The starter's dashboard layout, with the app's navigation and header actions. */
-export function AppShell({ children, navigation, headerActions }: AppShellProps) {
+export function AppShell({ children, navigation, navLabel, headerActions }: AppShellProps) {
   const pathname = usePathname();
 
   // From the starter's app.tsx: every navigation starts at the top of the page.
@@ -35,6 +37,6 @@ export function AppShell({ children, navigation, headerActions }: AppShellProps)
   }));
 
   return (
-    <DashboardLayout slotProps={{ nav: { data }, headerActions }}>{children}</DashboardLayout>
+    <DashboardLayout slotProps={{ nav: { data, label: navLabel }, headerActions }}>{children}</DashboardLayout>
   );
 }

@@ -1,5 +1,5 @@
 import { expect, test } from '../support/backend'
-import { fillLogin, MOCK_ADMIN, MOCK_NON_ADMIN } from '../support/auth'
+import { fillLogin, logout, MOCK_ADMIN, MOCK_NON_ADMIN } from '../support/auth'
 
 test.describe('admin login and logout', () => {
   test('admin logs in, lands on the dashboard, logs out, and admin pages are closed again', async ({ page }) => {
@@ -7,7 +7,7 @@ test.describe('admin login and logout', () => {
     await fillLogin(page, MOCK_ADMIN.email, MOCK_ADMIN.password)
     await expect(page).toHaveURL(/\/admin$/)
     await expect(page.getByRole('heading', { name: 'ড্যাশবোর্ড', level: 1 })).toBeVisible()
-    await page.getByRole('button', { name: 'লগআউট' }).click()
+    await logout(page)
     await expect(page).toHaveURL(/\/$/)
     await page.goto('/housing/admin/semi-pucca')
     await expect(page).toHaveURL(/\/admin\/login/)

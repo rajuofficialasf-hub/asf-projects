@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
 import { expect, test } from '../support/backend'
-import { loginAs, MOCK_ADMIN } from '../support/auth'
+import { accountMenu, loginAs, MOCK_ADMIN } from '../support/auth'
 import { PLAIN_ADMIN, PROJECT_EDITOR } from '../support/rest-data'
 
 // The admin shell (docs/plans/2026-10-11-1413-refactor-admin-ui-minimal-plan.md, U3): the menu shows each
@@ -8,9 +8,10 @@ import { PLAIN_ADMIN, PROJECT_EDITOR } from '../support/rest-data'
 
 const menu = (page: Page) => page.getByRole('navigation', { name: 'এডমিন মেনু' })
 
-/** The account actions (view public site, logout). */
+/** The account actions (view public site, logout), in the account menu. */
 async function accountAction(page: Page, name: string) {
-  return page.getByRole('button', { name }).or(page.getByRole('link', { name })).first()
+  await accountMenu(page).click()
+  return page.getByRole('menuitem', { name })
 }
 
 test('the main admin sees every menu item, with the current page marked', async ({ page }) => {
@@ -70,4 +71,18 @@ test('"view public site" goes home with the public look, and logout ends the ses
   await expect(page).toHaveURL(/\/$/)
   await page.goto('/admin')
   await expect(page).toHaveURL(/\/admin\/login$/)
+})
+
+test('the admin has its own shell: no public main menu, and its own language switch', async ({ page }) => {
+  await loginAs(page, MOCK_ADMIN, '/admin')
+  await expect(menu(page).getByRole('link', { name: 'ড্যাশবোর্ড' })).toBeVisible()
+  await expect(page.getByRole('navigation', { name: 'প্রধান মেনু' })).toHaveCount(0)
+
+  const language = page.getByRole('group', { name: 'ভাষা' })
+  await expect(language.getByRole('button', { name: 'বাং', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await language.getByRole('button', { name: 'EN', exact: true }).click()
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+  await expect(page).toHaveURL(/\/admin$/)
+  await page.getByRole('group', { name: 'Language' }).getByRole('button', { name: 'বাং', exact: true }).click()
+  await expect(page.locator('html')).toHaveAttribute('lang', 'bn')
 })

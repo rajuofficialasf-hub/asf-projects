@@ -18,7 +18,6 @@ import { VerticalDivider } from './content';
 import { NavVertical } from './nav-vertical';
 import { NavHorizontal } from './nav-horizontal';
 import { MenuButton } from '../components/menu-button';
-import { SettingsButton } from '../components/settings-button';
 import { dashboardLayoutVars, dashboardNavColorVars } from './css-vars';
 import { MainSection, layoutClasses, HeaderSection, LayoutSection } from '../core';
 
@@ -34,6 +33,8 @@ export type DashboardLayoutProps = LayoutBaseProps & {
     header?: HeaderSectionProps;
     nav?: {
       data?: NavSectionProps['data'];
+      /** The nav's accessible name and the phone menu button's name. */
+      label?: string;
     };
     /** Right side of the header, for example the signed-in user's menu. */
     headerActions?: React.ReactNode;
@@ -57,6 +58,7 @@ export function DashboardLayout({
   const { value: open, onFalse: onClose, onTrue: onOpen } = useBoolean();
 
   const navData = slotProps?.nav?.data ?? [];
+  const navLabel = slotProps?.nav?.label;
 
   const isNavMini = settings.state.navLayout === 'mini';
   const isNavHorizontal = settings.state.navLayout === 'horizontal';
@@ -99,7 +101,8 @@ export function DashboardLayout({
         <>
           {/** @slot Nav mobile */}
           <MenuButton
-            aria-label="Open navigation"
+            aria-label={navLabel ?? 'Open navigation'}
+            aria-expanded={open}
             onClick={onOpen}
             sx={{ mr: 1, ml: -1, [theme.breakpoints.up(layoutQuery)]: { display: 'none' } }}
           />
@@ -107,6 +110,7 @@ export function DashboardLayout({
             data={navData}
             open={open}
             onClose={onClose}
+            aria-label={navLabel}
             cssVars={navVars.section}
             checkPermissions={canDisplayItemByRole}
           />
@@ -129,9 +133,6 @@ export function DashboardLayout({
       ),
       rightArea: (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0, sm: 0.75 } }}>
-          {/** @slot Settings button */}
-          <SettingsButton />
-
           {/** @slot Header actions */}
           {slotProps?.headerActions}
         </Box>
@@ -155,15 +156,10 @@ export function DashboardLayout({
     <NavVertical
       data={navData}
       isNavMini={isNavMini}
+      navLabel={navLabel}
       layoutQuery={layoutQuery}
       cssVars={navVars.section}
       checkPermissions={canDisplayItemByRole}
-      onToggleNav={() =>
-        settings.setField(
-          'navLayout',
-          settings.state.navLayout === 'vertical' ? 'mini' : 'vertical'
-        )
-      }
     />
   );
 

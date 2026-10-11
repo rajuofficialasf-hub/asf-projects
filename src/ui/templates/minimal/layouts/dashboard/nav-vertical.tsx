@@ -11,7 +11,6 @@ import { Scrollbar } from '@/ui/templates/minimal/components/scrollbar';
 import { NavSectionMini, NavSectionVertical } from '@/ui/templates/minimal/components/nav-section';
 
 import { layoutClasses } from '../core';
-import { NavToggleButton } from '../components/nav-toggle-button';
 
 // ----------------------------------------------------------------------
 
@@ -19,7 +18,8 @@ export type NavVerticalProps = React.ComponentProps<'div'> &
   NavSectionProps & {
     isNavMini: boolean;
     layoutQuery?: Breakpoint;
-    onToggleNav: () => void;
+    /** The nav's accessible name. */
+    navLabel?: string;
     slots?: {
       topArea?: React.ReactNode;
       bottomArea?: React.ReactNode;
@@ -33,7 +33,7 @@ export function NavVertical({
   cssVars,
   className,
   isNavMini,
-  onToggleNav,
+  navLabel,
   checkPermissions,
   layoutQuery = 'md',
   ...other
@@ -51,6 +51,7 @@ export function NavVertical({
           data={data}
           cssVars={cssVars}
           checkPermissions={checkPermissions}
+          aria-label={navLabel}
           sx={{ px: 2, flex: '1 1 auto' }}
         />
 
@@ -71,6 +72,7 @@ export function NavVertical({
         data={data}
         cssVars={cssVars}
         checkPermissions={checkPermissions}
+        aria-label={navLabel}
         sx={[
           (theme) => ({
             ...theme.mixins.hideScrollY,
@@ -94,16 +96,6 @@ export function NavVertical({
       sx={sx}
       {...other}
     >
-      <NavToggleButton
-        isNavMini={isNavMini}
-        onClick={onToggleNav}
-        sx={[
-          (theme) => ({
-            display: 'none',
-            [theme.breakpoints.up(layoutQuery)]: { display: 'inline-flex' },
-          }),
-        ]}
-      />
       {isNavMini ? renderNavMini() : renderNavVertical()}
     </NavRoot>
   );

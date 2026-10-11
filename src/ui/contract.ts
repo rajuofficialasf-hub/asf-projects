@@ -100,7 +100,8 @@ export type SpaceStep = 0 | 0.5 | 1 | 1.5 | 2 | 3 | 4 | 5 | 6 | 8;
 export type UiProviderProps = { children: ReactNode };
 
 /** One link in the app navigation. `to` is an app path such as "/users". */
-export type NavItem = { label: string; to: string; icon?: IconName; children?: NavItem[] };
+/** `exact` marks the item current only on its own path; otherwise also on paths below it. */
+export type NavItem = { label: string; to: string; icon?: IconName; children?: NavItem[]; exact?: boolean };
 
 /** A titled group of navigation links. */
 export type NavGroup = { title?: string; items: NavItem[] };
@@ -109,6 +110,8 @@ export type NavGroup = { title?: string; items: NavItem[] };
 export type AppShellProps = {
   children: ReactNode;
   navigation: NavGroup[];
+  /** The navigation's accessible name, also the phone menu button's name. */
+  navLabel: string;
   /** Right side of the header, for example the signed-in user's menu. */
   headerActions?: ReactNode;
 };
@@ -129,7 +132,18 @@ export type PageProps = {
 };
 
 /** The frame of the sign-in page. The form inside comes from the login pack. */
-export type SignInLayoutProps = { title: string; description?: string; children: ReactNode };
+export type SignInLayoutProps = {
+  title: string;
+  description?: string;
+  children: ReactNode;
+  /** The large side panel's heading and line under it (shown on wide screens). */
+  asideTitle?: string;
+  asideSubtitle?: string;
+  /** Right side of the header, for example a language switch. */
+  headerActions?: ReactNode;
+  /** The browser tab title. Defaults to `title`; false leaves document.title to the caller. */
+  documentTitle?: string | false;
+};
 
 /** A full-page error: not found, not allowed, a crashed route. `action` is usually a LinkButton home. */
 export type ErrorScreenProps = { title: string; message: string; action?: ReactNode; kind?: "not-found" | "forbidden" | "error" };
@@ -145,6 +159,8 @@ export type StackProps = {
   align?: "start" | "center" | "end" | "stretch";
   justify?: "start" | "center" | "end" | "between";
   wrap?: boolean;
+  /** Space inside the edges. */
+  padding?: SpaceStep;
 };
 
 export type HeadingProps = { children: ReactNode; level?: 2 | 3 | 4 };
@@ -398,6 +414,14 @@ export type PaginationProps = {
   formatPage?: (page: number) => string;
 };
 
+/** A row of toggle buttons for one choice (aria-pressed), named as a group. */
+export type ToggleGroupProps = {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: readonly { value: string; label: string; lang?: string }[];
+};
+
 export type BreadcrumbsProps = { label: string; items: readonly { label: string; to?: string }[] };
 
 /** An icon-only button. `label` is its accessible name and tooltip. */
@@ -443,4 +467,5 @@ export type UiTemplate = {
   Menu: ComponentType<MenuProps>;
   Breadcrumbs: ComponentType<BreadcrumbsProps>;
   IconButton: ComponentType<IconButtonProps>;
+  ToggleGroup: ComponentType<ToggleGroupProps>;
 };

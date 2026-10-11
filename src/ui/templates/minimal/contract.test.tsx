@@ -44,6 +44,7 @@ import {
   Pagination,
   IconButton,
   Breadcrumbs,
+  ToggleGroup,
 } from './index';
 import { pageItems } from './components/pagination';
 
@@ -88,6 +89,7 @@ describe('layout and text', () => {
     renderInApp(
       <AppShell
         navigation={[{ title: 'Main', items: [{ label: 'Members', to: '/members', icon: 'users' }] }]}
+        navLabel="Main menu"
         headerActions={<Button>Sign out</Button>}
       >
         <Page title="Members" description="Everyone in the team" actions={<Button>Add</Button>}>
@@ -105,8 +107,9 @@ describe('layout and text', () => {
     expect(screen.getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Add' })).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Open navigation' }));
-    expect(await screen.findByRole('link', { name: 'Members' })).toHaveAttribute('href', '/members');
+    await user.click(screen.getByRole('button', { name: 'Main menu' }));
+    const nav = await screen.findByRole('navigation', { name: 'Main menu' });
+    expect(within(nav).getByRole('link', { name: 'Members' })).toHaveAttribute('href', '/members');
   });
 
   it('renders the sign-in layout with its heading and form slot', async () => {
@@ -532,7 +535,86 @@ describe('pieces the admin added to the set', () => {
 
 // ----------------------------------------------------------------------
 
+describe('living next to the public site', () => {
+  it('writes only prefixed theme variables, so Tailwind v4 variables on :root keep their values', async () => {
+    renderInApp(<Text>admin</Text>);
+    await screen.findByText('admin');
+    const css = [...document.querySelectorAll('style')].map((el) => el.textContent ?? '').join('\n');
+    expect(css).toMatch(/--mui-palette-primary-main/);
+    expect(css).not.toMatch(/[{;\s]--spacing\s*:/);
+    expect(css).not.toMatch(/[{;\s]--font-[a-z-]+\s*:/);
+  });
+
+  it('takes its page-wide rules and <html> marks away when it unmounts, so they never reach public pages', async () => {
+    const pageWide = () =>
+      [...document.querySelectorAll('style')].some((el) => /(^|\})\s*(html|body|:root|#root)[\s,{]/.test(el.textContent ?? ''));
+    const { unmount } = renderInApp(<Text>admin</Text>);
+    await screen.findByText('admin');
+    expect(pageWide()).toBe(true);
+    unmount();
+    expect(pageWide()).toBe(false);
+    expect(document.documentElement.hasAttribute('dir')).toBe(false);
+    expect(document.documentElement.hasAttribute('data-color-scheme')).toBe(false);
+  });
+});
+
 describe('details of the added pieces', () => {
+  it('marks the pressed toggle and reports a new choice, ignoring a click on the pressed one', async () => {
+    const user = userEvent.setup();
+    const picks: string[] = [];
+    renderInApp(
+      <ToggleGroup
+        label="Language"
+        value="bn"
+        onChange={(v) => picks.push(v)}
+        options={[
+          { value: 'bn', label: 'বাং', lang: 'bn' },
+          { value: 'en', label: 'EN', lang: 'en' },
+        ]}
+      />
+    );
+    const group = await screen.findByRole('group', { name: 'Language' });
+    expect(within(group).getByRole('button', { name: 'বাং' })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(group).getByRole('button', { name: 'EN' })).toHaveAttribute('lang', 'en');
+    await user.click(within(group).getByRole('button', { name: 'বাং' }));
+    await user.click(within(group).getByRole('button', { name: 'EN' }));
+    expect(picks).toEqual(['en']);
+  });
+
+  it('marks the current nav item, and items below their path unless exact', async () => {
+    const router = createMemoryRouter(
+      [
+        {
+          path: '*',
+          element: (
+            <AppShell
+              navLabel="Main menu"
+              navigation={[
+                {
+                  items: [
+                    { label: 'Home', to: '/admin', exact: true },
+                    { label: 'Records', to: '/admin/records/tin' },
+                  ],
+                },
+              ]}
+            >
+              <Text>page</Text>
+            </AppShell>
+          ),
+        },
+      ],
+      { initialEntries: ['/admin/records/tin/new'] }
+    );
+    render(
+      <UiProvider>
+        <RouterProvider router={router} />
+      </UiProvider>
+    );
+    const nav = await screen.findByRole('navigation', { name: 'Main menu', hidden: true });
+    expect(within(nav).getByRole('link', { name: 'Records', hidden: true })).toHaveAttribute('aria-current', 'page');
+    expect(within(nav).getByRole('link', { name: 'Home', hidden: true })).not.toHaveAttribute('aria-current');
+  });
+
   it('lists page numbers with gaps around the current page', () => {
     expect(pageItems(10, 20)).toEqual([1, '…', 9, 10, 11, '…', 20]);
     expect(pageItems(1, 20)).toEqual([1, 2, 3, 4, '…', 20]);

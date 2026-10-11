@@ -1,5 +1,5 @@
 import { expect, test } from '../support/backend'
-import { fillLogin, loginAsAdmin, MOCK_ADMIN } from '../support/auth'
+import { accountMenu, fillLogin, loginAsAdmin, MOCK_ADMIN } from '../support/auth'
 
 const ADMIN_ROUTES = [
   '/housing/admin/semi-pucca',
@@ -44,7 +44,7 @@ test.describe('admin route protection', () => {
     await expect(retry).toBeVisible()
     await page.unroute('**/api/v1/auth/me')
     await retry.click()
-    await expect(page.getByRole('button', { name: 'লগআউট' })).toBeVisible()
+    await expect(accountMenu(page)).toBeVisible()
     await expect(page).toHaveURL(/\/admin\/activity$/)
   })
 

@@ -35,7 +35,9 @@ export const themeConfig: ThemeConfig = {
    * Css variables
    *************************************** */
   cssVariables: {
-    cssVarPrefix: '',
+    // 'mui', not '': unprefixed MUI variables (--spacing, --font-*) would overwrite Tailwind v4's on :root and resize
+    // every Tailwind element shown inside the admin (the public field preview).
+    cssVarPrefix: 'mui',
     colorSchemeSelector: 'data-color-scheme',
   },
   /** **************************************

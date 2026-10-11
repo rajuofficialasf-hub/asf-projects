@@ -4,6 +4,7 @@ import { Navigate, Outlet, useLocation } from 'react-router'
 import { useAuth } from '../hooks/useAuth'
 import { AdminLayout } from '@/features/admin/layout/AdminLayout'
 import { AdminUserContext } from '@/features/admin/adminUser'
+import { Alert, Button, LoadingState, Stack } from '@/ui'
 
 export const LOGIN_PATH = '/admin/login'
 
@@ -20,22 +21,17 @@ export function RequireAdmin() {
   const [leaving, setLeaving] = useState(false)
 
   if (auth.status === 'loading') {
-    return (
-      <div className="container-page py-20 text-center text-sm text-slate-500" aria-busy="true">
-        {t('লগইন যাচাই হচ্ছে…')}
-      </div>
-    )
+    return <LoadingState label={t('লগইন যাচাই হচ্ছে…')} />
   }
 
   // সার্ভারে পৌঁছানো না গেলে লগইন পেইজে পাঠানো ভুল হতো: সেশন হয়তো ঠিকই আছে।
   if (auth.status === 'error') {
     return (
-      <div className="container-page py-20 text-center" role="alert">
-        <p className="text-sm text-slate-600">{t('সার্ভারে সংযোগ করা যায়নি।')}</p>
-        <button type="button" className="mt-4 inline-flex h-10 items-center rounded-md border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-100" onClick={() => window.location.reload()}>
-          {t('আবার চেষ্টা করুন')}
-        </button>
-      </div>
+      <Stack padding={5} align="center">
+        <Alert tone="error" action={<Button variant="secondary" onClick={() => window.location.reload()}>{t('আবার চেষ্টা করুন')}</Button>}>
+          {t('সার্ভারে সংযোগ করা যায়নি।')}
+        </Alert>
+      </Stack>
     )
   }
 
