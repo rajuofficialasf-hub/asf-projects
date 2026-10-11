@@ -1,8 +1,94 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
+  "plugins": [
+    "react",
+    "typescript",
+    "oxc"
+  ],
   "rules": {
     "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
+    "react/only-export-components": [
+      "warn",
+      {
+        "allowConstantExport": true
+      }
+    ],
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": [
+              "@mui/*",
+              "@mui/**",
+              "@emotion/*",
+              "@emotion/**",
+              "minimal-shared",
+              "minimal-shared/**"
+            ],
+            "message": "UI template library: import from @/ui instead (RE-UI-01). Only src/ui/templates/** may use it."
+          },
+          {
+            "group": [
+              "@/ui/templates/*",
+              "@/ui/templates/**"
+            ],
+            "message": "Import from @/ui, not a template folder (RE-UI-03)."
+          },
+          {
+            "group": [
+              "@/ui",
+              "@/ui/*"
+            ],
+            "message": "Only the admin panel uses @/ui (MUI). Public code keeps its own components so the public bundle stays MUI-free."
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "src/features/admin/**",
+        "src/features/housing/components/RequireAdmin.tsx",
+        "src/features/housing/pages/HousingLoginPage.tsx"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@mui/*",
+                  "@mui/**",
+                  "@emotion/*",
+                  "@emotion/**",
+                  "minimal-shared",
+                  "minimal-shared/**"
+                ],
+                "message": "UI template library: import from @/ui instead (RE-UI-01). Only src/ui/templates/** may use it."
+              },
+              {
+                "group": [
+                  "@/ui/templates/*",
+                  "@/ui/templates/**"
+                ],
+                "message": "Import from @/ui, not a template folder (RE-UI-03)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/ui/**"
+      ],
+      "rules": {
+        "no-restricted-imports": "off",
+        "react/only-export-components": "off"
+      }
+    }
+  ]
 }

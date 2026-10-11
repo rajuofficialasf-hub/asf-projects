@@ -7,6 +7,7 @@ How to run, extend and test the stack: `docs/DEVELOPER_GUIDE.md`.
 ## Stack profile
 
 - **Frontend:** React 19 + Vite + TypeScript (ST-01). Backends are chosen in `src/backend/factory.ts`. There is no TanStack Query, a deliberate deviation from ST-01: the project list is the registry store (`src/features/projects/registry/`, `useSyncExternalStore`) and pages call the `src/backend` adapters directly. Adopting TanStack Query is left as a later proposal.
+- **UI template (admin only):** Minimal on MUI + Emotion, behind the org component set in `src/ui/` (RE-UI-01..05). Only the admin panel and its login import `@/ui`; the public site keeps its own Tailwind components, and the lint rule in `.oxlintrc.json` and `npm run check:prod-bundle` keep MUI out of public code and chunks. Deviations from the kit copy: `src/ui/templates/minimal/UPSTREAM.md`.
 - **Backend:** Express 5 + TypeScript in `server/` (ST-02).
 - **Database:** PostgreSQL 17 through `postgres` (postgres.js), with dbmate SQL migrations in `server/db/migrations/`. This is not Prisma, a deliberate deviation from ST-03. The server was built this way, Prisma adds nothing a small app needs, and moving would be a rewrite. The intent of the DB rules still holds:
   - tagged-template queries only

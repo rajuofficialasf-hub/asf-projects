@@ -1,0 +1,9 @@
+/*
+  The template's only global stylesheet. A lazy chunk's CSS stays on the page after the admin
+  unmounts, so nothing here may target bare elements (body, #root, img, ul): those would leak into the
+  public site. Element baselines the admin needs go in UiProvider's GlobalStyles, which Emotion
+  removes on unmount. Fonts come from index.html (Ubuntu Sans, Noto Sans Bengali).
+*/
+
+/* scrollbar (class-scoped to simplebar) */
+@import './components/scrollbar/styles.css';
