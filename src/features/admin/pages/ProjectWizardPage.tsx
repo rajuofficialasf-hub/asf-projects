@@ -8,6 +8,7 @@ import { keyError, keyFromSlug, photoNameExample, prefixError, slugError, slugif
 import { PROJECT_TEMPLATES, buildProjectInput, templateOf, type TemplateKey } from '../projects/projectTemplates'
 import { Alert, Button, Grid, LinkButton, Page, RadioGroup, SelectField, Stack, Text, TextField, TextLink, useToast } from '@/ui'
 import { Step } from '../ui/Step'
+import { AccentSwatch } from '../ui/AccentSwatch'
 
 type Location = 'single' | 'child' | 'group'
 
@@ -282,13 +283,7 @@ export function ProjectWizardPage() {
                 onChange={setAccent}
                 options={(Object.keys(ACCENTS) as (keyof typeof ACCENTS)[]).map((k) => ({
                   value: k,
-                  label: (
-                    <Stack direction="row" gap={1} align="center">
-                      {/* রঙের নমুনা: পাবলিক হোম-কার্ডের আসল গ্রেডিয়েন্ট (রেজিস্ট্রির Tailwind ক্লাস), তাই পাবলিক চেহারাতেই */}
-                      <span className={`h-7 w-7 rounded-md bg-gradient-to-br ${ACCENTS[k].gradient}`} aria-hidden="true" />
-                      {pick(ACCENTS[k].label_bn, ACCENTS[k].label_en)}
-                    </Stack>
-                  ),
+                  label: <AccentSwatch accent={k} />,
                 }))}
               />
             </Step>

@@ -1,4 +1,4 @@
-import { lt, pick, t } from '@/i18n'
+import { lt, t } from '@/i18n'
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { getHousingApi, getProjectsApi, HousingApiError, type Project, type ProjectPatch, type ProjectStats } from '@/backend'
@@ -16,6 +16,7 @@ import { StatsTab } from '../projects/tabs/StatsTab'
 import { AdminNotFound } from '../ui/AdminNotFound'
 import { Badge } from '../ui/Badge'
 import { Alert, Breadcrumbs, Button, Card, Checkbox, Grid, LinkButton, LoadingState, Page, RadioGroup, SelectField, Stack, Tabs, Text, TextField, useToast } from '@/ui'
+import { AccentSwatch } from '../ui/AccentSwatch'
 
 type Tab = 'general' | 'fields' | 'stats' | 'photos' | 'display'
 
@@ -352,13 +353,7 @@ export function ProjectSettingsPage() {
                     onChange={(k) => set('accent', k)}
                     options={(Object.keys(ACCENTS) as (keyof typeof ACCENTS)[]).map((k) => ({
                       value: k,
-                      label: (
-                        <Stack direction="row" gap={1} align="center">
-                          {/* রঙের নমুনা: পাবলিক হোম-কার্ডের আসল গ্রেডিয়েন্ট (রেজিস্ট্রির Tailwind ক্লাস), তাই পাবলিক চেহারাতেই */}
-                          <span className={`h-7 w-7 rounded-md bg-gradient-to-br ${ACCENTS[k].gradient}`} aria-hidden="true" />
-                          {pick(ACCENTS[k].label_bn, ACCENTS[k].label_en)}
-                        </Stack>
-                      ),
+                      label: <AccentSwatch accent={k} />,
                     }))}
                   />
                 </Card>
