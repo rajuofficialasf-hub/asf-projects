@@ -182,6 +182,9 @@ export type ButtonProps = ButtonLook & {
   disabled?: boolean;
   /** Shows progress and blocks clicks while an action runs (RE-FX-03). */
   loading?: boolean;
+  /** Takes focus when it appears, for example the safe choice in a confirm dialog. */
+  autoFocus?: boolean;
+  size?: "small" | "medium";
 };
 
 /** A link to a route inside the app, styled as a button. `to` is an app path such as "/". */
@@ -218,6 +221,10 @@ export type TextFieldProps = FieldBase & {
   hideLabel?: boolean;
   /** Text or an icon inside the field, before the value (for example "৳"). */
   prefix?: ReactNode;
+  /** Text inside the field after the value, announced politely when it changes (for example a live preview). */
+  suffix?: ReactNode;
+  /** Values offered while typing (a datalist); any other text is still allowed. */
+  suggestions?: readonly string[];
   size?: "small" | "medium";
 };
 
@@ -263,6 +270,12 @@ export type RadioGroupProps = {
   look?: "plain" | "cards";
 };
 
+/** A bordered group of related fields: a real fieldset named by its legend (role group). */
+export type FieldGroupProps = { legend: string; children: ReactNode; disabled?: boolean };
+
+/** Progress of a running task. `value` 0-100; leave it out while the amount is unknown. */
+export type ProgressBarProps = { value?: number; label?: string };
+
 /**
  * Picks files with a real, visually hidden <input type="file"> named by `label`, behind a button.
  * `onFiles` gets the chosen files; the input is cleared after each pick so the same file can be picked again.
@@ -275,7 +288,10 @@ export type FileInputProps = {
   multiple?: boolean;
   disabled?: boolean;
   hint?: ReactNode;
-  /** "button" is a plain button; "dropzone" is a large area that also takes dropped files. */
+  /**
+   * "button" is a plain button showing `buttonLabel`. "dropzone" is a large area that opens the picker
+   * when clicked and takes dropped files, with `buttonLabel` as its main line.
+   */
   look?: "button" | "dropzone";
 };
 
@@ -468,4 +484,6 @@ export type UiTemplate = {
   Breadcrumbs: ComponentType<BreadcrumbsProps>;
   IconButton: ComponentType<IconButtonProps>;
   ToggleGroup: ComponentType<ToggleGroupProps>;
+  FieldGroup: ComponentType<FieldGroupProps>;
+  ProgressBar: ComponentType<ProgressBarProps>;
 };

@@ -1,5 +1,7 @@
 import type { TextFieldProps, SelectFieldProps } from '@/ui/contract';
 
+import { useId } from 'react';
+
 import MuiTextField from '@mui/material/TextField';
 import InputAdornment from '@mui/material/InputAdornment';
 
@@ -28,9 +30,25 @@ export function TextField({
   autoFocus,
   hideLabel,
   prefix,
+  suffix,
+  suggestions,
   size = 'medium',
 }: TextFieldProps) {
-  return (
+  const listId = useId();
+  const hasList = !!suggestions?.length;
+  const adornments = {
+    ...(prefix !== undefined && { startAdornment: <InputAdornment position="start">{prefix}</InputAdornment> }),
+    ...(suffix !== undefined &&
+      suffix !== null &&
+      suffix !== false && {
+        endAdornment: (
+          <InputAdornment position="end" aria-live="polite">
+            {suffix}
+          </InputAdornment>
+        ),
+      }),
+  };
+  const field = (
     <MuiTextField
       fullWidth
       // A hidden label moves to aria-label, so the outlined border keeps no gap for it.
@@ -51,14 +69,29 @@ export function TextField({
       onChange={(event) => onChange(event.target.value)}
       onBlur={onBlur}
       slotProps={{
-        htmlInput: { maxLength, inputMode, readOnly, ...(hideLabel && { 'aria-label': label }) },
+        htmlInput: {
+          maxLength,
+          inputMode,
+          readOnly,
+          ...(hasList && { list: listId }),
+          ...(hideLabel && { 'aria-label': label }),
+        },
         inputLabel: type === 'date' || placeholder || prefix !== undefined ? { shrink: true } : {},
         formHelperText: helperProps(error),
-        ...(prefix !== undefined && {
-          input: { startAdornment: <InputAdornment position="start">{prefix}</InputAdornment> },
-        }),
+        ...(Object.keys(adornments).length > 0 && { input: adornments }),
       }}
     />
+  );
+  if (!hasList) return field;
+  return (
+    <>
+      {field}
+      <datalist id={listId}>
+        {suggestions.map((value) => (
+          <option key={value} value={value} />
+        ))}
+      </datalist>
+    </>
   );
 }
 

@@ -30,13 +30,15 @@ function lookProps({ variant = 'primary', startIcon, fullWidth }: Look): MuiLook
   }
 }
 
-export function Button({ children, onClick, type = 'button', disabled, loading, ...look }: ButtonProps) {
+export function Button({ children, onClick, type = 'button', disabled, loading, autoFocus, size, ...look }: ButtonProps) {
   return (
     <MuiButton
       {...lookProps(look)}
       type={type}
       onClick={onClick}
       disabled={disabled}
+      autoFocus={autoFocus}
+      {...(size === 'small' && { size: 'small' as const, sx: { minHeight: 36 } })}
       loading={loading ?? null}
     >
       {children}

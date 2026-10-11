@@ -45,6 +45,8 @@ import {
   IconButton,
   Breadcrumbs,
   ToggleGroup,
+  FieldGroup,
+  ProgressBar,
 } from './index';
 import { pageItems } from './components/pagination';
 
@@ -478,10 +480,12 @@ describe('pieces the admin added to the set', () => {
   it('applies accept to dropped files too, as the picker does', async () => {
     const picked: string[][] = [];
     renderInApp(<FileInput look="dropzone" multiple label="Sheet" buttonLabel="Choose" accept=".csv,image/*" onFiles={(files) => picked.push(files.map((f) => f.name))} />);
-    const zone = (await screen.findByRole('button', { name: 'Choose' })).parentElement!;
+    const zone = (await screen.findByText('Choose')).closest('label')!;
     const files = [new File(['a'], 'list.CSV'), new File(['b'], 'notes.pdf', { type: 'application/pdf' }), new File(['c'], 'p.png', { type: 'image/png' })];
     fireEvent.drop(zone, { dataTransfer: { files } });
     expect(picked).toEqual([['list.CSV', 'p.png']]);
+    fireEvent.drop(zone, { dataTransfer: { files: [new File(['d'], 'unknown-type')] } });
+    expect(picked).toEqual([['list.CSV', 'p.png'], ['unknown-type']]);
   });
 
   it('opens a menu, runs an action, and closes on Esc with focus back on its button', async () => {
@@ -575,6 +579,30 @@ describe('living next to the public site', () => {
 });
 
 describe('details of the added pieces', () => {
+  it('groups fields under a legend, disables them together, and shows progress', async () => {
+    renderInApp(
+      <>
+        <FieldGroup legend="Before photo" disabled>
+          <TextField label="Caption" value="" onChange={() => {}} />
+        </FieldGroup>
+        <ProgressBar value={42} label="Uploading" />
+        <ProgressBar label="Processing" />
+      </>
+    );
+    const group = await screen.findByRole('group', { name: 'Before photo' });
+    expect(within(group).getByRole('textbox', { name: 'Caption' })).toBeDisabled();
+    expect(screen.getByRole('progressbar', { name: 'Uploading' })).toHaveAttribute('aria-valuenow', '42');
+    expect(screen.getByRole('progressbar', { name: 'Processing' })).not.toHaveAttribute('aria-valuenow');
+  });
+
+  it('offers suggestions through a datalist and shows a live suffix', async () => {
+    renderInApp(<TextField label="Category" value="" onChange={() => {}} suggestions={['Tin', 'Brick']} suffix="৳ ১,০০০" />);
+    const input = await screen.findByRole('combobox', { name: 'Category' });
+    const list = document.getElementById(input.getAttribute('list') ?? '');
+    expect([...(list?.querySelectorAll('option') ?? [])].map((o) => o.getAttribute('value'))).toEqual(['Tin', 'Brick']);
+    expect(screen.getByText('৳ ১,০০০').closest('[aria-live="polite"]')).not.toBeNull();
+  });
+
   it('marks the pressed toggle and reports a new choice, ignoring a click on the pressed one', async () => {
     const user = userEvent.setup();
     const picks: string[] = [];
@@ -645,7 +673,7 @@ describe('details of the added pieces', () => {
         <FileInput look="dropzone" label="Photo" buttonLabel="Choose" onFiles={(f) => picked.push(f.map((x) => x.name))} />
       </UiProvider>
     );
-    const zone = screen.getByRole('button', { name: 'Choose' }).parentElement!;
+    const zone = screen.getByText('Choose').closest('label')!;
     fireEvent.drop(zone, { dataTransfer: { files: [new File(['a'], 'a.jpg'), new File(['b'], 'b.jpg')] } });
     expect(picked).toEqual([['a.jpg']]);
     rerender(
@@ -653,7 +681,7 @@ describe('details of the added pieces', () => {
         <FileInput look="dropzone" disabled label="Photo" buttonLabel="Choose" onFiles={(f) => picked.push(f.map((x) => x.name))} />
       </UiProvider>
     );
-    fireEvent.drop(screen.getByRole('button', { name: 'Choose' }).parentElement!, { dataTransfer: { files: [new File(['c'], 'c.jpg')] } });
+    fireEvent.drop(screen.getByText('Choose').closest('label')!, { dataTransfer: { files: [new File(['c'], 'c.jpg')] } });
     expect(picked).toEqual([['a.jpg']]);
   });
 

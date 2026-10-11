@@ -1,0 +1,90 @@
+import { t } from '@/i18n'
+import { useEffect, useRef, useState } from 'react'
+import type { HousingRecord, PhotoKind } from '@/backend'
+import { SafeImage } from '@/features/housing/components/SafeImage'
+import { photoSrc } from '@/features/housing/utils/imagePath'
+import { createUploadItems, revokeUploadItems, type UploadItem } from '@/features/housing/utils/uploadItems'
+import { Button, FieldGroup, Stack, Text } from '@/ui'
+import { ImageUploader } from './ImageUploader'
+
+const KIND_LABEL: Record<PhotoKind, string> = { prev: 'পূর্বের ঘরের ছবি', current: 'বর্তমান ঘরের ছবি' }
+
+interface Props {
+  kind: PhotoKind
+  /** ঘরের নাম (প্রকল্পের ছবির লেবেল); না দিলে আগের নাম */
+  label?: string
+  /** এডিট মোডে বিদ্যমান রেকর্ড (থাকা ছবি দেখাতে) */
+  record?: HousingRecord | null
+  /** নির্বাচিত নতুন ফাইল (একটি) — parent এ রাখা হয়, সেভের সময় আপলোড */
+  item: UploadItem | null
+  onChange: (item: UploadItem | null) => void
+  /** বিদ্যমান ছবি মোছার অনুরোধ (parent নিশ্চিতকরণ + API করে) */
+  onDeleteExisting?: () => void
+  disabled?: boolean
+  /** true = থাকা ছবি বদলানো যায় না (প্রকল্পের ইউজার); ছবি না থাকলে নতুন দেওয়া যায় */
+  locked?: boolean
+}
+
+/**
+ * ফর্মের একক ছবি ফিল্ড (পাবলিক PhotoField-এর একই props ও আচরণ): বিদ্যমান ছবি (থাকলে) + ImageUploader (একটি ফাইল)
+ * + নতুন ফাইলের প্রিভিউ। নতুন ফাইল দিলে সেভের সময় সিরিয়াল-ভিত্তিক পাথে ওভাররাইট হয়।
+ */
+export function PhotoField({ kind, label, record, item, onChange, onDeleteExisting, disabled = false, locked = false }: Props) {
+  const title = label || t(KIND_LABEL[kind])
+  const existing = record ? photoSrc(record[`${kind}_thumb_url`], record.photo_updated_at) : null
+  const existingFull = record ? record[`${kind}_photo_url`] : null
+  const [items, setItems] = useState<UploadItem[]>(item ? [item] : [])
+
+  // parent item বদলালে (যেমন সেভের পর null) সিঙ্ক
+  const lastItem = useRef(item)
+  useEffect(() => {
+    if (lastItem.current !== item) {
+      lastItem.current = item
+      setItems(item ? [item] : [])
+    }
+  }, [item])
+
+  const add = (files: File[]) => {
+    const [first] = createUploadItems(files.slice(0, 1))
+    if (!first) return
+    setItems((prev) => {
+      revokeUploadItems(prev)
+      return [first]
+    })
+    onChange(first)
+  }
+  const remove = () => {
+    setItems((prev) => {
+      revokeUploadItems(prev)
+      return []
+    })
+    onChange(null)
+  }
+
+  return (
+    <FieldGroup legend={title} disabled={disabled}>
+      <Stack gap={2}>
+        {existingFull && (
+          <Stack direction="row" gap={1.5} align="center">
+            <SafeImage src={existing} alt={`${title} (${t('বর্তমানে সংরক্ষিত')})`} className="h-20 w-20 rounded-md object-cover" placeholderClassName="h-20 w-20 rounded-md" />
+            <Stack gap={0.5}>
+              <Text size="small">{t('বর্তমানে সংরক্ষিত ছবি')}</Text>
+              <Text size="small" tone="muted">
+                {locked ? t('ছবি আগে থেকেই আছে — বদলাতে বা মুছতে পারেন শুধু মূল এডমিন।') : t('নতুন ছবি দিলে এটি প্রতিস্থাপিত হবে (একই সিরিয়াল পাথে)।')}
+              </Text>
+              {onDeleteExisting && (
+                <div>
+                  <Button variant="text" size="small" onClick={onDeleteExisting}>
+                    {t('এই ছবি মুছুন')}
+                  </Button>
+                </div>
+              )}
+            </Stack>
+          </Stack>
+        )}
+
+        {!(locked && existingFull) && <ImageUploader items={items} onAdd={add} onRemove={remove} multiple={false} disabled={disabled} showList />}
+      </Stack>
+    </FieldGroup>
+  )
+}

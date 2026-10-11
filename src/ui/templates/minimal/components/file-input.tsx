@@ -10,7 +10,10 @@ import { Icon } from './icon';
 
 // ----------------------------------------------------------------------
 
-/** Whether a file fits an `accept` list (".csv", "image/*", "text/csv"), as the file picker filters. */
+/**
+ * Whether a file fits an `accept` list (".csv", "image/*", "text/csv"), as the file picker filters. A file
+ * whose type the browser cannot tell passes the type rules, as it does in the picker.
+ */
 export function matchesAccept(file: File, accept?: string): boolean {
   if (!accept) return true;
   const name = file.name.toLowerCase();
@@ -22,9 +25,8 @@ export function matchesAccept(file: File, accept?: string): boolean {
     .some((rule) =>
       rule.startsWith('.')
         ? name.endsWith(rule)
-        : rule.endsWith('/*')
-          ? type.startsWith(rule.slice(0, -1))
-          : type === rule
+        : !type ||
+          (rule.endsWith('/*') ? type.startsWith(rule.slice(0, -1)) : type === rule)
     );
 }
 
@@ -91,42 +93,48 @@ export function FileInput({
     return (
       <Box>
         <Box
-          onDragOver={(event) => {
+          component="label"
+          htmlFor={inputId}
+          onDragOver={(event: React.DragEvent) => {
             event.preventDefault();
             if (!disabled) setDragging(true);
           }}
           onDragLeave={() => setDragging(false)}
-          onDrop={(event) => {
+          onDrop={(event: React.DragEvent) => {
             event.preventDefault();
             setDragging(false);
             if (!disabled) take(event.dataTransfer.files);
           }}
           sx={{
             p: 4,
-            gap: 1.5,
+            gap: 1,
             display: 'flex',
             borderRadius: 1.5,
             alignItems: 'center',
             flexDirection: 'column',
             textAlign: 'center',
             border: '1px dashed',
+            cursor: disabled ? 'not-allowed' : 'pointer',
             borderColor: dragging ? 'primary.main' : 'divider',
             bgcolor: dragging ? 'primary.lighter' : 'background.neutral',
             opacity: disabled ? 0.5 : 1,
+            '&:hover': disabled ? undefined : { borderColor: 'primary.main' },
+            '&:focus-within': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 },
           }}
         >
-          <Icon name="upload" size={40} />
+          <Box sx={{ color: 'primary.main' }}>
+            <Icon name="upload" size={40} />
+          </Box>
           {input}
-          <Button
-            variant="contained"
-            color="inherit"
-            disabled={disabled}
-            onClick={() => inputRef.current?.click()}
-          >
+          <Typography variant="subtitle2" component="span">
             {buttonLabel}
-          </Button>
+          </Typography>
+          {hint && (
+            <Typography id={hintId} variant="caption" component="span" sx={{ color: 'text.secondary' }}>
+              {hint}
+            </Typography>
+          )}
         </Box>
-        {hintText}
       </Box>
     );
   }

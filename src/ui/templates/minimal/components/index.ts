@@ -25,3 +25,4 @@ export { IconButton } from './icon-button';
 export { Breadcrumbs } from './breadcrumbs';
 export { Checkbox, RadioGroup } from './choice';
 export { ToggleGroup } from './toggle-group';
+export { FieldGroup, ProgressBar } from './field-group';
