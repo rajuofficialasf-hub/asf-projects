@@ -7,10 +7,10 @@ import { DEFAULT_PAGE_SIZE, getHousingApi, HousingApiError, type ActivityEntry, 
 import { FIELD_VALUE_SPECS, formatField, resolveFields, type FieldDef } from '@/features/projects/fields'
 import { useProject, useProjects } from '@/features/projects/registry'
 import { canEditProject, useAdminUser } from '../adminUser'
-import { Badge } from '../ui/Badge'
 import { ErrorNotice } from '../ui/ErrorNotice'
 import { Pagination } from '../ui/Pagination'
-import { ACTION_CLASS, ACTION_LABEL, formatDateTime } from '@/features/housing/utils/activityLabels'
+import { ACTION_LABEL, formatDateTime } from '@/features/housing/utils/activityLabels'
+import { ActionBadge } from '../ui/ActionBadge'
 import { adminPath } from '@/features/housing/utils/housingProjects'
 import { photoSlotLabel } from '../records/recordColumns'
 import { Button, Card, EmptyState, LoadingState, Page as UiPage, SelectField, Stack, Text, TextField, TextLink } from '@/ui'
@@ -167,7 +167,7 @@ export function ActivityPage() {
   }, [projects])
 
 
-  // ইমেইল-ঘর আগের মতোই: লেখা থাকে নিজের কাছে, URL এ যায় ঘর ছাড়লে বা Enter চাপলে
+  // ইমেইল-ঘরের লেখা নিজের state-এ থাকে; URL শুধু ঘর ছাড়লে বা Enter চাপলে বদলায়
   const [actor, setActor] = useState(sp.get('actor') ?? '')
   const data = state.status === 'error' ? null : state.data
 
@@ -247,21 +247,6 @@ export function ActivityPage() {
 
 const isConfig = (a: string) => a.startsWith('project_') || a.startsWith('field_')
 
-/** ACTION_CLASS-এর রং → এডমিন Badge-এর রং */
-const CLASS_TONE: Record<string, 'green' | 'amber' | 'slate' | 'red' | 'blue'> = {
-  green: 'green',
-  emerald: 'green',
-  teal: 'green',
-  blue: 'blue',
-  sky: 'blue',
-  indigo: 'blue',
-  purple: 'blue',
-  red: 'red',
-  amber: 'amber',
-  slate: 'slate',
-}
-const actionTone = (action: string) => CLASS_TONE[/bg-(\w+)-/.exec(ACTION_CLASS[action] ?? '')?.[1] ?? 'slate'] ?? 'slate'
-
 function Entry({ e }: { e: ActivityEntry }) {
   const project = useProject(e.project_type)
   const defs = useMemo(() => (project ? resolveFields(project, { includePrivate: true, includeArchived: true }) : []), [project])
@@ -274,7 +259,7 @@ function Entry({ e }: { e: ActivityEntry }) {
             <Text size="caption" tone="muted" tabular inline>
               <time dateTime={e.at}>{formatDateTime(e.at)}</time>
             </Text>
-            <Badge tone={actionTone(e.action)}>{ACTION_LABEL[e.action] ? t(ACTION_LABEL[e.action]) : e.action}</Badge>
+            <ActionBadge action={e.action} />
             <Text size="small" weight="medium" inline>
               {e.actor_email ?? t('অজানা')}
             </Text>

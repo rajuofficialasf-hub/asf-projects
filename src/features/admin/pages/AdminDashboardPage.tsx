@@ -9,13 +9,14 @@ import {
   type ProjectOverviewItem,
 } from '@/backend'
 import { projectPath, useProjects } from '@/features/projects/registry'
-import { ACTION_CLASS, ACTION_LABEL, formatDateTime } from '@/features/housing/utils/activityLabels'
+import { formatDateTime } from '@/features/housing/utils/activityLabels'
+import { ActionBadge } from '../ui/ActionBadge'
 import { adminPath, useRecordProjects } from '@/features/housing/utils/housingProjects'
 import { canEditProject, useAdminUser } from '../adminUser'
 import { formatBanglaNumber, toBanglaNumber } from '@/lib/banglaNumber'
 import { formatTaka } from '@/lib/money'
 import { useDocumentTitle } from '@/lib/useDocumentTitle'
-import { Badge as UiBadge, Button, Card, Grid, LinkButton, LoadingState, Page, Stack, StatList, Text, TextLink, type BadgeProps } from '@/ui'
+import { Button, Card, Grid, LinkButton, LoadingState, Page, Stack, StatList, Text, TextLink } from '@/ui'
 import { Badge } from '../ui/Badge'
 import { ErrorNotice } from '../ui/ErrorNotice'
 
@@ -28,16 +29,6 @@ type State =
 function moneyTotal(item: ProjectOverviewItem): number | null {
   const sums = Object.values(item.stats.fields ?? {}).filter((f) => f.type === 'money')
   return sums.length ? sums.reduce((s, f) => s + (f.type === 'money' ? f.sum : 0), 0) : null
-}
-
-/** লগের কাজের রং (ACTION_CLASS-এর Tailwind রং থেকে) → ব্যাজের সুর */
-function actionTone(action: string): NonNullable<BadgeProps['tone']> {
-  const c = ACTION_CLASS[action] ?? ''
-  if (/green|emerald/.test(c)) return 'success'
-  if (/red/.test(c)) return 'error'
-  if (/amber/.test(c)) return 'warning'
-  if (/blue|sky|teal|purple|indigo/.test(c)) return 'info'
-  return 'neutral'
 }
 
 /**
@@ -183,7 +174,7 @@ export function AdminDashboardPage() {
                     <Text size="caption" tone="muted" tabular inline>
                       <time dateTime={e.at}>{formatDateTime(e.at)}</time>
                     </Text>
-                    <UiBadge tone={actionTone(e.action)}>{ACTION_LABEL[e.action] ? t(ACTION_LABEL[e.action]) : e.action}</UiBadge>
+                    <ActionBadge action={e.action} />
                     <Text size="small" inline truncate>
                       {e.actor_email ?? t('অজানা')}
                     </Text>

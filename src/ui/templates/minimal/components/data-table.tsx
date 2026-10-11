@@ -7,6 +7,7 @@ import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
+import TableFooter from '@mui/material/TableFooter';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import TableContainer from '@mui/material/TableContainer';
@@ -26,6 +27,8 @@ export function DataTable<Row>({
   emptyDescription,
   loadingLabel,
   cardsOnPhones,
+  phoneColumns = columns,
+  phoneFooter,
   dense,
 }: DataTableProps<Row>) {
   const theme = useTheme();
@@ -45,7 +48,7 @@ export function DataTable<Row>({
             {rows.map((row) => (
               <Card component="li" key={getRowId(row)} sx={{ p: 2 }}>
                 <Box component="dl" sx={{ m: 0, gap: 1, display: 'grid', gridTemplateColumns: 'minmax(96px, auto) 1fr' }}>
-                  {columns.map((column) => (
+                  {phoneColumns.map((column) => (
                     <Box key={column.id} sx={{ display: 'contents' }}>
                       <Typography component="dt" variant="caption" sx={{ color: 'text.secondary', pt: 0.25 }}>
                         {column.headerText ?? column.header}
@@ -60,9 +63,12 @@ export function DataTable<Row>({
             ))}
           </Box>
         )}
+        {phoneFooter !== undefined && rows.length > 0 && <Box sx={{ mt: 1.5 }}>{phoneFooter}</Box>}
       </Box>
     );
   }
+
+  const hasFooter = columns.some((column) => column.footer !== undefined);
 
   const renderBody = () => {
     if (loading) {
@@ -108,6 +114,17 @@ export function DataTable<Row>({
             </TableRow>
           </TableHead>
           <TableBody>{renderBody()}</TableBody>
+          {hasFooter && rows.length > 0 && (
+            <TableFooter>
+              <TableRow>
+                {columns.map((column) => (
+                  <TableCell key={column.id} align={column.align} sx={{ fontWeight: 700, color: 'text.primary', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                    {column.footer}
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableFooter>
+          )}
         </Table>
       </TableContainer>
     </Card>

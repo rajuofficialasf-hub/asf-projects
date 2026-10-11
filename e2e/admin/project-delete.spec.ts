@@ -42,7 +42,7 @@ test('the main admin deletes an empty draft after typing its exact name; the pro
   await expect(page).toHaveURL(/\/admin\/projects$/)
   await expect(toast(page, '«দর্জি অনুদান» মুছে ফেলা হয়েছে')).toBeVisible()
   // The list has rendered once another project's link is there; only then does "no link" mean anything.
-  await expect(page.getByRole('link', { name: DEMO.name })).toBeVisible()
+  await expect(page.getByRole('link', { name: DEMO.name, exact: true })).toBeVisible()
   await expect(page.getByRole('link', { name: 'দর্জি অনুদান' })).toHaveCount(0)
   expect((await api(page, `/projects/${key}`)).status).toBe(404)
 })

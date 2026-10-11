@@ -73,6 +73,7 @@ export function AdminRecordsTable({ project, layout, records, page, pageSize, bu
     {
       id: 'ordinal',
       header: t('ক্রম'),
+      footer: layout.moneyFields.length > 0 ? t('এই পাতার মোট') : undefined,
       cell: (r) => (
         <Text inline size="small" tone="muted" tabular>
           {ordinal(index.get(r.id) ?? 0)}
@@ -113,6 +114,7 @@ export function AdminRecordsTable({ project, layout, records, page, pageSize, bu
         id: d.key,
         header: lt(d, 'label'),
         align,
+        footer: layout.moneyFields.includes(d) ? formatTaka(pageSum(d)) : undefined,
         cell: (r) => {
           if (d.key === 'year') return toBanglaNumber(r.year)
           if (d.key === 'name') return r.name
@@ -124,16 +126,39 @@ export function AdminRecordsTable({ project, layout, records, page, pageSize, bu
     { id: 'actions', header: t('কাজ'), cell: (r) => <Actions record={r} onDelete={onDelete} /> },
   ]
 
+  // ফোনের কার্ডে আগের মতো শুধু পরিচয়, ঠিকানা (বিভাগ ছাড়া), "মোবাইল কার্ডে" চালু ফিল্ড, ছবি ও কাজ — টেবিলের সব কলাম নয়
+  const byId = new Map(columns.map((c) => [c.id, c]))
+  const pick = (id: string) => byId.get(id)
+  const phoneColumns: DataTableColumn<HousingRecord>[] = [
+    pick('select'),
+    pick('ordinal'),
+    pick('serial'),
+    pick('year'),
+    pick('name'),
+    { id: 'place', header: t('ঠিকানা'), cell: (r: HousingRecord) => place(r, false) },
+    ...layout.cardFields.map((d): DataTableColumn<HousingRecord> => ({ id: `card-${d.key}`, header: lt(d, 'label'), cell: (r) => <Value def={d} r={r} /> })),
+    ...(kinds.length ? [{ id: 'photos', header: t('ছবি'), cell: (r: HousingRecord) => thumbs(r) }] : []),
+    pick('actions'),
+  ].filter((c): c is DataTableColumn<HousingRecord> => !!c)
+
   return (
     <div aria-busy={busy}>
-      <Stack gap={1.5}>
-        <DataTable label={lt(project, 'name')} rows={records} columns={columns} getRowId={(r) => r.id} cardsOnPhones dense />
-        {layout.moneyFields.length > 0 && records.length > 0 && (
-          <Text size="small" weight="medium" tabular>
-            {t('এই পাতার মোট')}: {layout.moneyFields.map((d) => `${lt(d, 'label')} ${formatTaka(pageSum(d))}`).join(' · ')}
-          </Text>
-        )}
-      </Stack>
+      <DataTable
+        label={lt(project, 'name')}
+        rows={records}
+        columns={columns}
+        phoneColumns={phoneColumns}
+        phoneFooter={
+          layout.moneyFields.length > 0 ? (
+            <Text size="small" weight="medium" tabular>
+              {t('এই পাতার মোট')}: {layout.moneyFields.map((d) => `${lt(d, 'label')} ${formatTaka(pageSum(d))}`).join(' · ')}
+            </Text>
+          ) : undefined
+        }
+        getRowId={(r) => r.id}
+        cardsOnPhones
+        dense
+      />
     </div>
   )
 }

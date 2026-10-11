@@ -127,7 +127,7 @@ export function StatsTab({ project, stats, blocked, onChanged }: { project: Proj
                       </Stack>
                     </Stack>
                     <Grid columns={{ xs: 1, sm: 2 }} gap={1.5}>
-                      <TextField label={t('লেবেল (বাংলা)')} value={c.label_bn} onChange={(v) => update(i, { label_bn: v })} maxLength={60} />
+                      <TextField label={t('লেবেল (বাংলা)')} invalid={!c.label_bn.trim()} value={c.label_bn} onChange={(v) => update(i, { label_bn: v })} maxLength={60} />
                       <TextField label={t('লেবেল (ইংরেজি)')} value={c.label_en} onChange={(v) => update(i, { label_en: v })} maxLength={60} />
                     </Grid>
                     <Checkbox

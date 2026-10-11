@@ -673,8 +673,9 @@ describe('details of the added pieces', () => {
     const input = (await screen.findByLabelText('Sheet')) as HTMLInputElement;
     await userEvent.setup().upload(input, new File(['a'], 'a.csv'));
     expect(input.files?.[0]?.name).toBe('a.csv');
+    fireEvent.change(input, { target: { files: [new File(['b'], 'b.tsv')] } });
     fireEvent.change(input, { target: { files: [] } });
-    expect(picks).toEqual([['a.csv'], []]);
+    expect(picks).toEqual([['a.csv'], ['b.tsv'], []]);
   });
 
   it('lays out a grid, labelled figures, a text link and a disclosure', async () => {
@@ -862,6 +863,27 @@ describe('details of the added pieces', () => {
       expect(within(card).getByText('Select')).toBeInTheDocument();
     });
 
+    it('shows only the phone columns on a card, and the phone footer under the cards', async () => {
+      phoneWidth();
+      renderInApp(
+        <DataTable
+          label="Members"
+          cardsOnPhones
+          rows={[{ id: 'm1', name: 'Amina' }]}
+          columns={[
+            { id: 'name', header: 'Name', cell: (row: Member) => row.name },
+            { id: 'wide', header: 'Table only', cell: () => 'x' },
+          ]}
+          phoneColumns={[{ id: 'name', header: 'Name', cell: (row: Member) => row.name }]}
+          phoneFooter={<Text>Page total 5</Text>}
+          getRowId={(row) => row.id}
+        />
+      );
+      expect(await screen.findByText('Amina')).toBeInTheDocument();
+      expect(screen.queryByText('Table only')).not.toBeInTheDocument();
+      expect(screen.getByText('Page total 5')).toBeInTheDocument();
+    });
+
     it('shows the loading label and the empty card on a phone', async () => {
       phoneWidth();
       const { rerender } = renderInApp(
@@ -875,6 +897,24 @@ describe('details of the added pieces', () => {
       );
       expect(await screen.findByText('No members yet')).toBeInTheDocument();
     });
+  });
+
+  it('adds a footer row from column footers, and marks a field invalid without a message', async () => {
+    renderInApp(
+      <>
+        <DataTable
+          label="Totals"
+          rows={[{ id: 'm1', name: 'Amina' }]}
+          columns={[{ id: 'name', header: 'Name', cell: (row: Member) => row.name, footer: 'Page total' }]}
+          getRowId={(row) => row.id}
+        />
+        <TextField label="Label" value="" onChange={() => {}} invalid />
+      </>
+    );
+    const table = await screen.findByRole('table', { name: 'Totals' });
+    expect(within(table).getAllByRole('rowgroup')).toHaveLength(3);
+    expect(within(table).getByText('Page total')).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Label' })).toBeInvalid();
   });
 
   it('uses small rows when dense, and the loading label in the table', async () => {

@@ -85,7 +85,8 @@ export function FileInput({
           take(event.target.files);
           event.target.value = '';
         } else {
-          const files = Array.from(event.target.files ?? []).filter((file) => matchesAccept(file, accept));
+          // A plain file input: whatever was picked (even through the picker's "all files") goes to the caller.
+          const files = Array.from(event.target.files ?? []);
           onFiles(multiple ? files : files.slice(0, 1));
         }
       }}

@@ -251,6 +251,8 @@ export type TextFieldProps = FieldBase & {
   suggestions?: readonly string[];
   /** Fixed-width letters, for keys and codes. */
   mono?: boolean;
+  /** Marks the field invalid when its message is shown elsewhere (no `error` text under it). */
+  invalid?: boolean;
   size?: "small" | "medium";
 };
 
@@ -319,8 +321,8 @@ export type FileInputProps = {
   hint?: ReactNode;
   /**
    * true (default): the input is cleared after each pick, so picking the same file again works, and an
-   * empty pick is ignored. false: the choice stays, and an empty pick (the picker cancelled) calls
-   * onFiles([]), as a plain file input does.
+   * empty pick is ignored. false: it behaves as a plain file input: the choice stays, every picked file
+   * is passed on (accept only filters the picker), and an empty pick (picker cancelled) calls onFiles([]).
    */
   clearAfterPick?: boolean;
   /**
@@ -400,6 +402,8 @@ export type DataTableColumn<Row> = {
   headerText?: string;
   cell: (row: Row) => ReactNode;
   align?: "left" | "center" | "right";
+  /** A cell in the table's footer row under this column, for example a page total. */
+  footer?: ReactNode;
 };
 
 export type DataTableProps<Row> = {
@@ -416,6 +420,10 @@ export type DataTableProps<Row> = {
   loadingLabel?: string;
   /** Below 600px wide, draw each row as a card of "header: value" lines instead of a table. */
   cardsOnPhones?: boolean;
+  /** The columns a phone card shows, when they differ from the table's (defaults to `columns`). */
+  phoneColumns?: readonly DataTableColumn<Row>[];
+  /** Shown under the cards on a phone, in place of the table's footer row. */
+  phoneFooter?: ReactNode;
   /** Smaller rows. */
   dense?: boolean;
 };

@@ -539,7 +539,7 @@ function Importer({ project, projects, onProject }: { project: Project; projects
               />
             )}
 
-            {previewRows.length > 0 && <DataTable label={t('প্রিভিউ ও যাচাই')} rows={previewRows} columns={previewColumns} getRowId={(r) => String(r.rowNo)} dense />}
+            <DataTable label={t('প্রিভিউ ও যাচাই')} rows={previewRows} columns={previewColumns} getRowId={(r) => String(r.rowNo)} dense emptyTitle="—" />
             {previewRows.length >= PREVIEW_LIMIT && (
               <Text size="caption" tone="muted">
                 {t('প্রথম {n} টি সারি দেখানো হচ্ছে।', { n: formatBanglaNumber(PREVIEW_LIMIT) })}

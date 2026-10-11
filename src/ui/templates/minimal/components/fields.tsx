@@ -44,6 +44,7 @@ export function TextField({
   suffix,
   suggestions,
   mono,
+  invalid,
   size = 'medium',
 }: TextFieldProps) {
   const listId = useId();
@@ -75,7 +76,7 @@ export function TextField({
       autoFocus={autoFocus}
       multiline={rows !== undefined}
       rows={rows}
-      error={!!error}
+      error={!!error || !!invalid}
       helperText={helperText(error, hint)}
       onChange={(event) => onChange(event.target.value)}
       onBlur={onBlur}
