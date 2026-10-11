@@ -312,6 +312,27 @@ describe('feedback', () => {
     expect(closed).toBe(1);
   });
 
+  it('stacks two toasts from one action, the error announced and the success polite', async () => {
+    const user = userEvent.setup();
+    function ImportButton() {
+      const toast = useToast();
+      return (
+        <Button
+          onClick={() => {
+            toast.success('1 row added');
+            toast.error('1 row failed');
+          }}
+        >
+          Import
+        </Button>
+      );
+    }
+    renderInApp(<ImportButton />);
+    await user.click(await screen.findByRole('button', { name: 'Import' }));
+    expect(await screen.findByRole('status')).toHaveTextContent('1 row added');
+    expect(screen.getByRole('alert')).toHaveTextContent('1 row failed');
+  });
+
   it('shows a toast when a save fails', async () => {
     const user = userEvent.setup();
 
@@ -585,6 +606,77 @@ describe('living next to the public site', () => {
 });
 
 describe('details of the added pieces', () => {
+  it('hides a checkbox label but keeps it as the name, and marks the current link button', async () => {
+    const changes: boolean[] = [];
+    renderInApp(
+      <>
+        <Checkbox hideLabel label="Amina select" checked={false} indeterminate onChange={(v) => changes.push(v)} />
+        <LinkButton to="/admin/records/tin" current>
+          Tin
+        </LinkButton>
+      </>
+    );
+    await userEvent.setup().click(await screen.findByRole('checkbox', { name: 'Amina select' }));
+    expect(changes).toEqual([true]);
+    expect(screen.queryByText('Amina select')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Tin' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('shows an error and its hint together, groups select options, and titles a disabled button', async () => {
+    renderInApp(
+      <>
+        <TextField label="Slug" value="x" onChange={() => {}} error="Taken" hint="Used in the URL" mono />
+        <SelectField
+          label="Place"
+          value=""
+          onChange={() => {}}
+          options={[
+            { value: '', label: 'Pick' },
+            { value: 'a', label: 'A', group: 'Suggested' },
+            { value: 'b', label: 'B', group: 'All' },
+            { value: 'c', label: 'C', group: 'All' },
+          ]}
+        />
+        <Button disabled title="Fill in the name first">
+          Publish
+        </Button>
+      </>
+    );
+    expect(await screen.findByRole('alert')).toHaveTextContent('Taken');
+    expect(screen.getByText('Used in the URL')).toBeInTheDocument();
+    const select = screen.getByRole('combobox', { name: 'Place' });
+    expect([...select.querySelectorAll('optgroup')].map((g) => [g.label, g.querySelectorAll('option').length])).toEqual([
+      ['Suggested', 1],
+      ['All', 2],
+    ]);
+    expect(screen.getByRole('button', { name: 'Publish' }).parentElement).toHaveAttribute('title', 'Fill in the name first');
+  });
+
+  it('announces a step number in the heading only when asked', async () => {
+    renderInApp(
+      <>
+        <Card step="২" stepAnnounced title="Columns">
+          <Text>x</Text>
+        </Card>
+        <Card step="৩" title="Name">
+          <Text>y</Text>
+        </Card>
+      </>
+    );
+    expect(await screen.findByRole('heading', { name: '২ Columns' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Name' })).toBeInTheDocument();
+  });
+
+  it('keeps the choice and reports a cancelled pick when clearAfterPick is off', async () => {
+    const picks: string[][] = [];
+    renderInApp(<FileInput label="Sheet" buttonLabel="Choose" clearAfterPick={false} onFiles={(f) => picks.push(f.map((x) => x.name))} />);
+    const input = (await screen.findByLabelText('Sheet')) as HTMLInputElement;
+    await userEvent.setup().upload(input, new File(['a'], 'a.csv'));
+    expect(input.files?.[0]?.name).toBe('a.csv');
+    fireEvent.change(input, { target: { files: [] } });
+    expect(picks).toEqual([['a.csv'], []]);
+  });
+
   it('lays out a grid, labelled figures, a text link and a disclosure', async () => {
     const user = userEvent.setup();
     renderInApp(

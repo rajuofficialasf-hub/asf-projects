@@ -30,7 +30,20 @@ function ChoiceLabel({ label, hint }: { label: React.ReactNode; hint?: React.Rea
   );
 }
 
-export function Checkbox({ label, checked, onChange, name, hint, disabled, indeterminate }: CheckboxProps) {
+export function Checkbox({ label, checked, onChange, name, hint, disabled, indeterminate, hideLabel }: CheckboxProps) {
+  if (hideLabel) {
+    return (
+      <MuiCheckbox
+        name={name}
+        checked={checked}
+        disabled={disabled}
+        indeterminate={indeterminate}
+        onChange={(event) => onChange(event.target.checked)}
+        slotProps={{ input: { 'aria-label': typeof label === 'string' ? label : undefined } }}
+        sx={{ width: 44, height: 44 }}
+      />
+    );
+  }
   return (
     <FormControlLabel
       disabled={disabled}

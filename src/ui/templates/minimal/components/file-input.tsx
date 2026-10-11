@@ -56,6 +56,7 @@ export function FileInput({
   disabled,
   hint,
   look = 'button',
+  clearAfterPick = true,
 }: FileInputProps) {
   const inputId = useId();
   const hintId = useId();
@@ -80,8 +81,13 @@ export function FileInput({
       disabled={disabled}
       style={hiddenInput}
       onChange={(event) => {
-        take(event.target.files);
-        event.target.value = '';
+        if (clearAfterPick) {
+          take(event.target.files);
+          event.target.value = '';
+        } else {
+          const files = Array.from(event.target.files ?? []).filter((file) => matchesAccept(file, accept));
+          onFiles(multiple ? files : files.slice(0, 1));
+        }
       }}
     />
   );

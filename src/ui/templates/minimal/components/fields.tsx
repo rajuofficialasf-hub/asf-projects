@@ -7,8 +7,18 @@ import InputAdornment from '@mui/material/InputAdornment';
 
 // ----------------------------------------------------------------------
 
-/** An error under a field is announced (role alert); a hint is plain text. */
-const helperProps = (error?: string) => (error ? { role: 'alert' } : {});
+/** The text under a field: the error (announced, role alert) and the hint, both when both are present. */
+function helperText(error?: string, hint?: string) {
+  if (!error) return hint;
+  return (
+    <>
+      <span role="alert" style={{ display: 'block' }}>
+        {error}
+      </span>
+      {hint && <span style={{ display: 'block', color: 'var(--mui-palette-text-secondary)' }}>{hint}</span>}
+    </>
+  );
+}
 
 export function TextField({
   label,
@@ -33,6 +43,7 @@ export function TextField({
   prefix,
   suffix,
   suggestions,
+  mono,
   size = 'medium',
 }: TextFieldProps) {
   const listId = useId();
@@ -65,7 +76,7 @@ export function TextField({
       multiline={rows !== undefined}
       rows={rows}
       error={!!error}
-      helperText={error ?? hint}
+      helperText={helperText(error, hint)}
       onChange={(event) => onChange(event.target.value)}
       onBlur={onBlur}
       slotProps={{
@@ -80,8 +91,10 @@ export function TextField({
           ...((type === 'date' || placeholder || prefix !== undefined) && { shrink: true }),
           ...(!requiredMark && { required: false }),
         },
-        formHelperText: helperProps(error),
-        input: adornments,
+        input: {
+          ...adornments,
+          ...(mono && { sx: { fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' } }),
+        },
       }}
     />
   );
@@ -96,6 +109,17 @@ export function TextField({
       </datalist>
     </>
   );
+}
+
+/** Options in runs by group, keeping their order; ungrouped options form runs with no heading. */
+function optionGroups(options: SelectFieldProps['options']) {
+  const runs: [string | undefined, SelectFieldProps['options'][number][]][] = [];
+  for (const option of options) {
+    const last = runs[runs.length - 1];
+    if (last && last[0] === option.group) last[1].push(option);
+    else runs.push([option.group, [option]]);
+  }
+  return runs;
 }
 
 /**
@@ -128,21 +152,29 @@ export function SelectField({
       required={required}
       disabled={disabled}
       error={!!error}
-      helperText={error ?? hint}
+      helperText={helperText(error, hint)}
       onChange={(event) => onChange(event.target.value)}
       onBlur={onBlur}
       slotProps={{
         select: { native: true },
         htmlInput: hideLabel ? { 'aria-label': label } : {},
         inputLabel: { shrink: true, ...(!requiredMark && { required: false }) },
-        formHelperText: helperProps(error),
       }}
     >
-      {options.map((option) => (
-        <option key={option.value} value={option.value} disabled={option.disabled}>
-          {option.label}
-        </option>
-      ))}
+      {optionGroups(options).map(([group, items]) => {
+        const rendered = items.map((option) => (
+          <option key={option.value} value={option.value} disabled={option.disabled}>
+            {option.label}
+          </option>
+        ));
+        return group ? (
+          <optgroup key={group} label={group}>
+            {rendered}
+          </optgroup>
+        ) : (
+          rendered
+        );
+      })}
     </MuiTextField>
   );
 }

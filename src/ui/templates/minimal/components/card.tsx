@@ -18,6 +18,7 @@ export function Card({
   level = 2,
   padding = 'normal',
   step,
+  stepAnnounced,
   eyebrow,
   accent,
   tone = 'default',
@@ -73,7 +74,14 @@ export function Card({
                 </Typography>
               )}
               {title && (
-                <Typography id={titleId} variant={level === 2 ? 'h6' : 'subtitle1'} component={`h${level}`} noWrap title={title}>
+                <Typography
+                  id={titleId}
+                  variant={level === 2 ? 'h6' : 'subtitle1'}
+                  component={`h${level}`}
+                  noWrap
+                  title={title}
+                  aria-label={step && stepAnnounced ? `${step} ${title}` : undefined}
+                >
                   {title}
                 </Typography>
               )}

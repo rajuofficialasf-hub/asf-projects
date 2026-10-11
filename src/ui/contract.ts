@@ -85,7 +85,9 @@ export type IconName =
   | "list"
   | "import"
   | "export"
-  | "history";
+  | "history"
+  | "up"
+  | "down";
 
 /** Status colours for alerts and toasts. */
 export type Tone = "info" | "success" | "warning" | "error";
@@ -201,11 +203,14 @@ export type ButtonProps = ButtonLook & {
   loading?: boolean;
   /** Takes focus when it appears, for example the safe choice in a confirm dialog. */
   autoFocus?: boolean;
+  /** Shown on hover, for example why a disabled button can't be used. */
+  title?: string;
   size?: "small" | "medium";
 };
 
 /** A link to a route inside the app, styled as a button. `to` is an app path such as "/". */
-export type LinkButtonProps = ButtonLook & { to: string; children: ReactNode };
+/** `current` marks the link to the page being shown (aria-current="page"), for example in a row of tabs. */
+export type LinkButtonProps = ButtonLook & { to: string; children: ReactNode; current?: boolean; size?: "small" | "medium" };
 
 // ---------------------------------------------------------------------------------------------
 // Fields and forms
@@ -215,7 +220,7 @@ type FieldBase = {
   name?: string;
   /** The error message under the field. Present means invalid. */
   error?: string;
-  /** Help text under the field when there is no error. */
+  /** Help text under the field, kept under the error when both are present. */
   hint?: string;
   required?: boolean;
   /** false: the label already shows its own mark ("Name *"), so no second star; the field is still announced as required. */
@@ -244,10 +249,13 @@ export type TextFieldProps = FieldBase & {
   suffix?: ReactNode;
   /** Values offered while typing (a datalist); any other text is still allowed. */
   suggestions?: readonly string[];
+  /** Fixed-width letters, for keys and codes. */
+  mono?: boolean;
   size?: "small" | "medium";
 };
 
-export type SelectOption = { value: string; label: string; disabled?: boolean };
+/** `group` puts the option under that heading (an optgroup); options of one group stay together, in order. */
+export type SelectOption = { value: string; label: string; disabled?: boolean; group?: string };
 
 export type SelectFieldProps = FieldBase & {
   value: string;
@@ -268,6 +276,8 @@ export type CheckboxProps = {
   disabled?: boolean;
   /** Some but not all of a group are checked. */
   indeterminate?: boolean;
+  /** Hides the label visually (a table's row checkbox); it stays the accessible name. */
+  hideLabel?: boolean;
 };
 
 export type RadioOption = { value: string; label: ReactNode; hint?: ReactNode; disabled?: boolean };
@@ -307,6 +317,12 @@ export type FileInputProps = {
   multiple?: boolean;
   disabled?: boolean;
   hint?: ReactNode;
+  /**
+   * true (default): the input is cleared after each pick, so picking the same file again works, and an
+   * empty pick is ignored. false: the choice stays, and an empty pick (the picker cancelled) calls
+   * onFiles([]), as a plain file input does.
+   */
+  clearAfterPick?: boolean;
   /**
    * "button" is a plain button showing `buttonLabel`. "dropzone" is a large area that opens the picker
    * when clicked and takes dropped files, with `buttonLabel` as its main line.
@@ -416,6 +432,8 @@ export type CardProps = {
   padding?: "normal" | "none";
   /** A number shown in a circle before the title, for numbered steps. */
   step?: string;
+  /** The step number is part of the heading's accessible name ("২ কলাম ম্যাপিং"); by default it is decorative. */
+  stepAnnounced?: boolean;
   /** A small line above the title, for example the kind of item. */
   eyebrow?: string;
   /** A coloured bar on the left, for example to mark a child item under its parent. */

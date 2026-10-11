@@ -32,8 +32,8 @@ function lookProps({ variant = 'primary', startIcon, fullWidth }: Look): MuiLook
   }
 }
 
-export function Button({ children, onClick, type = 'button', disabled, loading, autoFocus, size, ...look }: ButtonProps) {
-  return (
+export function Button({ children, onClick, type = 'button', disabled, loading, autoFocus, size, title, ...look }: ButtonProps) {
+  const button = (
     <MuiButton
       {...lookProps(look)}
       type={type}
@@ -46,11 +46,25 @@ export function Button({ children, onClick, type = 'button', disabled, loading, 
       {children}
     </MuiButton>
   );
+  // A disabled button gets no hover events, so the title sits on a wrapper.
+  return title ? (
+    <span title={title} style={{ display: 'inline-flex' }}>
+      {button}
+    </span>
+  ) : (
+    button
+  );
 }
 
-export function LinkButton({ to, children, ...look }: LinkButtonProps) {
+export function LinkButton({ to, children, current, size, ...look }: LinkButtonProps) {
   return (
-    <MuiButton {...lookProps(look)} component={RouterLink} href={to}>
+    <MuiButton
+      {...lookProps(look)}
+      {...(size === 'small' && { size: 'small' as const, sx: { minHeight: 44 } })}
+      component={RouterLink}
+      href={to}
+      aria-current={current ? 'page' : undefined}
+    >
       {children}
     </MuiButton>
   );

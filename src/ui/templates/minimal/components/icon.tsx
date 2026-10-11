@@ -41,6 +41,8 @@ const ICONS: Record<IconName, IconifyName> = {
   import: 'solar:import-bold',
   export: 'solar:export-bold',
   history: 'solar:clock-circle-bold',
+  up: 'eva:arrow-upward-fill',
+  down: 'eva:arrow-downward-fill',
 };
 
 export function Icon({ name, label, size = 20 }: IconProps) {
