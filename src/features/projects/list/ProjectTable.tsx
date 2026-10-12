@@ -181,6 +181,7 @@ export function ViewButton({ record: r, compact = false }: { record: HousingReco
   return (
     <Link
       to={viewPath(r, search)}
+      data-view-serial={r.serial_no}
       className={[
         'inline-flex shrink-0 items-center gap-1 rounded-md border border-brand-600 font-medium whitespace-nowrap text-brand-700 transition hover:bg-brand-600 hover:text-white',
         compact ? 'h-9 px-3 text-sm' : 'px-3 py-1.5 text-sm',

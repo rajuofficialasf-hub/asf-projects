@@ -15,7 +15,7 @@ import { SafeImage } from './SafeImage'
  * আগে-পরে ছবির তুলনা (Remini স্টাইল) — কোনো লাইব্রেরি ছাড়া, Pointer Events দিয়ে।
  * - স্লাইডার মোড: এক ফ্রেমে দুই ছবি; উল্লম্ব হ্যান্ডেল টানলে clip-path দিয়ে বাম/ডান ভাগ।
  * - পাশাপাশি মোড: দুই ফ্রেম, একই জুম/প্যান।
- * - জুম: মাউস হুইল, ডাবল-ক্লিক/ডাবল-ট্যাপ, পিঞ্চ; জুম অবস্থায় ড্র্যাগে প্যান। দুই ছবিতে সিঙ্ক (একই transform)।
+ * - জুম: Ctrl+হুইল (জুম অবস্থায় শুধু হুইল), ডাবল-ক্লিক/ডাবল-ট্যাপ, পিঞ্চ; জুম অবস্থায় ড্র্যাগে প্যান। দুই ছবিতে সিঙ্ক (একই transform)।
  * - বাটন: −, +, রিসেট, ফুলস্ক্রিন (Fullscreen API)। কীবোর্ড: হ্যান্ডেলে ← → (স্লাইডার), Home/End।
  * - ভিন্ন আকার/অনুপাতের ছবি একই 4:3 ফ্রেমে object-contain; একটি ছবি না থাকলে একক ভিউ + বার্তা।
  * - লেবেল (M-ধাপ ১৪): প্রকল্পের ছবির লেবেল props এ (যেমন "মেরামতের আগে"); না দিলে ঘর নির্মাণের আগের লেখা হুবহু।
@@ -74,7 +74,8 @@ export function PhotoCompare({ before, after, alt, className = '', frameClassNam
   // ব্যাজ ও alt এর লেখা: প্রকল্পের লেবেল, নইলে আগের হুবহু
   const badgeBefore = labels?.before ?? tr(BEFORE_LABEL)
   const badgeAfter = labels?.after ?? tr(AFTER_LABEL)
-  const altBefore = alt + ' — ' + (labels?.before ?? tr('পূর্বের ঘর'))
+  const beforeName = labels?.before ?? tr('পূর্বের ঘর')
+  const altBefore = alt + ' — ' + beforeName
   const altAfter = alt + ' — ' + (labels?.after ?? tr('বর্তমান ঘর'))
   const [mode, setMode] = useState<Mode>('slider')
   const [t, setT] = useState<Transform>(IDENTITY)
@@ -155,7 +156,7 @@ export function PhotoCompare({ before, after, alt, className = '', frameClassNam
 
       {/* ---------- ফ্রেম ---------- */}
       {!before && !after && (
-        <div className={`flex items-center justify-center text-sm text-slate-500 ${isFs ? 'flex-1' : frameClassName} bg-slate-100`}>
+        <div className={`flex items-center justify-center text-sm text-slate-600 ${isFs ? 'flex-1' : frameClassName} bg-slate-100`}>
           {tr('এই উপকারভোগীর কোনো ছবি নেই।')}
         </div>
       )}
@@ -166,7 +167,7 @@ export function PhotoCompare({ before, after, alt, className = '', frameClassNam
             <Layer src={(before ?? after)!} alt={before ? altBefore : altAfter} t={t} />
             <Badge side="left">{before ? badgeBefore : badgeAfter}</Badge>
           </ZoomFrame>
-          <p className={`px-3 py-2 text-xs ${isFs ? 'text-white/80' : 'text-slate-500'}`}>
+          <p className={`px-3 py-2 text-xs ${isFs ? 'text-white/80' : 'text-slate-600'}`}>
             {labels ? tr('«{label}» ছবি নেই', { label: before ? labels.after : labels.before }) : before ? tr('বর্তমান ঘরের ছবি নেই') : tr('পূর্বের ঘরের ছবি নেই')} — {tr('তুলনা সম্ভব নয়, একটি ছবিই দেখানো হচ্ছে।')}
           </p>
         </div>
@@ -180,7 +181,7 @@ export function PhotoCompare({ before, after, alt, className = '', frameClassNam
           </div>
           <Badge side="left">{badgeBefore}</Badge>
           <Badge side="right">{badgeAfter}</Badge>
-          <SliderHandle split={split} onChange={setSplit} />
+          <SliderHandle split={split} onChange={setSplit} beforeName={beforeName} />
         </ZoomFrame>
       )}
 
@@ -198,8 +199,8 @@ export function PhotoCompare({ before, after, alt, className = '', frameClassNam
       )}
 
       {(both || single) && !isFs && !compact && (
-        <p className="px-3 py-1.5 text-[11px] text-slate-400">
-          {tr('হুইল/পিঞ্চ: জুম · ডাবল-ক্লিক/ডাবল-ট্যাপ: জুম টগল · জুম অবস্থায় টেনে সরান')}
+        <p className="px-3 py-1.5 text-xs text-slate-600">
+          {tr('Ctrl+হুইল/পিঞ্চ: জুম · ডাবল-ক্লিক/ডাবল-ট্যাপ: জুম টগল · জুম অবস্থায় টেনে সরান')}
           {both && mode === 'slider' ? ' · ' + tr('হ্যান্ডেল টেনে তুলনা') : ''}
         </p>
       )}
@@ -326,6 +327,8 @@ export function ZoomFrame({ t, onChange, fill, frameClass, children }: FrameProp
     }
 
     const onWheel = (e: WheelEvent) => {
+      // সাধারণ হুইল মডাল স্ক্রল করে; জুম হয় Ctrl+হুইল/ট্র্যাকপ্যাড-পিঞ্চে (ctrlKey), অথবা ছবি আগে থেকেই জুম করা থাকলে
+      if (!e.ctrlKey && tRef.current.z <= 1) return
       e.preventDefault()
       const s = size()
       const factor = Math.exp(-e.deltaY * 0.0022)
@@ -356,7 +359,8 @@ export function ZoomFrame({ t, onChange, fill, frameClass, children }: FrameProp
         fill ? 'flex-1' : frameClass,
         t.z > 1 ? 'cursor-grab active:cursor-grabbing' : 'cursor-zoom-in',
       ].join(' ')}
-      style={{ touchAction: 'none' }}
+      // ১×-এ উল্লম্ব সোয়াইপ মডাল স্ক্রল করে (পিঞ্চ আমাদের হাতেই থাকে); জুম অবস্থায় সব টাচ প্যানের জন্য
+      style={{ touchAction: t.z > 1 ? 'none' : 'pan-y' }}
     >
       {children}
     </div>
@@ -393,7 +397,7 @@ export function Badge({ side, children }: { side: 'left' | 'right'; children: Re
 }
 
 /** স্লাইডার হ্যান্ডেল: টেনে বা ← → দিয়ে ভাগ বদল */
-function SliderHandle({ split, onChange }: { split: number; onChange: (v: number) => void }) {
+function SliderHandle({ split, onChange, beforeName }: { split: number; onChange: (v: number) => void; beforeName: string }) {
   const ref = useRef<HTMLDivElement>(null)
 
   const onPointerDown = useCallback(
@@ -440,7 +444,7 @@ function SliderHandle({ split, onChange }: { split: number; onChange: (v: number
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={Math.round(split)}
-      aria-valuetext={tr('{pct}% পর্যন্ত পূর্বের ঘর', { pct: toBanglaNumber(Math.round(split)) })}
+      aria-valuetext={tr('{pct}% পর্যন্ত {label}', { pct: toBanglaNumber(Math.round(split)), label: beforeName })}
       onPointerDown={onPointerDown}
       onKeyDown={onKeyDown}
       className="absolute top-0 bottom-0 z-10 w-10 -translate-x-1/2 cursor-ew-resize touch-none outline-none"
@@ -463,7 +467,7 @@ function ModeButton({ active, disabled, onClick, children }: { active: boolean; 
       onClick={onClick}
       disabled={disabled}
       aria-pressed={active}
-      className={`rounded px-2.5 py-1 transition disabled:opacity-40 ${active ? 'bg-brand-700 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
+      className={`min-h-10 rounded px-3 transition disabled:opacity-40 sm:min-h-8 sm:px-2.5 ${active ? 'bg-brand-700 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
     >
       {children}
     </button>
@@ -478,7 +482,7 @@ export function ToolButton({ label, onClick, disabled, children }: { label: stri
       disabled={disabled}
       aria-label={label}
       title={label}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-300 bg-white text-base font-semibold text-slate-700 transition hover:border-brand-400 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-40 sm:h-8 sm:w-8"
+      className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-slate-300 bg-white text-base font-semibold text-slate-700 transition hover:border-brand-400 hover:text-brand-700 focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 sm:h-8 sm:w-8"
     >
       {children}
     </button>

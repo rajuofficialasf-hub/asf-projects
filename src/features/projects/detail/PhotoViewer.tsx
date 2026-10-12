@@ -105,7 +105,7 @@ export function PhotoViewer({ src, alt, label, className = '', frameClassName = 
           <Layer src={src} alt={alt + ' — ' + label} t={t} />
         </ZoomFrame>
       ) : (
-        <div className={`flex items-center justify-center bg-slate-100 text-sm text-slate-500 ${isFs ? 'flex-1' : frameClassName}`}>{tr('এই উপকারভোগীর কোনো ছবি নেই।')}</div>
+        <div className={`flex items-center justify-center bg-slate-100 text-sm text-slate-600 ${isFs ? 'flex-1' : frameClassName}`}>{tr('এই উপকারভোগীর কোনো ছবি নেই।')}</div>
       )}
     </div>
   )

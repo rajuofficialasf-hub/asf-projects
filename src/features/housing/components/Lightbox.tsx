@@ -1,5 +1,6 @@
 import { t } from '@/i18n'
 import { useEffect, useRef, type TouchEvent } from 'react'
+import { useDialogFocus } from '@/lib/useDialogFocus'
 import { SafeImage } from './SafeImage'
 
 export interface LightboxImage {
@@ -15,11 +16,14 @@ interface Props {
 }
 
 /**
- * বড় ছবির মোডাল। Esc বা ব্যাকড্রপে ক্লিকে বন্ধ। খোলা থাকলে body স্ক্রল বন্ধ, ফোকাস ক্লোজ বাটনে।
+ * বড় ছবির মোডাল। Esc বা ব্যাকড্রপে ক্লিকে বন্ধ। খোলা থাকলে body স্ক্রল বন্ধ, ফোকাস ক্লোজ বাটনে ও মোডালের ভেতরে;
+ * বন্ধ হলে ফোকাস যে ছবির বাটন থেকে খোলা হয়েছিল সেখানে ফেরে।
  * বড় ছবি শুধু এখানে লোড হয় (টেবিলে নয়) — ব্যান্ডউইথ বাঁচাতে।
  */
 export function Lightbox({ image, onClose }: Props) {
+  const dialogRef = useRef<HTMLDivElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
+  useDialogFocus(dialogRef, { active: !!image, initial: closeRef })
 
   useEffect(() => {
     if (!image) return
@@ -29,7 +33,6 @@ export function Lightbox({ image, onClose }: Props) {
     document.addEventListener('keydown', onKey)
     const prevOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    closeRef.current?.focus()
     return () => {
       document.removeEventListener('keydown', onKey)
       document.body.style.overflow = prevOverflow
@@ -51,6 +54,7 @@ export function Lightbox({ image, onClose }: Props) {
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-label={image.alt}
@@ -80,7 +84,7 @@ export function Lightbox({ image, onClose }: Props) {
           placeholderClassName="h-64 w-64 rounded-lg"
         />
         {image.caption && (
-          <figcaption className="mt-3 max-w-full truncate rounded-full bg-white/10 px-4 py-1.5 text-center text-sm text-white">
+          <figcaption className="mt-3 max-w-full rounded-2xl bg-white/10 px-4 py-1.5 text-center break-words text-sm text-white">
             {image.caption}
           </figcaption>
         )}
