@@ -66,7 +66,12 @@ export function LayoutSection({
 
 // ----------------------------------------------------------------------
 
-const LayoutRoot = styled('div')``;
+// The kit's global.css grew this root to the window; that rule now lives here (see UPSTREAM.md).
+const LayoutRoot = styled('div')({
+  display: 'flex',
+  flex: '1 1 auto',
+  flexDirection: 'column',
+});
 
 const LayoutSidebarContainer = styled('div')(() => ({
   display: 'flex',

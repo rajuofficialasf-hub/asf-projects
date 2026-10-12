@@ -51,6 +51,8 @@ import {
   StatList,
   TextLink,
   Disclosure,
+  FilterPanel,
+  ActionBar,
 } from './index';
 import { pageItems } from './components/pagination';
 import { matchesAccept } from './components/file-input';
@@ -884,6 +886,46 @@ describe('details of the added pieces', () => {
       expect(screen.getByText('Page total 5')).toBeInTheDocument();
     });
 
+    it('puts the phone title and actions in a card heading row', async () => {
+      phoneWidth();
+      renderInApp(
+        <DataTable
+          label="Members"
+          cardsOnPhones
+          rows={[{ id: 'm1', name: 'Amina' }]}
+          columns={columns}
+          phoneColumns={[{ id: 'serial', header: 'Serial', cell: () => '7' }]}
+          phoneTitle={(row: Member) => row.name}
+          phoneActions={(row: Member) => <Button onClick={() => {}}>{`Edit ${row.name}`}</Button>}
+          getRowId={(row) => row.id}
+        />
+      );
+      const card = within(await screen.findByRole('region', { name: 'Members' })).getByRole('listitem');
+      expect(within(card).getByText('Amina')).toBeInTheDocument();
+      expect(within(card).getByRole('button', { name: 'Edit Amina' })).toBeInTheDocument();
+      // The title is the heading, not one of the "header: value" lines.
+      expect(within(card).getAllByRole('term')).toHaveLength(1);
+    });
+
+    it('folds the filters behind a button that counts the active ones', async () => {
+      phoneWidth();
+      const user = userEvent.setup();
+      let cleared = 0;
+      renderInApp(
+        <FilterPanel label="Filters" activeCount={2} onClear={() => (cleared += 1)} clearLabel="Clear filters">
+          <TextField label="Name" value="" onChange={() => {}} />
+        </FilterPanel>
+      );
+      const toggle = await screen.findByRole('button', { name: /Filters\s*2/ });
+      expect(toggle).toHaveAttribute('aria-expanded', 'false');
+      expect(screen.queryByRole('textbox', { name: 'Name' })).not.toBeInTheDocument();
+      await user.click(toggle);
+      expect(toggle).toHaveAttribute('aria-expanded', 'true');
+      expect(screen.getByRole('textbox', { name: 'Name' })).toBeVisible();
+      await user.click(screen.getByRole('button', { name: 'Clear filters' }));
+      expect(cleared).toBe(1);
+    });
+
     it('shows the loading label and the empty card on a phone', async () => {
       phoneWidth();
       const { rerender } = renderInApp(
@@ -922,5 +964,41 @@ describe('details of the added pieces', () => {
     const table = await screen.findByRole('table', { name: 'Members' });
     expect(within(table).getByRole('columnheader', { name: 'Name' }).className).toMatch(/MuiTableCell-sizeSmall/);
     expect(within(table).getByRole('status')).toHaveTextContent('Loading members');
+  });
+
+  it('shows the filters under a heading on a wide screen, with clear disabled when none are on', async () => {
+    renderInApp(
+      <FilterPanel label="Filters" activeCount={0} onClear={() => {}} clearLabel="Clear filters" note="Years did not load">
+        <TextField label="Name" value="" onChange={() => {}} />
+      </FilterPanel>
+    );
+    const panel = await screen.findByRole('region', { name: 'Filters' });
+    expect(within(panel).getByRole('heading', { name: 'Filters' })).toBeInTheDocument();
+    expect(within(panel).getByRole('textbox', { name: 'Name' })).toBeInTheDocument();
+    expect(within(panel).getByRole('button', { name: 'Clear filters' })).toBeDisabled();
+    expect(within(panel).getByText('Years did not load')).toBeInTheDocument();
+  });
+
+  it('names the action bar as a group, and divides a list with lines between items', async () => {
+    renderInApp(
+      <>
+        <ActionBar label="Form actions">
+          <Button type="submit">Save</Button>
+        </ActionBar>
+        <Stack role="list" divided>
+          <Stack role="listitem">
+            <Text>One</Text>
+          </Stack>
+          <Stack role="listitem">
+            <Text>Two</Text>
+          </Stack>
+        </Stack>
+      </>
+    );
+    const bar = await screen.findByRole('group', { name: 'Form actions' });
+    expect(within(bar).getByRole('button', { name: 'Save' })).toBeInTheDocument();
+    const list = screen.getByRole('list');
+    expect(within(list).getAllByRole('listitem')).toHaveLength(2);
+    expect(list.querySelectorAll('hr')).toHaveLength(1);
   });
 });

@@ -27,3 +27,4 @@ export { Checkbox, RadioGroup } from './choice';
 export { ToggleGroup } from './toggle-group';
 export { FieldGroup, ProgressBar } from './field-group';
 export { Grid, StatList, TextLink, Disclosure } from './layout-pieces';
+export { FilterPanel, ActionBar } from './filter-panel';

@@ -29,6 +29,8 @@ export function DataTable<Row>({
   cardsOnPhones,
   phoneColumns = columns,
   phoneFooter,
+  phoneTitle,
+  phoneActions,
   dense,
 }: DataTableProps<Row>) {
   const theme = useTheme();
@@ -47,7 +49,17 @@ export function DataTable<Row>({
           <Box component="ul" sx={{ m: 0, p: 0, gap: 1.5, display: 'flex', flexDirection: 'column', listStyle: 'none' }}>
             {rows.map((row) => (
               <Card component="li" key={getRowId(row)} sx={{ p: 2 }}>
-                <Box component="dl" sx={{ m: 0, gap: 1, display: 'grid', gridTemplateColumns: 'minmax(96px, auto) 1fr' }}>
+                {(phoneTitle || phoneActions) && (
+                  <Box sx={{ mb: 1.5, gap: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    {phoneTitle && (
+                      <Typography component="div" variant="subtitle1" sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
+                        {phoneTitle(row)}
+                      </Typography>
+                    )}
+                    {phoneActions && <Box sx={{ ml: 'auto', gap: 0.5, display: 'flex', alignItems: 'center', flexShrink: 0 }}>{phoneActions(row)}</Box>}
+                  </Box>
+                )}
+                <Box component="dl" sx={{ m: 0, columnGap: 1.5, rowGap: 0.75, display: 'grid', gridTemplateColumns: 'minmax(80px, auto) 1fr' }}>
                   {phoneColumns.map((column) => (
                     <Box key={column.id} sx={{ display: 'contents' }}>
                       <Typography component="dt" variant="caption" sx={{ color: 'text.secondary', pt: 0.25 }}>

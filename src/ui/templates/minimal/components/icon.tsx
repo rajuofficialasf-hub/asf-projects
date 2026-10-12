@@ -43,6 +43,7 @@ const ICONS: Record<IconName, IconifyName> = {
   history: 'solar:clock-circle-bold',
   up: 'eva:arrow-upward-fill',
   down: 'eva:arrow-downward-fill',
+  filter: 'ic:round-filter-list',
 };
 
 export function Icon({ name, label, size = 20 }: IconProps) {

@@ -36,11 +36,12 @@ export function StatList({ items }: StatListProps) {
         m: 0,
         gap: 1,
         display: 'grid',
-        gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))`,
+        // Each figure is at least as wide as its value, so a long amount ("৳ ১,২৫,০০০") is never cut off.
+        gridTemplateColumns: `repeat(${items.length}, minmax(min-content, 1fr))`,
       }}
     >
       {items.map((item) => (
-        <Box key={item.label} sx={{ px: 1, py: 1.25, borderRadius: 1, textAlign: 'center', bgcolor: 'background.neutral' }}>
+        <Box key={item.label} sx={{ px: 0.75, py: 1.25, borderRadius: 1, textAlign: 'center', bgcolor: 'background.neutral' }}>
           <Typography component="dt" variant="caption" sx={{ display: 'block', color: 'text.secondary' }}>
             {item.label}
           </Typography>

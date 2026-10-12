@@ -10,10 +10,10 @@ import { RouterLink } from '../routes/components';
 
 export function Breadcrumbs({ label, items }: BreadcrumbsProps) {
   return (
-    <MuiBreadcrumbs aria-label={label} sx={{ mb: 1 }}>
+    <MuiBreadcrumbs aria-label={label}>
       {items.map((item, index) =>
         item.to ? (
-          <Link key={`${index}-${item.label}`} component={RouterLink} href={item.to} color="inherit" variant="body2">
+          <Link key={`${index}-${item.label}`} component={RouterLink} href={item.to} color="inherit" variant="body2" underline="hover" sx={{ minHeight: 44, display: 'inline-flex', alignItems: 'center' }}>
             {item.label}
           </Link>
         ) : (

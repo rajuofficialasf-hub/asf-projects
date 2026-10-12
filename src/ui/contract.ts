@@ -87,7 +87,8 @@ export type IconName =
   | "export"
   | "history"
   | "up"
-  | "down";
+  | "down"
+  | "filter";
 
 /** Status colours for alerts and toasts. */
 export type Tone = "info" | "success" | "warning" | "error";
@@ -165,6 +166,8 @@ export type StackProps = {
   padding?: SpaceStep;
   /** A list of items (role list), or one item in such a list. */
   role?: "list" | "listitem";
+  /** A thin line between the children, for a compact list inside a card. */
+  divided?: boolean;
 };
 
 export type HeadingProps = { children: ReactNode; level?: 2 | 3 | 4 };
@@ -424,6 +427,10 @@ export type DataTableProps<Row> = {
   phoneColumns?: readonly DataTableColumn<Row>[];
   /** Shown under the cards on a phone, in place of the table's footer row. */
   phoneFooter?: ReactNode;
+  /** A phone card's heading, for example the person's name, above its "header: value" lines. */
+  phoneTitle?: (row: Row) => ReactNode;
+  /** Controls at the end of a phone card's heading row, for example a checkbox or an edit link. */
+  phoneActions?: (row: Row) => ReactNode;
   /** Smaller rows. */
   dense?: boolean;
 };
@@ -471,6 +478,26 @@ export type StatListProps = {
 
 /** A link to a route inside the app, styled as text. */
 export type TextLinkProps = { to: string; children: ReactNode };
+
+/**
+ * The filters above a list. On a phone the fields fold behind one button that names how many filters
+ * are on; from a tablet up they are always shown, with the clear button in the panel's heading.
+ */
+export type FilterPanelProps = {
+  /** The filter fields, laid out by the caller (usually a Grid). */
+  children: ReactNode;
+  /** The panel's heading and the phone button's text, for example "ফিল্টার". */
+  label: string;
+  /** How many filters are on; 0 disables the clear button. */
+  activeCount: number;
+  onClear: () => void;
+  clearLabel: string;
+  /** A short line under the fields, for example why a list of options didn't load. */
+  note?: ReactNode;
+};
+
+/** A form's Save and Cancel row that stays at the bottom of the window while a long form scrolls. */
+export type ActionBarProps = { children: ReactNode; label: string };
 
 /** A summary line that shows or hides more content (a native details element). */
 export type DisclosureProps = { summary: ReactNode; children: ReactNode; defaultOpen?: boolean };
@@ -556,5 +583,7 @@ export type UiTemplate = {
   StatList: ComponentType<StatListProps>;
   TextLink: ComponentType<TextLinkProps>;
   Disclosure: ComponentType<DisclosureProps>;
+  FilterPanel: ComponentType<FilterPanelProps>;
+  ActionBar: ComponentType<ActionBarProps>;
   ProgressBar: ComponentType<ProgressBarProps>;
 };

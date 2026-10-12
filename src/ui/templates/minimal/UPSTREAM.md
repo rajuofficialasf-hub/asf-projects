@@ -65,3 +65,14 @@ Copied from the assunnah-engineering kit 0.16.0 (`skills/ae-new-app/kit/template
 - `global-config.ts`: `appName`, `logoUrl`, `homePath` for this app.
 - Pieces added for the admin (RE-UI-04), each typed in `contract.ts` and tested in `contract.test.tsx`: `Card`, `Tabs`, `Drawer`, `Badge`, `Checkbox`, `RadioGroup`, `Pagination`, `FileInput`, `Menu`, `Breadcrumbs`, `IconButton` (`components/{card,tabs,drawer,badge,choice,pagination,file-input,menu,breadcrumbs,icon-button}.tsx`). `TextField` gained `date`, `maxLength`, `inputMode`, `readOnly`, `autoFocus`, `hideLabel`, `prefix` and `size`, and announces its error (`role="alert"`). `Page` gained `breadcrumbs`, `badges` and `documentTitle`. `DataTable` takes node headers, `loadingLabel`, `dense`, and `cardsOnPhones` (cards below 600px). More contract icon names.
 - Lint: `.oxlintrc.json` (`no-restricted-imports`) replaces the kit's `eslint.config.js` rule (RE-UI-05), and also keeps `@/ui` out of public code. `scripts/check-prod-bundle.mjs` fails if MUI or Emotion reaches a public chunk.
+
+### Admin polish pass (2026-10-12)
+
+- `layouts/dashboard/layout.tsx`, `layouts/auth-split/layout.tsx`: the hidden demo `<Alert>` ("This is an info Alert.") in the header's `topArea` is removed. It had `role="alert"`, so screen readers could announce it.
+- `layouts/core/layout-section.tsx`: `LayoutRoot` grows to the window (`display: flex`, `flex: 1 1 auto`, column). The kit's `global.css` did this; without it the sign-in split's side panel stopped short of the window bottom.
+- `layouts/auth-split/section.tsx`: the side panel's title renders as `<p>` (variant `h3` kept), so the page's first heading is the form's `<h1>`.
+- `components/ui-provider.tsx`: `html` gets `scrollbar-gutter: stable`, so short and long pages keep the same width.
+- `components/toggle-group.tsx`: the 44px touch target is set from the group (`& .MuiToggleButtonGroup-grouped`), because the theme's two-class grouped rule beat the button's own `sx` and left the buttons 30px.
+- `components/breadcrumbs.tsx`, `components/page.tsx`: breadcrumb links are 44px targets; `Page` spaces the breadcrumb slot (`mb: 1.5`) instead of `Breadcrumbs` carrying its own margin.
+- `components/layout-pieces.tsx`: `StatList` columns are at least as wide as their value (`minmax(min-content, 1fr)`), so an amount such as "৳ ১,২৫,০০০" is not cut off.
+- Contract additions, tested in `contract.test.tsx`: `DataTable` `phoneTitle` and `phoneActions` (a phone card's heading row); `Stack` `divided`; `FilterPanel` (filters that fold behind one counted button on phones) and `ActionBar` (a form's sticky Save/Cancel row) in `components/filter-panel.tsx`; icon `filter`.

@@ -45,7 +45,8 @@ const baseline = (
   <GlobalStyles
     styles={{
       // The layouts fill the window (the sign-in split, the dashboard's sidebar).
-      html: { height: '100%' },
+      // A stable gutter keeps the layout from shifting sideways between short and long pages.
+      html: { height: '100%', scrollbarGutter: 'stable' },
       'body, #root': { display: 'flex', flex: '1 1 auto', minHeight: '100%', flexDirection: 'column' },
       'input[type=number]': { MozAppearance: 'textfield', appearance: 'none' },
       'input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button': {

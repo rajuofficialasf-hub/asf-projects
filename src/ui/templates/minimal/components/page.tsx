@@ -15,7 +15,7 @@ export function Page({ title, description, actions, children, breadcrumbs, badge
       {tabTitle !== false && (
         <title>{tabTitle === CONFIG.appName ? tabTitle : `${tabTitle} | ${CONFIG.appName}`}</title>
       )}
-      {breadcrumbs}
+      {breadcrumbs && <Box sx={{ mb: 1.5 }}>{breadcrumbs}</Box>}
       <Box
         sx={{
           mb: { xs: 3, md: 5 },
