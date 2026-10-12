@@ -4,6 +4,7 @@ import { formatBanglaNumber } from '@/lib/banglaNumber'
 import { useDocumentTitle } from '@/lib/useDocumentTitle'
 import { useCountUp } from '@/features/housing/hooks/useCountUp'
 import { ProjectCardGrid } from '@/features/projects/home/ProjectCardGrid'
+import { homeProjects } from '@/features/projects/home/homeProjects'
 import { useProjectsOverview } from '@/features/projects/home/useProjectsOverview'
 
 /**
@@ -15,6 +16,8 @@ export function HomePage() {
   useDocumentTitle() // শুধু সাইটের নাম
   const overview = useProjectsOverview()
   const g = overview.status === 'ready' ? overview.data.global : null
+  // "মোট প্রকল্প" = নিচের কার্ডগুলোই (শীর্ষ-স্তরের প্রকাশিত প্রকল্প); উপ-প্রকল্প আলাদা প্রকল্প হিসেবে গোনা হয় না
+  const projectCount = overview.status === 'ready' ? homeProjects(overview.data).length : null
 
   return (
     <>
@@ -26,7 +29,7 @@ export function HomePage() {
             {t('অসহায় ও দুস্থ মানুষের পাশে আমাদের প্রকল্পগুলোর অগ্রগতি, উপকারভোগীদের তথ্য ও ছবি এখানে সবার জন্য উন্মুক্ত।')}
           </p>
           <dl className="mt-8 grid max-w-2xl grid-cols-3 gap-2 sm:gap-4" aria-busy={overview.status === 'loading'}>
-            <HeroStat label={t('মোট প্রকল্প')} value={g?.projects ?? null} loading={overview.status === 'loading'} />
+            <HeroStat label={t('মোট প্রকল্প')} value={projectCount} loading={overview.status === 'loading'} />
             <HeroStat label={t('মোট উপকারভোগী')} value={g?.total ?? null} loading={overview.status === 'loading'} />
             <HeroStat label={t('মোট জেলা')} value={g?.districts ?? null} loading={overview.status === 'loading'} />
           </dl>
@@ -42,7 +45,9 @@ export function HomePage() {
 function HeroStat({ label, value, loading }: { label: string; value: number | null; loading: boolean }) {
   const shown = useCountUp(value ?? 0)
   return (
-    <div className="min-w-0 rounded-xl bg-white/10 px-3 py-3 ring-1 ring-white/15 backdrop-blur-sm sm:px-5 sm:py-4">
+    // <dl>-এ dt আগে আসতে হয়; চোখে লেবেল সংখ্যার নিচে (order-last)
+    <div className="flex min-w-0 flex-col rounded-xl bg-white/10 px-3 py-3 ring-1 ring-white/15 backdrop-blur-sm sm:px-5 sm:py-4">
+      <dt className="order-last mt-1.5 text-xs font-medium text-brand-50/85 sm:text-sm">{label}</dt>
       {loading ? (
         <dd className="h-8 w-14 animate-pulse rounded bg-white/25 sm:h-10" />
       ) : (
@@ -50,7 +55,6 @@ function HeroStat({ label, value, loading }: { label: string; value: number | nu
           {value === null ? '—' : formatBanglaNumber(shown)}
         </dd>
       )}
-      <dt className="mt-1.5 text-xs font-medium text-brand-50/85 sm:text-sm">{label}</dt>
     </div>
   )
 }

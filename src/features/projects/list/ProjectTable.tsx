@@ -8,6 +8,7 @@ import { fieldSpec, fieldValue, type FieldDef } from '@/features/projects/fields
 import { photoSrc } from '@/features/housing/utils/imagePath'
 import { projectPath } from '@/features/housing/utils/housingProjects'
 import { Lightbox, type LightboxImage } from '@/features/housing/components/Lightbox'
+import { KEEP_SCROLL } from '@/lib/keepScroll'
 import { SafeImage } from '@/features/housing/components/SafeImage'
 import { photoLabel, placeParts, type ListLayout } from './listColumns'
 import { RecordCardList } from './RecordCardList'
@@ -168,8 +169,8 @@ export function Thumb({
     <button
       type="button"
       onClick={() => onOpen(r, kind)}
-      aria-label={`${label} — ${t('বড় করে দেখুন')}`}
-      className="block overflow-hidden rounded-md ring-brand-400 transition hover:ring-2 focus-visible:ring-2 focus-visible:outline-none"
+      aria-label={t('{name}: {label} — বড় করে দেখুন', { name: r.name, label })}
+      className="block overflow-hidden rounded-md ring-brand-600 transition hover:ring-2 focus-visible:ring-2 focus-visible:outline-none"
     >
       {img}
     </button>
@@ -181,11 +182,14 @@ export function ViewButton({ record: r, compact = false }: { record: HousingReco
   return (
     <Link
       to={viewPath(r, search)}
+      state={KEEP_SCROLL}
+      data-view-serial={r.serial_no}
       className={[
         'inline-flex shrink-0 items-center gap-1 rounded-md border border-brand-600 font-medium whitespace-nowrap text-brand-700 transition hover:bg-brand-600 hover:text-white',
-        compact ? 'h-9 px-3 text-sm' : 'px-3 py-1.5 text-sm',
+        compact ? 'h-11 px-4 text-sm' : 'px-3 py-1.5 text-sm',
+        'focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 focus-visible:outline-none',
       ].join(' ')}
-      aria-label={`${r.name} — ${t('বিস্তারিত দেখুন')}`}
+      aria-label={t('{name} — বিস্তারিত দেখুন', { name: r.name })}
     >
       {t('বিস্তারিত')}
     </Link>

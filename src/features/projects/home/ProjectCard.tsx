@@ -1,15 +1,13 @@
 import { lt, pick, t } from '@/i18n'
 import { Link } from 'react-router'
-import type { ProjectOverviewItem, StatCardDef } from '@/backend'
-import { formatBanglaNumber } from '@/lib/banglaNumber'
-import { formatTaka } from '@/lib/money'
-import { accentOf, useProject } from '@/features/projects/registry'
+import type { ProjectOverviewItem } from '@/backend'
+import { accentOf, StatIcon, useProject } from '@/features/projects/registry'
 import { cardValue, homeCards, homeLabel } from '@/features/projects/stats/statCards'
-import { useCountUp } from '@/features/housing/hooks/useCountUp'
 import { photoSrc } from '@/features/housing/utils/imagePath'
 import { projectPath } from '@/features/housing/utils/housingProjects'
 import { SafeImage } from '@/features/housing/components/SafeImage'
-import { coverSrc } from './cover'
+import { coverIcon, coverSrc } from './cover'
+import { StatTile } from './StatTile'
 
 interface Props {
   item: ProjectOverviewItem
@@ -22,8 +20,8 @@ const STAT_COLS: Record<number, string> = { 1: 'grid-cols-1', 2: 'grid-cols-2', 
 
 /**
  * হোম পেইজের প্রকল্প-কার্ড (M-ধাপ ১৫) — সব তথ্য projects_overview() এর একটি সারি থেকে (আলাদা কল নয়):
- *   ছবি: কভার → সর্বশেষ রেকর্ডের থাম্ব → প্রকল্পের রঙে গ্রেডিয়েন্ট + বড় আইকন
- *   আইকন-ব্যাজ, নাম ও ছোট বর্ণনা (pick), `home: true` কার্ডের ২–৩টি সংখ্যা (টাকা ৳), গ্রুপে উপ-প্রকল্পের চিপ, "প্রকল্প দেখুন"
+ *   ছবি: কভার → সর্বশেষ রেকর্ডের থাম্ব → প্রকল্পের রঙে গ্রেডিয়েন্ট + বড় আইকন (নাম নিচে শিরোনামেই — দুবার নয়)
+ *   নাম ও ছোট বর্ণনা (pick), `home: true` কার্ডের ২–৩টি সংখ্যা (টাকা ৳), গ্রুপে উপ-প্রকল্পের চিপ, "প্রকল্প দেখুন"
  */
 export function ProjectCard({ item, subProjects = [] }: Props) {
   const accent = accentOf(item.accent)
@@ -51,8 +49,8 @@ export function ProjectCard({ item, subProjects = [] }: Props) {
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/35 to-transparent" aria-hidden="true" />
           </>
         ) : (
-          <div data-cover-fallback="" className={`flex h-full w-full items-center justify-center bg-gradient-to-br px-6 text-center text-white ${accent.gradient}`} aria-hidden="true">
-            <span className="text-2xl leading-snug font-bold drop-shadow-sm">{name}</span>
+          <div data-cover-fallback="" className={`flex h-full w-full items-center justify-center bg-gradient-to-br text-white ${accent.gradient}`} aria-hidden="true">
+            <StatIcon icon={coverIcon(item.icon)} className="h-20 w-20 opacity-90 drop-shadow-sm" />
           </div>
         )}
       </div>
@@ -66,7 +64,11 @@ export function ProjectCard({ item, subProjects = [] }: Props) {
           <ul className="mt-3 flex flex-wrap gap-1.5" aria-label={t('উপ-প্রকল্প')}>
             {subProjects.map((c) => (
               <li key={c.key}>
-                <Link to={projectPath(c.key)} className={`inline-flex min-h-8 items-center rounded-full px-3 py-1 text-xs font-medium transition hover:brightness-95 ${accent.soft}`}>
+                <Link
+                  to={projectPath(c.key)}
+                  // চোখে ছোট চিপ, চাপার জায়গা ৪৪px (after:)
+                  className={`relative inline-flex min-h-9 items-center rounded-full px-3 py-1 text-xs font-medium transition after:absolute after:inset-x-0 after:-inset-y-1 hover:brightness-95 focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:outline-none ${accent.soft}`}
+                >
                   {lt(c, 'name')}
                 </Link>
               </li>
@@ -77,7 +79,7 @@ export function ProjectCard({ item, subProjects = [] }: Props) {
         {cards.length > 0 && (
           <dl className={`mt-4 grid gap-2 ${STAT_COLS[cards.length] ?? 'grid-cols-3'}`}>
             {cards.map((c, i) => (
-              <StatTile key={c.id} card={c} value={cardValue(c, item.stats)} strong={i === 0} accentSolid={accent.solid} accentSoft={accent.soft} />
+              <StatTile key={c.id} label={homeLabel(c)} value={cardValue(c, item.stats)} money={c.format === 'money'} strong={i === 0} solid={accent.solid} soft={accent.soft} />
             ))}
           </dl>
         )}
@@ -86,7 +88,7 @@ export function ProjectCard({ item, subProjects = [] }: Props) {
           <Link
             to={href}
             aria-label={pick(item.name_bn, item.name_en) + ' — ' + t('প্রকল্প দেখুন')}
-            className={`inline-flex min-h-11 items-center gap-2 rounded-md border-2 px-4 py-2 text-sm font-semibold transition ${accent.outline}`}
+            className={`inline-flex min-h-11 items-center gap-2 rounded-md border-2 px-4 py-2 text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 focus-visible:outline-none ${accent.outline}`}
           >
             {t('প্রকল্প দেখুন')}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
@@ -99,30 +101,13 @@ export function ProjectCard({ item, subProjects = [] }: Props) {
   )
 }
 
-/** একটি সংখ্যা (count-up; টাকা ৳) — প্রথমটি গাঢ় রঙে */
-function StatTile({ card, value, strong, accentSolid, accentSoft }: { card: StatCardDef; value: number | null; strong: boolean; accentSolid: string; accentSoft: string }) {
-  const shown = useCountUp(value ?? 0)
-  const label = homeLabel(card)
-  const money = card.format === 'money'
-  const fmt = (n: number) => (money ? formatTaka(n) : formatBanglaNumber(n))
-  return (
-    <div className={`flex min-w-0 flex-col justify-center rounded-xl px-2.5 py-2.5 text-center ${strong ? accentSolid : accentSoft}`}>
-      <dd className={`${money ? 'text-base sm:text-lg' : 'text-2xl'} leading-tight font-bold tabular-nums`} aria-label={label + ': ' + (value === null ? '—' : fmt(value))}>
-        {value === null ? '—' : fmt(Math.round(shown))}
-      </dd>
-      <dt className={`mt-1 text-[11px] leading-tight font-medium ${strong ? 'opacity-85' : 'opacity-80'}`}>{label}</dt>
-    </div>
-  )
-}
-
 /** লোডের সময় কার্ডের কাঠামো */
 export function ProjectCardSkeleton() {
   return (
     <div className="flex h-full animate-pulse flex-col overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-slate-200/70" aria-hidden="true">
       <div className="aspect-[16/9] bg-slate-200" />
       <div className="flex flex-1 flex-col px-5 pb-5">
-        <div className="-mt-7 h-14 w-14 rounded-2xl bg-slate-300 ring-4 ring-white" />
-        <div className="mt-3 h-6 w-2/3 rounded bg-slate-200" />
+        <div className="mt-4 h-6 w-2/3 rounded bg-slate-200" />
         <div className="mt-2 h-4 w-full rounded bg-slate-100" />
         <div className="mt-1 h-4 w-4/5 rounded bg-slate-100" />
         <div className="mt-4 grid grid-cols-3 gap-2">

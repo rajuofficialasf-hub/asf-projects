@@ -1,5 +1,5 @@
 import { gn, pick, t } from '@/i18n'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { formatBanglaNumber } from '@/lib/banglaNumber'
 import type { Project } from '../../../backend/interfaces/types'
@@ -25,6 +25,18 @@ export function UpazilaMapPanel({ project, stats, filters, onChange }: Props) {
   const unit = pick(project.unit_bn, project.unit_en) || t('ঘর')
   const housingWording = !project.unit_bn || project.unit_bn === 'ঘর'
   const [open, setOpen] = useState(false)
+  // খোলা/বন্ধের বাটন একে অপরের জায়গা নেয় — ফোকাস হারায় না, নতুন বাটনে যায় (প্রথম রেন্ডারে নয়)
+  const toggled = useRef(false)
+  const openBtn = useRef<HTMLButtonElement>(null)
+  const hideBtn = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (!toggled.current) return
+    ;(open ? hideBtn : openBtn).current?.focus()
+  }, [open])
+  const toggle = (v: boolean) => {
+    toggled.current = true
+    setOpen(v)
+  }
   const counts = stats.status === 'ready' ? stats.data.by_location : {}
   const upazilaCount = Object.keys(counts).length
   const total = stats.status === 'ready' ? stats.data.total : 0
@@ -38,10 +50,11 @@ export function UpazilaMapPanel({ project, stats, filters, onChange }: Props) {
   if (!open) {
     return (
       <button
+        ref={openBtn}
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => toggle(true)}
         aria-expanded={false}
-        className="group relative flex w-full items-center gap-4 overflow-hidden rounded-2xl border border-brand-200 bg-gradient-to-r from-brand-700 via-brand-600 to-brand-500 px-5 py-4 text-left text-white shadow-md transition hover:shadow-lg focus-visible:ring-4 focus-visible:ring-brand-300 focus-visible:outline-none sm:px-6"
+        className="group relative flex w-full items-center gap-4 overflow-hidden rounded-2xl border border-brand-200 bg-gradient-to-r from-brand-800 via-brand-700 to-brand-600 px-5 py-4 text-left text-white shadow-md transition hover:shadow-lg focus-visible:ring-4 focus-visible:ring-brand-300 focus-visible:outline-none sm:px-6"
       >
         {/* পটভূমির নরম বৃত্ত */}
         <span aria-hidden="true" className="pointer-events-none absolute -top-10 -right-10 h-40 w-40 rounded-full bg-white/10 transition-transform duration-500 motion-safe:group-hover:scale-125" />
@@ -80,7 +93,7 @@ export function UpazilaMapPanel({ project, stats, filters, onChange }: Props) {
           </span>
           <div>
             <h3 className="text-sm font-semibold text-slate-800">{housingWording ? t('কোথায় কোথায় ঘর হয়েছে') : t('{unit} কোথায় কোথায়', { unit })}</h3>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-600">
               {stats.status === 'ready'
                 ? t('{u} উপজেলায় পতাকা (রঙ = জেলা) · পতাকা/উপজেলায় ক্লিক করলে তালিকা সেখানে ফিল্টার হবে', { u: formatBanglaNumber(upazilaCount) })
                 : stats.status === 'error'
@@ -91,15 +104,16 @@ export function UpazilaMapPanel({ project, stats, filters, onChange }: Props) {
         </div>
         <div className="flex items-center gap-2">
           {selected && (
-            <button type="button" onClick={() => select(null)} className="inline-flex h-9 items-center rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-slate-700 hover:border-red-300 hover:text-red-700">
+            <button type="button" onClick={() => select(null)} className="inline-flex h-11 items-center sm:h-9 rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-slate-700 hover:border-red-300 hover:text-red-700">
               {gn(selected.upazila)} — {t('বাতিল')}
             </button>
           )}
           <button
+            ref={hideBtn}
             type="button"
-            onClick={() => setOpen(false)}
+            onClick={() => toggle(false)}
             aria-expanded
-            className="inline-flex h-9 items-center rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-slate-700 hover:border-brand-400 hover:text-brand-700"
+            className="inline-flex h-11 items-center sm:h-9 rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-slate-700 hover:border-brand-400 hover:text-brand-700"
           >
             {t('মানচিত্র লুকান')}
           </button>

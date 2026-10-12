@@ -12,6 +12,7 @@ export const EN: Record<string, string> = {
   'হোম': 'Home',
   'খসড়া — শুধু এডমিন দেখছেন': 'Draft — only admins can see this',
   'প্রধান মেনু': 'Main menu',
+  'মূল অংশে যান': 'Skip to main content',
   'মোবাইল মেনু': 'Mobile menu',
   'মেনু খুলুন': 'Open menu',
   'মেনু বন্ধ করুন': 'Close menu',
@@ -80,6 +81,11 @@ export const EN: Record<string, string> = {
   'কিছু একটা ভুল হয়েছে': 'Something went wrong',
   'ত্রুটির বার্তা (সাপোর্টকে জানাতে পারেন):': 'Error message (you can report it to support):',
   'আবার চেষ্টা করুন': 'Try again',
+  'এই অংশটি দেখাতে সমস্যা হয়েছে। আবার চেষ্টা করুন, না হলে পেইজটি রিলোড করুন।': 'Something went wrong showing this part. Try again, or reload the page.',
+  '{name} — বিস্তারিত দেখুন': '{name} — view details',
+  '{name}: {label} — বড় করে দেখুন': '{name}: {label} — view larger',
+  'এখনো ছবি যোগ হয়নি': 'No photos added yet',
+  'এই মুহূর্তে তথ্য দেখানো যাচ্ছে না। কিছুক্ষণ পরে আবার চেষ্টা করুন।': 'We can’t show this right now. Please try again in a little while.',
   'পেইজ রিলোড করুন': 'Reload page',
   'সালের তালিকা লোড হয়নি।': 'Could not load the list of years.',
   'কোনো তথ্য পাওয়া যায়নি।': 'No data found.',
@@ -217,9 +223,9 @@ export const EN: Record<string, string> = {
   'পাশাপাশি দেখুন': 'Side-by-side view',
   'ফুলস্ক্রিন': 'Fullscreen',
   'ফুলস্ক্রিন বন্ধ': 'Exit fullscreen',
-  'হুইল/পিঞ্চ: জুম · ডাবল-ক্লিক/ডাবল-ট্যাপ: জুম টগল · জুম অবস্থায় টেনে সরান': 'Wheel/pinch: zoom · double-click/double-tap: toggle zoom · drag to pan when zoomed',
+  'Ctrl+হুইল/পিঞ্চ: জুম · ডাবল-ক্লিক/ডাবল-ট্যাপ: জুম টগল · জুম অবস্থায় টেনে সরান': 'Ctrl+wheel/pinch: zoom · double-click/double-tap: toggle zoom · drag to pan when zoomed',
   'হ্যান্ডেল টেনে তুলনা': 'drag the handle to compare',
-  '{pct}% পর্যন্ত পূর্বের ঘর': 'Before photo up to {pct}%',
+  '{pct}% পর্যন্ত {label}': '{label} up to {pct}%',
 
   // ---------------------------------------------------------------- এডমিন / লগইন
   'এডমিন': 'Admin',
@@ -398,7 +404,10 @@ Object.assign(EN, {
   ') আর কাজ করবে না, এবং পুরনো সিরিয়াল আর কাউকে দেওয়া হবে না।': ') will stop working, and the old serial will never be given to anyone else.',
   // ডিটেইল
   'সিরিয়াল {n}': 'Serial {n}',
-  '{total} টির মধ্যে {at}': '{at} of {total}',
+  'তালিকায় {at}/{total}': 'In list {at}/{total}',
+  'এই সিরিয়ালে কোনো উপকারভোগী নেই': 'No beneficiary has this serial number',
+  'সিরিয়াল নম্বরটি আবার দেখুন, অথবা তালিকায় ফিরে যান।': 'Check the serial number, or go back to the list.',
+  'তালিকায় ফিরে যান': 'Back to the list',
   '{label} উপকারভোগী': '{label} beneficiary',
   'পেইজ {n} · ← → কী বা সোয়াইপ': 'Page {n} · ← → keys or swipe',
   // এডমিন রেকর্ড

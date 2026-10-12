@@ -1,14 +1,14 @@
 import { t, gn, lt } from '@/i18n'
 import { Link } from 'react-router'
-import { formatBanglaNumber, toBanglaNumber } from '@/lib/banglaNumber'
+import { toBanglaNumber } from '@/lib/banglaNumber'
 import type { HousingRecord, Project } from '../../../backend/interfaces/types'
-import { useCountUp } from '../hooks/useCountUp'
-import { formatTaka } from '@/lib/money'
 import { cardValue, homeCards, homeLabel } from '@/features/projects/stats/statCards'
 import { useFeaturedRecord } from '../hooks/useFeaturedRecord'
 import { useHousingStats } from '../hooks/useHousingStats'
 import { photoSrc } from '../utils/imagePath'
-import { accentOf } from '@/features/projects/registry'
+import { accentOf, StatIcon } from '@/features/projects/registry'
+import { StatTile } from '@/features/projects/home/StatTile'
+import { coverIcon } from '@/features/projects/home/cover'
 import { projectPath } from '../utils/housingProjects'
 import { SafeImage } from './SafeImage'
 
@@ -31,6 +31,7 @@ export function FeaturedProjectCard({ project }: Props) {
   const photo = record ? photoSrc(record.current_photo_url ?? record.prev_photo_url, record.photo_updated_at) : null
   // টাইল প্রকল্পের কনফিগ থেকে (M-ধাপ ১৫): `home: true` কার্ড, লেবেল home_label → label; ঘর নির্মাণে আগের তিনটি হুবহু
   const cards = homeCards(project)
+  const accent = accentOf(project.accent)
 
   return (
     <article className="flex h-full min-w-0 flex-col overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-slate-200/70">
@@ -47,8 +48,9 @@ export function FeaturedProjectCard({ project }: Props) {
               placeholderClassName="aspect-square w-full rounded-xl sm:w-44"
             />
           ) : (
-            <div className={`flex aspect-square w-full items-center justify-center rounded-xl bg-gradient-to-br px-4 text-center text-white sm:w-44 ${accentOf(project.accent).gradient}`} aria-hidden="true">
-              <span className="text-lg leading-snug font-bold">{title}</span>
+            // ছবি নেই: প্রকল্পের রঙ ও আইকন (নাম পাশেই শিরোনামে — দুবার নয়); ফোনে চওড়া ফিতা, পুরো বর্গ নয়
+            <div className={`flex aspect-[3/1] w-full items-center justify-center rounded-xl bg-gradient-to-br text-white sm:aspect-square sm:w-44 ${accent.gradient}`} aria-hidden="true">
+              <StatIcon icon={coverIcon(project.icon)} className="h-14 w-14 opacity-90 drop-shadow-sm sm:h-16 sm:w-16" />
             </div>
           )}
         </div>
@@ -59,14 +61,14 @@ export function FeaturedProjectCard({ project }: Props) {
           {cards.length > 0 && (
             <dl className={`mt-3 grid flex-1 ${TILE_COLS[cards.length] ?? 'grid-cols-3'} gap-2`}>
               {cards.map((c, i) => (
-                <StatTile key={c.id} label={homeLabel(c)} value={stats.status === 'ready' ? cardValue(c, stats.data) : null} loading={stats.status === 'loading'} money={c.format === 'money'} accent={i === 0} />
+                <StatTile key={c.id} label={homeLabel(c)} value={stats.status === 'ready' ? cardValue(c, stats.data) : null} loading={stats.status === 'loading'} money={c.format === 'money'} strong={i === 0} solid={accent.solid} soft={accent.soft} />
               ))}
             </dl>
           )}
           <div className="mt-4">
             <Link
               to={listPath}
-              className="inline-flex items-center gap-2 rounded-md border-2 border-brand-600 px-4 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-600 hover:text-white"
+              className={`inline-flex min-h-11 items-center gap-2 rounded-md border-2 px-4 py-2 text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 focus-visible:outline-none ${accent.outline}`}
               aria-label={`${title} — ${t('আরো দেখুন')}`}
             >
               {t('আরো দেখুন')}
@@ -86,24 +88,6 @@ export function FeaturedProjectCard({ project }: Props) {
 
 /** টাইলের কলাম (Tailwind পুরো ক্লাসের নাম দেখতে চায়) */
 const TILE_COLS: Record<number, string> = { 1: 'grid-cols-1', 2: 'grid-cols-2', 3: 'grid-cols-3' }
-
-/** কার্ডের ছোট পরিসংখ্যান টাইল: বড় বাংলা সংখ্যা (count-up; টাকা ৳) + লেবেল; লোডিংয়ে skeleton; ডাটা না এলে "—" */
-function StatTile({ label, value, loading, accent = false, money = false }: { label: string; value: number | null; loading: boolean; accent?: boolean; money?: boolean }) {
-  const shown = useCountUp(value ?? 0)
-  const fmt = money ? formatTaka : formatBanglaNumber
-  return (
-    <div className={`flex min-w-0 flex-col items-center justify-center rounded-xl px-2 py-3 text-center ${accent ? 'bg-brand-700 text-white' : 'bg-brand-50 text-brand-900'}`}>
-      {loading ? (
-        <dd className={`h-7 w-10 animate-pulse rounded ${accent ? 'bg-white/30' : 'bg-brand-200'}`} aria-busy="true" />
-      ) : (
-        <dd className={money ? 'text-lg leading-none font-bold tabular-nums sm:text-xl' : 'text-2xl leading-none font-bold tabular-nums sm:text-3xl'} aria-label={`${label}: ${value === null ? t('অজানা') : fmt(value)}`}>
-          {value === null ? '—' : fmt(Math.round(shown))}
-        </dd>
-      )}
-      <dt className={`mt-1.5 text-[11px] leading-tight font-medium sm:text-xs ${accent ? 'text-white/85' : 'text-brand-800/80'}`}>{label}</dt>
-    </div>
-  )
-}
 
 function FeaturedBar({ record, project, loading }: { record: HousingRecord | null; project: Project; loading: boolean }) {
   if (loading) {
@@ -126,20 +110,20 @@ function FeaturedBar({ record, project, loading }: { record: HousingRecord | nul
     <dl className="grid gap-3 bg-accent-500 px-5 py-4 text-brand-950 sm:grid-cols-[1.2fr_1fr_1fr] sm:items-center sm:px-6">
       <div className="min-w-0">
         <dt className="sr-only">{t('উপকারভোগী')}</dt>
-        <dd className="truncate text-lg font-bold" title={record.name}>
+        <dd className="text-lg font-bold break-words">
           {record.name}
         </dd>
       </div>
       <div className="min-w-0 text-sm leading-snug">
         <dt className="sr-only">{t('ঠিকানা')}</dt>
-        <dd className="truncate font-medium">{record.father_or_husband_name ? t('পিতা/স্বামী: {name}', { name: record.father_or_husband_name }) : record.address || '—'}</dd>
-        <dd className="truncate">
+        <dd className="font-medium break-words">{record.father_or_husband_name ? t('পিতা/স্বামী: {name}', { name: record.father_or_husband_name }) : record.address || '—'}</dd>
+        <dd className="break-words">
           {gn(record.upazila)}, {gn(record.district)}
         </dd>
       </div>
       <div className="min-w-0 text-sm leading-snug">
         <dt className="sr-only">{t('প্রকল্প ও সিরিয়াল')}</dt>
-        <dd className="truncate font-medium">
+        <dd className="font-medium break-words">
           {lt(project, 'name')} {toBanglaNumber(record.year)}
         </dd>
         <dd>

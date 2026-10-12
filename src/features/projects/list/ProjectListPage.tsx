@@ -7,6 +7,7 @@ import type { ListOutletContext } from '@/features/housing/pages/listContext'
 import { HousingSubnav } from '@/features/housing/components/HousingSubnav'
 import { Lazy, LazyUpazilaMapPanel } from '@/features/housing/pages/lazyPages'
 import { Pagination } from '@/features/housing/components/Pagination'
+import { EmptyState } from '@/components/EmptyState'
 import { ErrorNotice } from '@/features/housing/components/ErrorNotice'
 import { useHousingList } from '@/features/housing/hooks/useHousingList'
 import { useFilteredStats, useHousingStats } from '@/features/housing/hooks/useHousingStats'
@@ -88,7 +89,7 @@ export function ProjectListPage({ project }: Props) {
         else sp.set('page', String(next))
         return sp
       })
-      tableTop.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      tableTop.current?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })
     },
     [setSearchParams],
   )
@@ -143,7 +144,7 @@ export function ProjectListPage({ project }: Props) {
         {/* ইন্টারেক্টিভ উপজেলা মানচিত্র — ফিল্টারের উপরে, ডিফল্টে লুকানো; ফিল্টারের সাথে দুই-দিকে সিঙ্ক */}
         {project.display?.show_map !== false && (
           <div className="mt-4">
-            <Lazy>
+            <Lazy variant="banner">
               <LazyUpazilaMapPanel project={project} stats={stats} filters={filters} onChange={setGeoFromMap} />
             </Lazy>
           </div>
@@ -164,12 +165,7 @@ export function ProjectListPage({ project }: Props) {
         {data && (
           <>
             {data.meta.total === 0 ? (
-              <p
-                role="status"
-                className="mt-4 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500"
-              >
-                {active ? t('কোনো তথ্য পাওয়া যায়নি। ফিল্টার বদলে আবার চেষ্টা করুন।') : t('এখনো কোনো রেকর্ড নেই।')}
-              </p>
+              <EmptyState className="mt-4">{active ? t('কোনো তথ্য পাওয়া যায়নি। ফিল্টার বদলে আবার চেষ্টা করুন।') : t('এখনো কোনো রেকর্ড নেই।')}</EmptyState>
             ) : (
               <>
                 <div className="mt-4">
@@ -187,21 +183,34 @@ export function ProjectListPage({ project }: Props) {
   )
 }
 
+/** লোডের কাঠামো আসল তালিকার মতো: বড় পর্দায় টেবিলের সারি, ফোন/ট্যাবে কার্ড */
 function TableSkeleton() {
   const rows = Array.from({ length: 8 }, (_, i) => i)
   return (
-    <div className="mt-4 animate-pulse space-y-2" aria-busy="true" aria-label={t('তালিকা লোড হচ্ছে')}>
-      <div className="h-10 rounded-lg bg-brand-50" />
-      {rows.map((i) => (
-        <div key={i} className="flex items-center gap-3 rounded-lg border border-slate-100 bg-white p-3">
-          <div className="h-4 w-8 rounded bg-slate-200" />
-          <div className="h-4 w-12 rounded bg-slate-200" />
-          <div className="h-4 flex-1 rounded bg-slate-200" />
-          <div className="hidden h-4 w-40 rounded bg-slate-200 md:block" />
-          <div className="h-12 w-12 rounded-md bg-slate-200" />
-          <div className="h-12 w-12 rounded-md bg-slate-200" />
-        </div>
-      ))}
+    <div className="mt-4 animate-pulse" role="status" aria-label={t('তালিকা লোড হচ্ছে')}>
+      <div className="hidden space-y-2 lg:block">
+        <div className="h-10 rounded-lg bg-brand-50" />
+        {rows.map((i) => (
+          <div key={i} className="flex items-center gap-3 rounded-lg border border-slate-100 bg-white p-3">
+            <div className="h-4 w-8 rounded bg-slate-200" />
+            <div className="h-4 w-12 rounded bg-slate-200" />
+            <div className="h-4 flex-1 rounded bg-slate-200" />
+            <div className="h-4 w-40 rounded bg-slate-200" />
+            <div className="h-12 w-12 rounded-md bg-slate-200" />
+            <div className="h-12 w-12 rounded-md bg-slate-200" />
+          </div>
+        ))}
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:hidden">
+        {rows.slice(0, 4).map((i) => (
+          <div key={i} className="rounded-xl border border-slate-200 bg-white p-4">
+            <div className="h-3 w-24 rounded bg-slate-200" />
+            <div className="mt-2 h-5 w-40 rounded bg-slate-200" />
+            <div className="mt-3 h-4 w-48 rounded bg-slate-200" />
+            <div className="mt-2 h-4 w-32 rounded bg-slate-200" />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

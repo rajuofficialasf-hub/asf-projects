@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { coverSrc } from './cover'
+import { coverIcon, coverSrc } from './cover'
 
 // The server stores a cover's full file URL in cover_path; anything else has no URL to show.
 describe('coverSrc', () => {
@@ -12,5 +12,14 @@ describe('coverSrc', () => {
     expect(coverSrc(null, null)).toBeNull()
     expect(coverSrc('', null)).toBeNull()
     expect(coverSrc('housing/_projects/demo/cover.webp', null)).toBeNull()
+  })
+})
+
+describe('coverIcon', () => {
+  it('maps project icons the icon set lacks to the nearest one and keeps the rest', () => {
+    expect(coverIcon('tin-house')).toBe('house')
+    expect(coverIcon('house')).toBe('house')
+    expect(coverIcon('heart')).toBe('heart')
+    expect(coverIcon(null)).toBe(null)
   })
 })

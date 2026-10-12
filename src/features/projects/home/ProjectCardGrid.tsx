@@ -1,11 +1,13 @@
 import { t } from '@/i18n'
 import type { ProjectOverview } from '@/backend'
+import { EmptyState } from '@/components/EmptyState'
 import { ErrorNotice } from '@/features/housing/components/ErrorNotice'
 import type { OverviewState } from './useProjectsOverview'
 import { ProjectCard, ProjectCardSkeleton } from './ProjectCard'
+import { homeProjects } from './homeProjects'
 
 /**
- * হোমের প্রকল্প-গ্রিড (M-ধাপ ১৫): ফোনে ১ কলাম, md-এ ২, xl-এ ৩।
+ * হোমের প্রকল্প-গ্রিড (M-ধাপ ১৫): ফোনে ১ কলাম, md-এ ২, xl-এ ৩; কার্ড কম হলে সারি মাঝখানে (একটি কার্ড বাঁয়ে একা পড়ে থাকে না)।
  * কার্ড = শীর্ষ-স্তরের (গ্রুপ বা একক) প্রকাশিত প্রকল্প যার `show_on_home` চালু; গ্রুপের প্রকাশিত উপ-প্রকল্প চিপে।
  * খসড়া কখনো আসে না (ওভারভিউ খসড়া ছাড়া আনা হয়; এখানেও is_published যাচাই)।
  */
@@ -26,10 +28,10 @@ export function ProjectCardGrid({ state }: { state: OverviewState }) {
           </div>
         )}
         {state.status === 'loading' && (
-          <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3" aria-busy="true" aria-label={t('লোড হচ্ছে')}>
-            <ProjectCardSkeleton />
-            <ProjectCardSkeleton />
-            <ProjectCardSkeleton />
+          <div className={GRID} role="status" aria-label={t('লোড হচ্ছে')}>
+            <div className={CELL}>
+              <ProjectCardSkeleton />
+            </div>
           </div>
         )}
         {state.status === 'ready' && <Grid data={state.data} />}
@@ -38,14 +40,18 @@ export function ProjectCardGrid({ state }: { state: OverviewState }) {
   )
 }
 
+/** গ্রিডের মতো কলাম, কিন্তু flex-wrap + justify-center — শেষ সারির কার্ড মাঝখানে */
+const GRID = 'mt-10 flex flex-wrap justify-center gap-6'
+const CELL = 'w-full min-w-0 md:w-[calc((100%-1.5rem)/2)] xl:w-[calc((100%-3rem)/3)]'
+
 function Grid({ data }: { data: ProjectOverview }) {
   const shown = data.projects.filter((p) => p.is_published)
-  const top = shown.filter((p) => !p.parent_key && p.show_on_home)
-  if (!top.length) return <p className="mt-10 text-center text-slate-500">{t('এখনো কোনো প্রকল্প প্রকাশিত হয়নি।')}</p>
+  const top = homeProjects(data)
+  if (!top.length) return <EmptyState className="mx-auto mt-10 max-w-xl">{t('এখনো কোনো প্রকল্প প্রকাশিত হয়নি।')}</EmptyState>
   return (
-    <ul className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+    <ul className={GRID}>
       {top.map((p) => (
-        <li key={p.key} className="min-w-0">
+        <li key={p.key} className={CELL}>
           <ProjectCard item={p} subProjects={p.is_group ? shown.filter((c) => c.parent_key === p.key) : []} />
         </li>
       ))}

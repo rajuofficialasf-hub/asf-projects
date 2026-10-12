@@ -57,7 +57,7 @@ function leafRoute(p: Project) {
       <Route
         path=":serial"
         element={
-          <Lazy>
+          <Lazy variant="dialog">
             <LazyProjectDetailPage />
           </Lazy>
         }

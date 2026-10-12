@@ -22,7 +22,7 @@ interface Props {
 const SEARCH_DEBOUNCE_MS = 500
 
 const selectClass =
-  'h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400'
+  'h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-brand-600 focus:ring-2 focus:ring-brand-600/25 focus:outline-none sm:h-10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400'
 
 /**
  * পাবলিক তালিকার ফিল্টার বার (M-ধাপ ১৩; ঘর নির্মাণে আগের HousingFilters এর হুবহু চেহারা): সাল (stats.by_year থেকে —
@@ -93,7 +93,7 @@ export function ProjectFilters({ project, stats, categoryFields, value, onChange
           aria-expanded={mobileOpen}
           aria-controls={panelId}
           onClick={() => setMobileOpen((v) => !v)}
-          className="inline-flex h-10 flex-1 items-center gap-2 rounded-md px-2 text-left text-sm font-semibold text-slate-800"
+          className="inline-flex h-11 flex-1 items-center gap-2 rounded-md px-2 text-left text-sm font-semibold text-slate-800"
         >
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-brand-700">
             <path d="M3 5h18l-7 8v5l-4 2v-7z" />
@@ -107,12 +107,12 @@ export function ProjectFilters({ project, stats, categoryFields, value, onChange
           </svg>
         </button>
         {active && (
-          <button type="button" onClick={() => onChange(EMPTY_LIST_FILTERS)} className="inline-flex h-10 items-center rounded-md px-3 text-sm font-medium text-red-700">
+          <button type="button" onClick={() => onChange(EMPTY_LIST_FILTERS)} className="inline-flex h-11 items-center rounded-md px-3 text-sm font-medium text-red-700">
             {t('মুছুন')}
           </button>
         )}
       </div>
-      <div id={panelId} className={`${mobileOpen ? 'mt-3 grid' : 'hidden'} grid-cols-1 gap-3 sm:mt-0 sm:grid sm:grid-cols-2 lg:grid-cols-5`}>
+      <div id={panelId} className={`${mobileOpen ? 'mt-3 grid' : 'hidden'} grid-cols-1 gap-3 sm:mt-0 sm:grid sm:grid-cols-3 lg:grid-cols-5`}>
         <Field id={`${id}-year`} label={t('সাল')}>
           <select
             id={`${id}-year`}
@@ -239,15 +239,16 @@ export function ProjectFilters({ project, stats, categoryFields, value, onChange
         </Field>
       </div>
 
-      <div className={`${mobileOpen ? 'flex' : 'hidden'} mt-3 items-center justify-between gap-3 sm:flex`}>
-        <p className="text-xs text-slate-500">
+      {/* বড় পর্দায় এই সারি শুধু ফিল্টার থাকলে (বা সালের তালিকা না এলে) — নইলে একটি নিষ্ক্রিয় বাটনের জন্য পুরো সারি খালি যায় */}
+      <div className={`${mobileOpen ? 'flex' : 'hidden'} mt-3 items-center justify-between gap-3 ${active || stats.status === 'error' ? 'sm:flex' : 'sm:hidden'}`}>
+        <p className="text-xs text-slate-600">
           {stats.status === 'error' ? t('সালের তালিকা লোড হয়নি।') : active ? t('ফিল্টার প্রয়োগ করা আছে।') : ' '}
         </p>
         <button
           type="button"
           disabled={!active}
           onClick={() => onChange(EMPTY_LIST_FILTERS)}
-          className="inline-flex h-10 items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 transition hover:border-red-300 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-40 sm:h-9"
+          className="inline-flex h-11 items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 transition hover:border-red-300 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-40 sm:h-9"
         >
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="h-4 w-4">
             <path d="M6 6l12 12M18 6L6 18" />

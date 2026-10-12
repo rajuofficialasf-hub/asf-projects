@@ -2,16 +2,20 @@ import { getLang, lt, t as tr } from '@/i18n'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type TouchEvent } from 'react'
 import { useLocation, useNavigate, useOutletContext, useParams } from 'react-router'
 import { formatBanglaNumber, toBanglaNumber } from '@/lib/banglaNumber'
+import { KEEP_SCROLL } from '@/lib/keepScroll'
+import { useDialogFocus } from '@/lib/useDialogFocus'
 import { getHousingApi, HousingApiError, type HousingRecord, type Project } from '@/backend'
 import type { FieldDef } from '@/features/projects/fields'
 import { useUnionData } from '@/features/geo/unions'
+import { EmptyState } from '@/components/EmptyState'
+import { NoPhotoIcon } from '@/components/NoPhotoIcon'
 import { ErrorNotice } from '@/features/housing/components/ErrorNotice'
 import { PhotoCompare } from '@/features/housing/components/PhotoCompare'
 import { photoSrc } from '@/features/housing/utils/imagePath'
 import { projectPath } from '@/features/housing/utils/housingProjects'
 import type { ListOutletContext } from '@/features/housing/pages/listContext'
 import { fieldHeader, photoLabel } from '@/features/projects/list/listColumns'
-import { compareLabels, detailLayout, fieldsFor, fieldText, type DetailLayout } from './detailLayout'
+import { compareLabels, detailLayout, fieldsFor, type DetailLayout } from './detailLayout'
 import { FieldValue } from './FieldValue'
 import { PhotoViewer } from './PhotoViewer'
 
@@ -95,7 +99,7 @@ export function ProjectDetailPage() {
     [location.search, ctx.projectType],
   )
   const listUrl = `${projectPath(ctx.projectType)}${location.search}`
-  const close = useCallback(() => navigate(listUrl, { replace: true }), [navigate, listUrl])
+  const close = useCallback(() => navigate(listUrl, { replace: true, state: KEEP_SCROLL }), [navigate, listUrl])
 
   // ---- আগের/পরের ----
   const [navBusy, setNavBusy] = useState(false)
@@ -111,7 +115,7 @@ export function ProjectDetailPage() {
         if (inList) {
           const ni = idx + dir
           if (ni >= 0 && ni < pageRecords.length) {
-            navigate(urlFor(pageRecords[ni].serial_no, ctx.page), { replace: true })
+            navigate(urlFor(pageRecords[ni].serial_no, ctx.page), { replace: true, state: KEEP_SCROLL })
             return
           }
           const nextPage = ctx.page + dir
@@ -120,14 +124,14 @@ export function ProjectDetailPage() {
           const p = await api.list({ ...ctx.params, page: nextPage })
           if (p.data.length === 0) return
           const target = dir === 1 ? p.data[0] : p.data[p.data.length - 1]
-          navigate(urlFor(target.serial_no, nextPage), { replace: true })
+          navigate(urlFor(target.serial_no, nextPage), { replace: true, state: KEEP_SCROLL })
         } else {
           // সিরিয়াল-ক্রমে fallback (ডিলেট হওয়া সিরিয়াল টপকে)
           setNavBusy(true)
           for (let s = serialNo + dir, tries = 0; s >= 1 && tries < SERIAL_FALLBACK_TRIES; s += dir, tries++) {
             try {
               const r = await api.getBySerial(ctx.projectType, s)
-              navigate(urlFor(r.serial_no, ctx.page), { replace: true })
+              navigate(urlFor(r.serial_no, ctx.page), { replace: true, state: KEEP_SCROLL })
               return
             } catch (err) {
               if (!(HousingApiError.is(err) && err.code === 'NOT_FOUND')) throw err
@@ -144,15 +148,20 @@ export function ProjectDetailPage() {
   )
 
   // ---- কীবোর্ড, body স্ক্রল লক, ফোকাস ----
+  const dialogRef = useRef<HTMLDivElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      // ফুলস্ক্রিন তুলনা বা স্লাইডার হ্যান্ডেলে ফোকাস থাকলে ← → / Esc সেখানে যায়
+      // ফুলস্ক্রিনে Esc ব্রাউজার নিজে ধরে (ফুলস্ক্রিন বন্ধ)
       if (document.fullscreenElement) return
+      if (e.key === 'Escape') {
+        close()
+        return
+      }
+      // লেখার ঘর বা স্লাইডার হ্যান্ডেলে ← → সেখানেই কাজ করে, রেকর্ড বদলায় না
       const target = e.target as HTMLElement | null
-      if (target?.closest('[data-handle]')) return
-      if (e.key === 'Escape') close()
-      else if (e.key === 'ArrowLeft') void go(-1)
+      if (target?.closest('[data-handle], input, select, textarea')) return
+      if (e.key === 'ArrowLeft') void go(-1)
       else if (e.key === 'ArrowRight') void go(1)
     }
     document.addEventListener('keydown', onKey)
@@ -163,9 +172,16 @@ export function ProjectDetailPage() {
       document.body.style.overflow = prevOverflow
     }
   }, [close, go])
+  // বন্ধ হলে ফোকাস তালিকায় এই রেকর্ডের "বিস্তারিত" বাটনে (আগের/পরের দিয়ে অন্য রেকর্ডে এলে সেটির বাটনে)
+  const serialRef = useRef(serialNo)
   useEffect(() => {
-    closeRef.current?.focus()
-  }, [])
+    serialRef.current = serialNo
+  }, [serialNo])
+  const returnTo = useCallback(
+    () => [...document.querySelectorAll<HTMLElement>(`[data-view-serial="${serialRef.current}"]`)].find((el) => el.getClientRects().length > 0) ?? null,
+    [],
+  )
+  useDialogFocus(dialogRef, { initial: closeRef, returnTo })
 
   // ---- সোয়াইপ ----
   const touchStart = useRef<{ x: number; y: number } | null>(null)
@@ -197,6 +213,7 @@ export function ProjectDetailPage() {
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="detail-title"
@@ -222,8 +239,8 @@ export function ProjectDetailPage() {
           </div>
           <div className="flex items-center gap-2">
             {position && (
-              <span className="hidden text-sm text-slate-500 sm:inline" aria-live="polite">
-                {tr('{total} টির মধ্যে {at}', { total: formatBanglaNumber(position.total), at: formatBanglaNumber(position.at) })}
+              <span className="hidden text-sm text-slate-600 sm:inline" aria-live="polite">
+                {tr('তালিকায় {at}/{total}', { total: formatBanglaNumber(position.total), at: formatBanglaNumber(position.at) })}
               </span>
             )}
             <button
@@ -231,7 +248,7 @@ export function ProjectDetailPage() {
               type="button"
               onClick={close}
               aria-label={tr('বন্ধ করুন (Esc)')}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:outline-none sm:h-9 sm:w-9"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:outline-none sm:h-9 sm:w-9"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true" className="h-6 w-6">
                 <path d="M6 6l12 12M18 6L6 18" />
@@ -242,14 +259,14 @@ export function ProjectDetailPage() {
 
         {/* ---------- বডি ---------- */}
         <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3 sm:px-4">
-          {error && <ErrorNotice title={error.code === 'NOT_FOUND' ? tr('রেকর্ড পাওয়া যায়নি') : tr('রেকর্ড লোড করা যায়নি')} error={error} />}
-          {loading && <DetailSkeleton photos={layout.photoKinds.length} />}
+          {error && (error.code === 'NOT_FOUND' || error.code === 'VALIDATION_ERROR' ? <MissingRecord onBack={close} /> : <ErrorNotice title={tr('রেকর্ড লোড করা যায়নি')} error={error} />)}
+          {loading && <DetailSkeleton photos={layout.photoKinds.length > 0} />}
           {record && <RecordDetail project={project} layout={layout} labels={labels} record={record} />}
         </div>
 
         {/* ---------- ফুটার: আগের / পরের ---------- */}
         <footer className="flex items-center justify-between gap-3 border-t border-slate-200 bg-white px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:px-4 sm:pb-2">
-          <NavButton dir={-1} disabled={!hasPrev || navBusy || loading} onClick={() => void go(-1)} />
+          <NavButton dir={-1} disabled={!!error || !hasPrev || navBusy || loading} onClick={() => void go(-1)} />
           <p className="hidden text-center text-xs text-slate-500 sm:block">
             {position
               ? tr('পেইজ {n} · ← → কী বা সোয়াইপ', { n: toBanglaNumber(ctx.page) })
@@ -257,7 +274,7 @@ export function ProjectDetailPage() {
                 ? tr('← → কী বা সোয়াইপ')
                 : tr('সিরিয়াল ক্রমে · ← → কী বা সোয়াইপ')}
           </p>
-          <NavButton dir={1} disabled={!hasNext || navBusy || loading} onClick={() => void go(1)} />
+          <NavButton dir={1} disabled={!!error || !hasNext || navBusy || loading} onClick={() => void go(1)} />
         </footer>
       </div>
     </div>
@@ -269,10 +286,12 @@ type CompareLabels = { before: string; after: string } | undefined
 /** রেকর্ডের অংশ: ছবি (ছবি মোড অনুযায়ী), হাইলাইট কার্ড (টাকা/ক্যাটাগরি), বাকি ঘর */
 function RecordDetail({ project, layout, labels, record }: { project: Project; layout: DetailLayout; labels: CompareLabels; record: HousingRecord }) {
   const kinds = layout.photoKinds
+  const hasPhoto = kinds.some((k) => (k === 'prev' ? record.prev_photo_url : record.current_photo_url))
   const highlightCols = HIGHLIGHT_COLS[Math.min(4, layout.highlight.length)] ?? ''
   return (
     <>
-      {kinds.length === 2 && (
+      {kinds.length > 0 && !hasPhoto && <NoPhotos />}
+      {hasPhoto && kinds.length === 2 && (
         <PhotoCompare
           before={photoSrc(record.prev_photo_url, record.photo_updated_at)}
           after={photoSrc(record.current_photo_url, record.photo_updated_at)}
@@ -282,7 +301,7 @@ function RecordDetail({ project, layout, labels, record }: { project: Project; l
           frameClassName="h-[clamp(200px,42vh,380px)] sm:h-[clamp(160px,36vh,380px)]"
         />
       )}
-      {kinds.length === 1 && (
+      {hasPhoto && kinds.length === 1 && (
         <PhotoViewer
           src={photoSrc(kinds[0] === 'prev' ? record.prev_photo_url : record.current_photo_url, record.photo_updated_at)}
           alt={record.name}
@@ -296,7 +315,7 @@ function RecordDetail({ project, layout, labels, record }: { project: Project; l
           {layout.highlight.map((d) => (
             <div key={d.key} className="min-w-0 bg-brand-50 px-3 py-2">
               <p className="text-[11px] font-medium text-brand-800">{fieldHeader(d, project)}</p>
-              <p className="truncate text-lg leading-snug font-bold text-slate-900" title={fieldText(d, record)}>
+              <p className="text-lg leading-snug font-bold break-words text-slate-900">
                 <FieldValue def={d} record={record} />
               </p>
             </div>
@@ -305,7 +324,7 @@ function RecordDetail({ project, layout, labels, record }: { project: Project; l
       )}
 
       <dl className={`${kinds.length || layout.highlight.length ? 'mt-3 ' : ''}grid grid-cols-2 gap-2 sm:grid-cols-4`}>
-        <Field label={tr('সিরিয়াল নম্বর')} title={toBanglaNumber(record.serial_no)} strong>
+        <Field label={tr('সিরিয়াল নম্বর')} strong>
           {toBanglaNumber(record.serial_no)}
         </Field>
         {fieldsFor(layout, record).map((d) => (
@@ -319,21 +338,22 @@ function RecordDetail({ project, layout, labels, record }: { project: Project; l
 /** হাইলাইট কার্ডে বড় পর্দায় কলাম (Tailwind পুরো ক্লাসের নাম দেখতে চায়) */
 const HIGHLIGHT_COLS: Record<number, string> = { 1: 'sm:grid-cols-1', 2: 'sm:grid-cols-2', 3: 'sm:grid-cols-3', 4: 'sm:grid-cols-4' }
 
-/** একটি ঘর — লম্বা লেখা (ঠিকানা ইত্যাদি) পূর্ণ-চওড়া, লাইন-ভাঙা; নাম মোটা */
+/** একটি ঘর — লম্বা লেখা (ঠিকানা ইত্যাদি) পূর্ণ-চওড়া; নাম মোটা */
 function DetailField({ def, project, record }: { def: FieldDef; project: Project; record: HousingRecord }) {
   const long = def.type === 'long_text'
   return (
-    <Field label={fieldHeader(def, project)} title={long ? undefined : fieldText(def, record)} strong={def.key === 'name'} wrap={long} className={long ? 'col-span-2 sm:col-span-4' : ''}>
+    <Field label={fieldHeader(def, project)} strong={def.key === 'name'} className={long ? 'col-span-2 sm:col-span-4' : ''}>
       <FieldValue def={def} record={record} />
     </Field>
   )
 }
 
-function Field({ label, title, strong = false, wrap = false, className = '', children }: { label: string; title?: string; strong?: boolean; wrap?: boolean; className?: string; children: ReactNode }) {
+/** একটি ঘর — লেখা লম্বা হলে লাইন ভাঙে (ফোনে title দেখা যায় না, তাই কাটা নয়) */
+function Field({ label, strong = false, className = '', children }: { label: string; strong?: boolean; className?: string; children: ReactNode }) {
   return (
     <div className={`min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-1.5 ${className}`}>
-      <dt className="text-[11px] font-medium text-slate-500">{label}</dt>
-      <dd className={`${wrap ? 'break-words' : 'truncate'} text-slate-900 ${strong ? 'text-sm font-semibold' : 'text-sm'}`} title={wrap ? undefined : title}>
+      <dt className="text-xs font-medium text-slate-600">{label}</dt>
+      <dd className={`break-words text-slate-900 ${strong ? 'text-sm font-semibold' : 'text-sm'}`}>
         {children}
       </dd>
     </div>
@@ -357,21 +377,46 @@ function NavButton({ dir, disabled, onClick }: { dir: -1 | 1; disabled: boolean;
   )
 }
 
-function DetailSkeleton({ photos }: { photos: number }) {
+/** লোডের কাঠামো আসল মডালের মতো: একটি ছবির ফ্রেম, নিচে ২/৪ কলামের ঘর — লোড শেষে লেখা লাফায় না */
+function DetailSkeleton({ photos }: { photos: boolean }) {
   return (
-    <div className="animate-pulse" aria-busy="true" aria-label={tr('লোড হচ্ছে')}>
-      {photos === 2 && (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="aspect-[4/3] rounded-xl bg-slate-200" />
-          <div className="aspect-[4/3] rounded-xl bg-slate-200" />
-        </div>
-      )}
-      {photos === 1 && <div className="aspect-[4/3] rounded-xl bg-slate-200 sm:aspect-[16/9]" />}
-      <div className={`${photos ? 'mt-5 ' : ''}grid gap-3 sm:grid-cols-2 lg:grid-cols-3`}>
-        {Array.from({ length: 6 }, (_, i) => (
-          <div key={i} className="h-16 rounded-xl bg-slate-200" />
+    <div className="animate-pulse" role="status" aria-label={tr('লোড হচ্ছে')}>
+      {photos && <div className="h-[clamp(200px,42vh,380px)] rounded-xl bg-slate-200 sm:h-[clamp(160px,36vh,380px)]" />}
+      <div className={`${photos ? 'mt-3 ' : ''}grid grid-cols-2 gap-2 sm:grid-cols-4`}>
+        {Array.from({ length: 8 }, (_, i) => (
+          <div key={i} className="h-12 rounded-lg bg-slate-200" />
         ))}
       </div>
     </div>
+  )
+}
+
+/** কোনো ছবি নেই — খালি ফ্রেম আর অকেজো জুম বাটনের বদলে এক লাইনের নোট */
+function NoPhotos() {
+  return (
+    <p className="flex items-center gap-2 rounded-lg border border-dashed border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-600">
+      <NoPhotoIcon className="h-5 w-5 shrink-0 text-slate-500" />
+      {tr('এই উপকারভোগীর কোনো ছবি নেই।')}
+    </p>
+  )
+}
+
+/** ভুল বা মুছে যাওয়া সিরিয়াল — এটা সার্ভারের ত্রুটি নয়, তাই লাল সতর্কতা নয় */
+function MissingRecord({ onBack }: { onBack: () => void }) {
+  return (
+    <EmptyState
+      title={tr('এই সিরিয়ালে কোনো উপকারভোগী নেই')}
+      action={
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex h-11 items-center rounded-md border border-brand-600 px-4 text-sm font-medium text-brand-700 transition hover:bg-brand-600 hover:text-white focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 focus-visible:outline-none sm:h-9"
+        >
+          {tr('তালিকায় ফিরে যান')}
+        </button>
+      }
+    >
+      {tr('সিরিয়াল নম্বরটি আবার দেখুন, অথবা তালিকায় ফিরে যান।')}
+    </EmptyState>
   )
 }
