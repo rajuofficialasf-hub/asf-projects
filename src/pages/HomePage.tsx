@@ -15,6 +15,8 @@ export function HomePage() {
   useDocumentTitle() // শুধু সাইটের নাম
   const overview = useProjectsOverview()
   const g = overview.status === 'ready' ? overview.data.global : null
+  // "মোট প্রকল্প" = শীর্ষ-স্তরের প্রকাশিত প্রকল্প (নিচের কার্ডের সংখ্যার সাথে মেলে); উপ-প্রকল্প আলাদা প্রকল্প হিসেবে গোনা হয় না
+  const projectCount = overview.status === 'ready' ? overview.data.projects.filter((p) => p.is_published && !p.parent_key).length : null
 
   return (
     <>
@@ -26,7 +28,7 @@ export function HomePage() {
             {t('অসহায় ও দুস্থ মানুষের পাশে আমাদের প্রকল্পগুলোর অগ্রগতি, উপকারভোগীদের তথ্য ও ছবি এখানে সবার জন্য উন্মুক্ত।')}
           </p>
           <dl className="mt-8 grid max-w-2xl grid-cols-3 gap-2 sm:gap-4" aria-busy={overview.status === 'loading'}>
-            <HeroStat label={t('মোট প্রকল্প')} value={g?.projects ?? null} loading={overview.status === 'loading'} />
+            <HeroStat label={t('মোট প্রকল্প')} value={projectCount} loading={overview.status === 'loading'} />
             <HeroStat label={t('মোট উপকারভোগী')} value={g?.total ?? null} loading={overview.status === 'loading'} />
             <HeroStat label={t('মোট জেলা')} value={g?.districts ?? null} loading={overview.status === 'loading'} />
           </dl>

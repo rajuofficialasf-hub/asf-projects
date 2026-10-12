@@ -8,3 +8,11 @@ export function coverSrc(coverPath: string | null | undefined, updatedAt: string
   if (!coverPath || !/^https?:\/\//i.test(coverPath)) return null
   return photoSrc(coverPath, updatedAt ?? null)
 }
+
+/**
+ * কভার না থাকলে কার্ডে যে আইকন বসে (statIcons-এর key)। প্রকল্পের নিজের আইকন কিছু key আইকন-সেটে নেই (যেমন টিনের ঘরের
+ * `tin-house`) — সেগুলো কাছের আইকনে, নইলে মানুষ-আইকন দেখাত।
+ */
+export function coverIcon(icon: string | null | undefined): string | null | undefined {
+  return icon?.endsWith('-house') ? 'house' : icon
+}

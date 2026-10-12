@@ -7,6 +7,7 @@ import { useDialogFocus } from '@/lib/useDialogFocus'
 import { getHousingApi, HousingApiError, type HousingRecord, type Project } from '@/backend'
 import type { FieldDef } from '@/features/projects/fields'
 import { useUnionData } from '@/features/geo/unions'
+import { EmptyState } from '@/components/EmptyState'
 import { ErrorNotice } from '@/features/housing/components/ErrorNotice'
 import { PhotoCompare } from '@/features/housing/components/PhotoCompare'
 import { photoSrc } from '@/features/housing/utils/imagePath'
@@ -406,16 +407,19 @@ function NoPhotos() {
 /** ভুল বা মুছে যাওয়া সিরিয়াল — এটা সার্ভারের ত্রুটি নয়, তাই লাল সতর্কতা নয় */
 function MissingRecord({ onBack }: { onBack: () => void }) {
   return (
-    <div role="status" className="rounded-xl border border-dashed border-slate-300 bg-white px-4 py-8 text-center">
-      <p className="font-semibold text-slate-900">{tr('এই সিরিয়ালে কোনো উপকারভোগী নেই')}</p>
-      <p className="mt-1 text-sm text-slate-600">{tr('সিরিয়াল নম্বরটি আবার দেখুন, অথবা তালিকায় ফিরে যান।')}</p>
-      <button
-        type="button"
-        onClick={onBack}
-        className="mt-4 inline-flex h-11 items-center rounded-md border border-brand-600 px-4 text-sm font-medium text-brand-700 transition hover:bg-brand-600 hover:text-white focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 focus-visible:outline-none sm:h-9"
-      >
-        {tr('তালিকায় ফিরে যান')}
-      </button>
-    </div>
+    <EmptyState
+      title={tr('এই সিরিয়ালে কোনো উপকারভোগী নেই')}
+      action={
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex h-11 items-center rounded-md border border-brand-600 px-4 text-sm font-medium text-brand-700 transition hover:bg-brand-600 hover:text-white focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 focus-visible:outline-none sm:h-9"
+        >
+          {tr('তালিকায় ফিরে যান')}
+        </button>
+      }
+    >
+      {tr('সিরিয়াল নম্বরটি আবার দেখুন, অথবা তালিকায় ফিরে যান।')}
+    </EmptyState>
   )
 }

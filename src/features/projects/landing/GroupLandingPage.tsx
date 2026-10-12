@@ -1,4 +1,5 @@
 import { lt, t } from '@/i18n'
+import { SITE_NAME } from '@/config/site'
 import { useDocumentTitle } from '@/lib/useDocumentTitle'
 import type { Project } from '@/backend'
 import { FeaturedProjects } from '@/features/housing/components/FeaturedProjects'
@@ -18,7 +19,7 @@ export function GroupLandingPage({ group }: { group: Project }) {
       <section className="bg-gradient-to-br from-brand-800 via-brand-700 to-brand-600 text-white">
         <div className="container-page py-14 sm:py-20">
           <HousingSubnav variant="dark" group={group.key} />
-          <p className="mt-8 text-sm font-medium tracking-wider text-accent-400 uppercase">{t('আস-সুন্নাহ ফাউন্ডেশন')}</p>
+          <p className="mt-8 text-sm font-medium tracking-wider text-accent-400 uppercase">{t(SITE_NAME)}</p>
           <h1 className="mt-2 text-3xl leading-tight font-bold sm:text-5xl">{title}</h1>
           <p className="mt-4 max-w-2xl text-base text-brand-50/90 sm:text-lg">{lt(group, 'description')}</p>
         </div>

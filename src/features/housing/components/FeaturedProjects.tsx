@@ -1,5 +1,6 @@
 import { t } from '@/i18n'
 import { useRef } from 'react'
+import { EmptyState } from '@/components/EmptyState'
 import type { ProjectKey } from '../../../backend/interfaces/types'
 import { useGroupChildren } from '../utils/housingProjects'
 import { FeaturedProjectCard } from './FeaturedProjectCard'
@@ -33,20 +34,24 @@ export function FeaturedProjects({ groupKey, intro }: { groupKey?: ProjectKey; i
           )}
         </div>
 
-        <div className="relative mt-10">
-          <ArrowButton dir={-1} onClick={() => scrollBy(-1)} />
-          <div
-            ref={scroller}
-            className="flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth pb-2 [scrollbar-width:none] lg:grid lg:grid-cols-2 lg:gap-8 lg:overflow-visible [&::-webkit-scrollbar]:hidden"
-          >
-            {projects.map((p) => (
-              <div key={p.key} className="w-[88%] shrink-0 snap-center sm:w-[80%] lg:w-auto">
-                <FeaturedProjectCard project={p} />
-              </div>
-            ))}
+        {projects.length === 0 ? (
+          <EmptyState className="mx-auto mt-10 max-w-xl">{t('এখনো কোনো প্রকল্প প্রকাশিত হয়নি।')}</EmptyState>
+        ) : (
+          <div className="relative mt-10">
+            {projects.length > 1 && <ArrowButton dir={-1} onClick={() => scrollBy(-1)} />}
+            <div
+              ref={scroller}
+              className="flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth pb-2 [scrollbar-width:none] lg:grid lg:grid-cols-2 lg:gap-8 lg:overflow-visible [&::-webkit-scrollbar]:hidden"
+            >
+              {projects.map((p) => (
+                <div key={p.key} className="w-[88%] shrink-0 snap-center sm:w-[80%] lg:w-auto">
+                  <FeaturedProjectCard project={p} />
+                </div>
+              ))}
+            </div>
+            {projects.length > 1 && <ArrowButton dir={1} onClick={() => scrollBy(1)} />}
           </div>
-          <ArrowButton dir={1} onClick={() => scrollBy(1)} />
-        </div>
+        )}
       </div>
     </section>
   )

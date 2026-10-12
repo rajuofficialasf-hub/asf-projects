@@ -7,6 +7,7 @@ import type { ListOutletContext } from '@/features/housing/pages/listContext'
 import { HousingSubnav } from '@/features/housing/components/HousingSubnav'
 import { Lazy, LazyUpazilaMapPanel } from '@/features/housing/pages/lazyPages'
 import { Pagination } from '@/features/housing/components/Pagination'
+import { EmptyState } from '@/components/EmptyState'
 import { ErrorNotice } from '@/features/housing/components/ErrorNotice'
 import { useHousingList } from '@/features/housing/hooks/useHousingList'
 import { useFilteredStats, useHousingStats } from '@/features/housing/hooks/useHousingStats'
@@ -164,12 +165,7 @@ export function ProjectListPage({ project }: Props) {
         {data && (
           <>
             {data.meta.total === 0 ? (
-              <p
-                role="status"
-                className="mt-4 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500"
-              >
-                {active ? t('কোনো তথ্য পাওয়া যায়নি। ফিল্টার বদলে আবার চেষ্টা করুন।') : t('এখনো কোনো রেকর্ড নেই।')}
-              </p>
+              <EmptyState className="mt-4">{active ? t('কোনো তথ্য পাওয়া যায়নি। ফিল্টার বদলে আবার চেষ্টা করুন।') : t('এখনো কোনো রেকর্ড নেই।')}</EmptyState>
             ) : (
               <>
                 <div className="mt-4">
