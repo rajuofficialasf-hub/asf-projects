@@ -81,6 +81,7 @@ export const EN: Record<string, string> = {
   'কিছু একটা ভুল হয়েছে': 'Something went wrong',
   'ত্রুটির বার্তা (সাপোর্টকে জানাতে পারেন):': 'Error message (you can report it to support):',
   'আবার চেষ্টা করুন': 'Try again',
+  'এই অংশটি দেখাতে সমস্যা হয়েছে। আবার চেষ্টা করুন, না হলে পেইজটি রিলোড করুন।': 'Something went wrong showing this part. Try again, or reload the page.',
   '{name} — বিস্তারিত দেখুন': '{name} — view details',
   '{name}: {label} — বড় করে দেখুন': '{name}: {label} — view larger',
   'এখনো ছবি যোগ হয়নি': 'No photos added yet',

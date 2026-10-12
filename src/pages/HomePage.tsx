@@ -44,7 +44,9 @@ export function HomePage() {
 function HeroStat({ label, value, loading }: { label: string; value: number | null; loading: boolean }) {
   const shown = useCountUp(value ?? 0)
   return (
-    <div className="min-w-0 rounded-xl bg-white/10 px-3 py-3 ring-1 ring-white/15 backdrop-blur-sm sm:px-5 sm:py-4">
+    // <dl>-এ dt আগে আসতে হয়; চোখে লেবেল সংখ্যার নিচে (order-last)
+    <div className="flex min-w-0 flex-col rounded-xl bg-white/10 px-3 py-3 ring-1 ring-white/15 backdrop-blur-sm sm:px-5 sm:py-4">
+      <dt className="order-last mt-1.5 text-xs font-medium text-brand-50/85 sm:text-sm">{label}</dt>
       {loading ? (
         <dd className="h-8 w-14 animate-pulse rounded bg-white/25 sm:h-10" />
       ) : (
@@ -52,7 +54,6 @@ function HeroStat({ label, value, loading }: { label: string; value: number | nu
           {value === null ? '—' : formatBanglaNumber(shown)}
         </dd>
       )}
-      <dt className="mt-1.5 text-xs font-medium text-brand-50/85 sm:text-sm">{label}</dt>
     </div>
   )
 }

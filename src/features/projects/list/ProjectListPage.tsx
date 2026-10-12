@@ -89,7 +89,7 @@ export function ProjectListPage({ project }: Props) {
         else sp.set('page', String(next))
         return sp
       })
-      tableTop.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      tableTop.current?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })
     },
     [setSearchParams],
   )
@@ -144,7 +144,7 @@ export function ProjectListPage({ project }: Props) {
         {/* ইন্টারেক্টিভ উপজেলা মানচিত্র — ফিল্টারের উপরে, ডিফল্টে লুকানো; ফিল্টারের সাথে দুই-দিকে সিঙ্ক */}
         {project.display?.show_map !== false && (
           <div className="mt-4">
-            <Lazy>
+            <Lazy variant="banner">
               <LazyUpazilaMapPanel project={project} stats={stats} filters={filters} onChange={setGeoFromMap} />
             </Lazy>
           </div>

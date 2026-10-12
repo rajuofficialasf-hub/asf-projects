@@ -14,7 +14,7 @@ export function ConfigAwareNotFound() {
   const { synced } = useRegistry()
   if (!synced) {
     return (
-      <div className="container-page py-20 text-center text-sm text-slate-500" aria-busy="true">
+      <div className="container-page py-20 text-center text-sm text-slate-600" role="status">
         {t('লোড হচ্ছে…')}
       </div>
     )

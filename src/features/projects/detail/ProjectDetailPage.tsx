@@ -265,7 +265,7 @@ export function ProjectDetailPage() {
 
         {/* ---------- ফুটার: আগের / পরের ---------- */}
         <footer className="flex items-center justify-between gap-3 border-t border-slate-200 bg-white px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:px-4 sm:pb-2">
-          <NavButton dir={-1} disabled={!validSerial || !hasPrev || navBusy || loading} onClick={() => void go(-1)} />
+          <NavButton dir={-1} disabled={!!error || !hasPrev || navBusy || loading} onClick={() => void go(-1)} />
           <p className="hidden text-center text-xs text-slate-500 sm:block">
             {position
               ? tr('পেইজ {n} · ← → কী বা সোয়াইপ', { n: toBanglaNumber(ctx.page) })
@@ -273,7 +273,7 @@ export function ProjectDetailPage() {
                 ? tr('← → কী বা সোয়াইপ')
                 : tr('সিরিয়াল ক্রমে · ← → কী বা সোয়াইপ')}
           </p>
-          <NavButton dir={1} disabled={!validSerial || !hasNext || navBusy || loading} onClick={() => void go(1)} />
+          <NavButton dir={1} disabled={!!error || !hasNext || navBusy || loading} onClick={() => void go(1)} />
         </footer>
       </div>
     </div>

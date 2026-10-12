@@ -1,6 +1,7 @@
 import { t } from '@/i18n'
 import { useEffect, useRef } from 'react'
 import { Outlet, useLocation, useNavigationType } from 'react-router'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { isKeepScroll } from '@/lib/keepScroll'
 import { SiteHeader } from './SiteHeader'
 import { SiteFooter } from './SiteFooter'
@@ -30,6 +31,8 @@ function useNewPageFocus(main: React.RefObject<HTMLElement | null>) {
 export function SiteLayout() {
   const main = useRef<HTMLElement>(null)
   useNewPageFocus(main)
+  // পেইজ ভাঙলে হেডার-ফুটার থাকে (অন্য পেইজে যাওয়া যায়); অন্য পেইজে গেলে ত্রুটির বক্স নিজে মুছে যায় (resetKey — remount নয়)
+  const { pathname } = useLocation()
   return (
     <div className="flex min-h-screen flex-col">
       <a
@@ -40,7 +43,9 @@ export function SiteLayout() {
       </a>
       <SiteHeader />
       <main id="main" ref={main} tabIndex={-1} className="flex-1 outline-none">
-        <Outlet />
+        <ErrorBoundary resetKey={pathname}>
+          <Outlet />
+        </ErrorBoundary>
       </main>
       <SiteFooter />
     </div>

@@ -19,7 +19,7 @@ export function FeaturedProjects({ groupKey, intro }: { groupKey?: ProjectKey; i
   const scrollBy = (dir: -1 | 1) => {
     const el = scroller.current
     if (!el) return
-    el.scrollBy({ left: dir * el.clientWidth * 0.9, behavior: 'smooth' })
+    el.scrollBy({ left: dir * el.clientWidth * 0.9, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
   }
 
   return (

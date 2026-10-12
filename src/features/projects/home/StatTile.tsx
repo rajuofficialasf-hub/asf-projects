@@ -28,7 +28,9 @@ export function StatTile({
   const shown = useCountUp(value ?? 0)
   const fmt = money ? formatTaka : formatBanglaNumber
   return (
+    // <dl>-এ dt আগে আসতে হয়; চোখে লেবেল সংখ্যার নিচে (order-last)
     <div className={`flex min-w-0 flex-col items-center justify-center rounded-xl px-2 py-3 text-center ${strong ? solid : soft}`}>
+      <dt className="order-last mt-1.5 text-xs leading-tight font-medium">{label}</dt>
       {loading ? (
         <dd className={`h-7 w-10 animate-pulse rounded ${strong ? 'bg-white/30' : 'bg-current/15'}`} aria-busy="true" />
       ) : (
@@ -36,7 +38,6 @@ export function StatTile({
           {value === null ? '—' : fmt(Math.round(shown))}
         </dd>
       )}
-      <dt className="mt-1.5 text-xs leading-tight font-medium">{label}</dt>
     </div>
   )
 }
