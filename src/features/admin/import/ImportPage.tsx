@@ -7,7 +7,8 @@ import { getHousingApi, HousingApiError, type BulkUpdateInput, type HousingBulkR
 import { gnUnion, useUnionData } from '@/features/geo/unions'
 import { formatField } from '@/features/projects/fields'
 import { downloadText, toCsv } from '@/features/housing/utils/csvExport'
-import { adminPath, useRecordProjects } from '@/features/housing/utils/housingProjects'
+import { NoProjectsNotice } from '../ui/NoProjectsNotice'
+import { useRecordProjects } from '@/features/housing/utils/housingProjects'
 import { isMainAdmin, useAdminUser } from '../adminUser'
 import { useCategoryUsage } from '../records/useCategoryUsage'
 import { CategoryReviewPanel } from './CategoryReviewPanel'
@@ -17,7 +18,7 @@ import { buildImportFields, guessMapping, isIgnoredHeader, type ImportFieldDef, 
 import { parseSpreadsheet, type ParsedSheet } from './importParse'
 import { Badge } from '../ui/Badge'
 import { Step } from '../ui/Step'
-import { Alert, Button, Card, Checkbox, DataTable, FileInput, Grid, Page, ProgressBar, RadioGroup, SelectField, Stack, Text, TextLink, useToast, type DataTableColumn } from '@/ui'
+import { Alert, Button, Card, Checkbox, DataTable, FileInput, Grid, Page, ProgressBar, RadioGroup, SelectField, Stack, Text, useToast, type DataTableColumn } from '@/ui'
 
 const BATCH = 200
 const PREVIEW_LIMIT = 300
@@ -42,7 +43,12 @@ export function ImportPage() {
   // URL এর প্রকল্প (খসড়া হলে এডমিনের রেজিস্ট্রিতে একটু পরে আসে) — এলে সেটিই; ব্যবহারকারী বাছলে সেটি
   const projectKey = chosen ?? (projects.some((p) => p.key === asked) ? asked : null) ?? projects[0]?.key
   const project = projects.find((p) => p.key === projectKey) ?? projects[0]
-  if (!project) return null
+  if (!project)
+    return (
+      <Page title={t('বাল্ক ইম্পোর্ট')} documentTitle={false}>
+        <NoProjectsNotice />
+      </Page>
+    )
   return <Importer key={project.key} project={project} projects={projects} onProject={setProjectKey} />
 }
 
@@ -364,11 +370,6 @@ function Importer({ project, projects, onProject }: { project: Project; projects
       title={t('Google Sheet থেকে বাল্ক ইম্পোর্ট')}
       description={t('Sheet → File → Download → Excel (.xlsx) বা CSV (UTF-8)। ছবির লিঙ্ক শুধু রেফারেন্স হিসেবে সংরক্ষিত হয়; ছবি নিজে আলাদা স্ক্রিপ্ট/বাল্ক পেইজে আপলোড হবে।')}
       documentTitle={false}
-      breadcrumbs={
-        <Text size="small" tone="muted">
-          <TextLink to={adminPath(projectType)}>{t('রেকর্ড')}</TextLink> / {t('বাল্ক ইম্পোর্ট')}
-        </Text>
-      }
     >
       <Stack gap={3}>
         {/* ---------- ধাপ ১ ---------- */}

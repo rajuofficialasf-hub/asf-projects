@@ -27,9 +27,15 @@ const ACTION_TONE: Record<string, NonNullable<BadgeProps['tone']>> = {
   field_restore: 'success',
   field_delete: 'error',
   admin_user_update: 'info',
+  admin_create: 'success',
+  admin_disable: 'warning',
+  admin_enable: 'success',
+  admin_password_set: 'neutral',
+  admin_role_set: 'info',
 }
 
 /** একটিভিটি লগের কাজের নাম, রঙিন ব্যাজে (ড্যাশবোর্ড ও লগ পেইজ) */
 export function ActionBadge({ action }: { action: string }) {
   return <Badge tone={ACTION_TONE[action] ?? 'neutral'}>{ACTION_LABEL[action] ? t(ACTION_LABEL[action]) : action}</Badge>
 }
+

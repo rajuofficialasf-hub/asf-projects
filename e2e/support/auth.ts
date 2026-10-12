@@ -5,7 +5,7 @@ export { MOCK_ADMIN, MOCK_NON_ADMIN }
 
 /** লগইন পেইজে ফর্ম পূরণ করে সাবমিট (লগইনে সরাসরি আসা বা রিডাইরেক্ট — দুই অবস্থায় কাজ করে) */
 export async function fillLogin(page: Page, email: string, password: string) {
-  await page.getByPlaceholder('admin@example.org').fill(email)
+  await page.getByRole('textbox', { name: /^ইমেইল/ }).fill(email)
   await page.locator('input[type=password]').fill(password)
   await page.getByRole('button', { name: 'লগইন' }).click()
 }

@@ -10,13 +10,14 @@ import { formatBytes, processImage } from '@/features/housing/utils/imageProcess
 import { photoSrc } from '@/features/housing/utils/imagePath'
 import { buildProjectAliases, parsePhotoFilename, photoNameExamples, photoTarget, type PhotoTarget } from '@/features/housing/utils/photoFilename'
 import { useRecordProjects } from '@/features/housing/utils/housingProjects'
+import { NoProjectsNotice } from '../ui/NoProjectsNotice'
 import { photoSlotLabel } from '../records/recordColumns'
 import { isMainAdmin, useAdminUser } from '../adminUser'
 import { Badge } from '../ui/Badge'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { ErrorNotice } from '../ui/ErrorNotice'
 import { ImageUploader, StatusPill } from '../ui/ImageUploader'
-import { Button, Card, DataTable, IconButton, Page, ProgressBar, SelectField, Stack, Text, TextLink, type DataTableColumn } from '@/ui'
+import { Button, Card, DataTable, EmptyState, IconButton, Page, ProgressBar, SelectField, Stack, Text, type DataTableColumn } from '@/ui'
 
 const UPLOAD_CONCURRENCY = 2
 
@@ -379,15 +380,23 @@ export function PhotoBulkPage() {
     },
   ]
 
+  if (withPhotos.length === 0)
+    return (
+      <Page title={t('ছবি বাল্ক আপডেট')} documentTitle={false}>
+        {all.length === 0 ? (
+          <NoProjectsNotice />
+        ) : (
+          <Card>
+            <EmptyState title={t('আপনার প্রকল্পগুলোতে ছবি রাখা হয় না')} description={t('প্রকল্পের সেটিংসে ছবির মোড চালু থাকলে এখানে ছবি আপলোড করা যাবে।')} />
+          </Card>
+        )}
+      </Page>
+    )
+
   return (
     <Page
       title={t('ছবি বাল্ক আপডেট')}
       documentTitle={false}
-      breadcrumbs={
-        <Text size="small" tone="muted">
-          <TextLink to="/admin">{t('এডমিন')}</TextLink> / {t('ছবি বাল্ক আপডেট')}
-        </Text>
-      }
     >
       <Stack gap={3}>
         <Text size="small" tone="muted">

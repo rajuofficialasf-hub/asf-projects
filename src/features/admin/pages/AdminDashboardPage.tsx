@@ -11,6 +11,7 @@ import {
 import { projectPath, useProjects } from '@/features/projects/registry'
 import { formatDateTime } from '@/features/housing/utils/activityLabels'
 import { ActionBadge } from '../ui/ActionBadge'
+import { actorLabel } from '../ui/actorLabel'
 import { adminPath, useRecordProjects } from '@/features/housing/utils/housingProjects'
 import { canEditProject, useAdminUser } from '../adminUser'
 import { formatBanglaNumber, toBanglaNumber } from '@/lib/banglaNumber'
@@ -19,6 +20,7 @@ import { useDocumentTitle } from '@/lib/useDocumentTitle'
 import { Button, Card, Grid, LinkButton, LoadingState, Page, Stack, StatList, Text, TextLink } from '@/ui'
 import { Badge } from '../ui/Badge'
 import { ErrorNotice } from '../ui/ErrorNotice'
+import { NoProjectsNotice } from '../ui/NoProjectsNotice'
 
 type State =
   | { status: 'loading' }
@@ -107,6 +109,7 @@ export function AdminDashboardPage() {
       }
     >
       <Stack gap={4}>
+        {items.length === 0 && <NoProjectsNotice />}
         <Grid columns={{ xs: 1, md: 2, lg: 3 }} gap={2}>
           {[...ordered, ...orphans].map((item) => {
             const money = moneyTotal(item)
@@ -123,18 +126,15 @@ export function AdminDashboardPage() {
                   </Text>
                 }
                 actions={draft ? <Badge tone="amber">{t('খসড়া')}</Badge> : <Badge tone="green">{t('প্রকাশিত')}</Badge>}
-                accent={!!item.parent_key}
               >
                 <Stack gap={2}>
                   <StatList
                     items={[
                       { label: t('রেকর্ড'), value: formatBanglaNumber(item.stats.total) },
                       { label: t('মোট টাকা'), value: money === null ? '—' : formatTaka(money) },
-                      {
-                        label: t('ছবি বাকি'),
-                        value: item.is_group || item.photo_mode === 'none' || item.without_photo === null ? '—' : formatBanglaNumber(item.without_photo),
-                        tone: item.without_photo ? 'warning' : 'default',
-                      },
+                      item.is_group || item.photo_mode === 'none' || item.without_photo === null
+                        ? { label: t('ছবি বাকি'), value: '—' }
+                        : { label: t('ছবি বাকি'), value: formatBanglaNumber(item.without_photo), tone: item.without_photo > 0 ? 'warning' : 'default' },
                     ]}
                   />
                   <Stack direction="row" gap={1} wrap>
@@ -176,7 +176,7 @@ export function AdminDashboardPage() {
                     </Text>
                     <ActionBadge action={e.action} />
                     <Text size="small" inline truncate>
-                      {e.actor_email ?? t('অজানা')}
+                      {actorLabel(e.actor_email)}
                     </Text>
                     {p && (
                       <Text size="small" tone="muted" inline>
@@ -188,7 +188,8 @@ export function AdminDashboardPage() {
                         · {t('সিরিয়াল')} {toBanglaNumber(e.serial_no)}
                       </Text>
                     )}
-                    {e.record_name && (
+                    {/* প্রকল্পের সেটিং বদলে record_name = প্রকল্পের নাম, যা আগেই দেখানো — তাই শুধু রেকর্ড/ফিল্ডের নাম */}
+                    {e.record_name && (e.serial_no !== null || e.action.startsWith('field_')) && (
                       <Text size="small" tone="muted" inline truncate>
                         ({e.record_name})
                       </Text>

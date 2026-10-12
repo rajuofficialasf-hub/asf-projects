@@ -11,9 +11,10 @@ import { ErrorNotice } from '../ui/ErrorNotice'
 import { Pagination } from '../ui/Pagination'
 import { ACTION_LABEL, formatDateTime } from '@/features/housing/utils/activityLabels'
 import { ActionBadge } from '../ui/ActionBadge'
+import { actorLabel } from '../ui/actorLabel'
 import { adminPath } from '@/features/housing/utils/housingProjects'
 import { photoSlotLabel } from '../records/recordColumns'
-import { Button, Card, EmptyState, LoadingState, Page as UiPage, SelectField, Stack, Text, TextField, TextLink } from '@/ui'
+import { Button, Card, EmptyState, FilterPanel, Grid, Icon, LoadingState, Page as UiPage, SelectField, Stack, Text, TextField, TextLink } from '@/ui'
 
 /** রেকর্ডের কলাম যা ফিল্ড-সংজ্ঞায় নেই (বা পুরনো লগে) — বাংলা লেবেল */
 const RECORD_COL: Record<string, string> = {
@@ -185,12 +186,19 @@ export function ActivityPage() {
       }
     >
       <Stack gap={2}>
-        {/* ---------- ফিল্টার ---------- */}
-        <Card>
-          <Stack direction="row" gap={1.5} wrap align="center">
+        {/* ---------- ফিল্টার (রেকর্ড-তালিকার মতো একই প্যানেল) ---------- */}
+        <FilterPanel
+          label={t('ফিল্টার')}
+          activeCount={FILTER_KEYS.filter((k) => sp.get(k)).length}
+          onClear={() => {
+            setActor('')
+            setSp(new URLSearchParams(), { replace: true })
+          }}
+          clearLabel={t('ফিল্টার মুছুন')}
+        >
+          <Grid columns={{ xs: 1, sm: 2, lg: 5 }}>
             <SelectField
               label={t('কাজের ধরন')}
-              hideLabel
               size="small"
               value={sp.get('action') ?? ''}
               onChange={(v) => setParam('action', v)}
@@ -198,7 +206,6 @@ export function ActivityPage() {
             />
             <SelectField
               label={t('প্রকল্প')}
-              hideLabel
               size="small"
               value={sp.get('project') ?? ''}
               onChange={(v) => setParam('project', v)}
@@ -211,17 +218,12 @@ export function ActivityPage() {
                 setParam('actor', actor.trim())
               }}
             >
-              <TextField label={t('ইমেইল')} hideLabel size="small" placeholder={t('কে (ইমেইল)')} value={actor} onChange={setActor} onBlur={() => setParam('actor', actor.trim())} />
+              <TextField label={t('কে (ইমেইল)')} type="search" size="small" placeholder={t('ইমেইল লিখে খুঁজুন')} value={actor} onChange={setActor} onBlur={() => setParam('actor', actor.trim())} />
             </form>
             <TextField label={t('থেকে')} type="date" size="small" value={sp.get('from') ?? ''} onChange={(v) => setParam('from', v)} />
             <TextField label={t('পর্যন্ত')} type="date" size="small" value={sp.get('to') ?? ''} onChange={(v) => setParam('to', v)} />
-            {['action', 'project', 'actor', 'from', 'to', 'record'].some((k) => sp.get(k)) && (
-              <Button variant="text" size="small" onClick={() => setSp(new URLSearchParams(), { replace: true })}>
-                {t('ফিল্টার মুছুন')}
-              </Button>
-            )}
-          </Stack>
-        </Card>
+          </Grid>
+        </FilterPanel>
 
         {state.status === 'error' && <ErrorNotice title={t('লগ লোড করা যায়নি')} error={state.error} />}
         {state.status === 'loading' && !data && <LoadingState label={t('লোড হচ্ছে…')} />}
@@ -232,11 +234,13 @@ export function ActivityPage() {
         )}
         {data && data.meta.total > 0 && (
           <>
-            <Stack role="list" gap={1}>
-              {data.data.map((e) => (
-                <Entry key={e.id} e={e} />
-              ))}
-            </Stack>
+            <Card padding="none">
+              <Stack role="list" gap={0} divided>
+                {data.data.map((e) => (
+                  <Entry key={e.id} e={e} />
+                ))}
+              </Stack>
+            </Card>
             <Pagination meta={data.meta} onPageChange={(p) => setParam('page', p <= 1 ? '' : String(p))} disabled={state.status === 'loading'} />
           </>
         )}
@@ -245,6 +249,8 @@ export function ActivityPage() {
   )
 }
 
+const FILTER_KEYS = ['action', 'project', 'actor', 'from', 'to', 'record'] as const
+
 const isConfig = (a: string) => a.startsWith('project_') || a.startsWith('field_')
 
 function Entry({ e }: { e: ActivityEntry }) {
@@ -252,8 +258,7 @@ function Entry({ e }: { e: ActivityEntry }) {
   const defs = useMemo(() => (project ? resolveFields(project, { includePrivate: true, includeArchived: true }) : []), [project])
   const config = isConfig(e.action)
   return (
-    <Stack role="listitem">
-      <Card>
+    <Stack role="listitem" padding={2}>
         <Stack gap={1}>
           <Stack direction="row" gap={1.5} wrap align="center">
             <Text size="caption" tone="muted" tabular inline>
@@ -261,7 +266,7 @@ function Entry({ e }: { e: ActivityEntry }) {
             </Text>
             <ActionBadge action={e.action} />
             <Text size="small" weight="medium" inline>
-              {e.actor_email ?? t('অজানা')}
+              {actorLabel(e.actor_email)}
             </Text>
             {e.record_id && e.serial_no !== null && (
               <Text size="small" inline>
@@ -307,7 +312,6 @@ function Entry({ e }: { e: ActivityEntry }) {
           </Stack>
           <Details e={e} project={project ?? null} defs={defs} />
         </Stack>
-      </Card>
     </Stack>
   )
 }
@@ -386,7 +390,7 @@ function Details({ e, project, defs }: { e: ActivityEntry; project: Project | nu
     const keys = Array.isArray(d.fields) ? (d.fields as string[]) : []
     return (
       <Text size="caption" tone="muted">
-        🔒 {keys.map((k) => recordChange(`extra.${k}`, project, defs).label).join(', ')} ({t('মান লগে রাখা হয় না')})
+        <Icon name="lock" size={14} /> {keys.map((k) => recordChange(`extra.${k}`, project, defs).label).join(', ')} ({t('মান লগে রাখা হয় না')})
       </Text>
     )
   }

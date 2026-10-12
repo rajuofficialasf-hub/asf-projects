@@ -26,6 +26,10 @@ export function HousingLoginPage() {
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<HousingApiError | null>(null)
+  // Empty fields are named under the field on submit, so the button never sits greyed out without a reason.
+  const [tried, setTried] = useState(false)
+  const emailError = tried && !email.trim() ? t('ইমেইল দিন') : undefined
+  const passwordError = tried && !password ? t('পাসওয়ার্ড দিন') : undefined
 
   if (auth.status === 'ready' && auth.user && auth.isAdmin) {
     return <Navigate to={from} replace />
@@ -34,6 +38,8 @@ export function HousingLoginPage() {
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     if (busy) return
+    setTried(true)
+    if (!email.trim() || !password) return
     setBusy(true)
     setError(null)
     try {
@@ -72,13 +78,21 @@ export function HousingLoginPage() {
             required
             value={email}
             onChange={setEmail}
-            placeholder="admin@example.org"
+            error={emailError}
           />
-          <TextField label={t('পাসওয়ার্ড')} type="password" autoComplete="current-password" required value={password} onChange={setPassword} />
+          <TextField
+            label={t('পাসওয়ার্ড')}
+            type="password"
+            autoComplete="current-password"
+            required
+            value={password}
+            onChange={setPassword}
+            error={passwordError}
+          />
 
           {message && <Alert tone="error">{message}</Alert>}
 
-          <Button type="submit" fullWidth disabled={busy || !email.trim() || !password}>
+          <Button type="submit" fullWidth disabled={busy}>
             {busy ? t('লগইন হচ্ছে…') : t('লগইন')}
           </Button>
 
