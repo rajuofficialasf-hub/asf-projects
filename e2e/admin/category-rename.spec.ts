@@ -11,7 +11,7 @@ import { addStatCard, inFreshContext, DEMO, publish, toast } from '../support/pr
 async function mergeIntoNearSpelling(page: Page) {
   await page.getByRole('row', { name: /নাজমা আক্তার/ }).getByRole('link', { name: 'এডিট' }).click()
   // The list stays on screen until the edit route has loaded, and it has its own পেশা filter.
-  await expect(page.getByRole('heading', { name: 'সিরিয়াল নম্বর' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'রেকর্ড সম্পাদনা' })).toBeVisible()
   await page.getByLabel('পেশা').fill('দর্জী')
   await page.getByRole('button', { name: 'সংরক্ষণ করুন' }).click()
   await expect(page).toHaveURL(/\/admin\/records\/demo$/)

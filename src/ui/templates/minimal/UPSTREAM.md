@@ -76,3 +76,4 @@ Copied from the assunnah-engineering kit 0.16.0 (`skills/ae-new-app/kit/template
 - `components/breadcrumbs.tsx`, `components/page.tsx`: breadcrumb links are 44px targets; `Page` spaces the breadcrumb slot (`mb: 1.5`) instead of `Breadcrumbs` carrying its own margin.
 - `components/layout-pieces.tsx`: `StatList` columns are at least as wide as their value (`minmax(min-content, 1fr)`), so an amount such as "৳ ১,২৫,০০০" is not cut off.
 - Contract additions, tested in `contract.test.tsx`: `DataTable` `phoneTitle` and `phoneActions` (a phone card's heading row); `Stack` `divided`; `FilterPanel` (filters that fold behind one counted button on phones) and `ActionBar` (a form's sticky Save/Cancel row) in `components/filter-panel.tsx`; icon `filter`.
+- `components/choice.tsx`: `RadioGroup` with `look="cards"` and `direction="row"` lays the cards out in a grid (`repeat(auto-fill, minmax(200px, 1fr))`), so a short last row keeps the same card width instead of stretching.

@@ -82,7 +82,7 @@ export function FieldPreview({ project }: { project: Project }) {
                 <p className="mb-1 text-xs font-medium text-slate-600">
                   {lt(f, 'label')}
                   {f.required && <span className="text-red-600"> *</span>}
-                  {f.visibility === 'admin' && <span className="ml-1">🔒</span>}
+                  {f.visibility === 'admin' && <span className="ml-1 text-xs font-normal text-slate-500">({t('গোপন')})</span>}
                 </p>
                 <I def={f} value={fieldSpec(f.type).toInput(sampleValue(f), f)} onChange={() => {}} disabled />
               </div>

@@ -246,7 +246,7 @@ export function FieldEditorDrawer({
               onChange={(v) => set('visibility', v as Form['visibility'])}
               options={(['public', 'admin'] as const).map((v) => ({
                 value: v,
-                label: v === 'public' ? t('পাবলিক — সবাই দেখবে') : t('🔒 শুধু-এডমিন (গোপন) — পাবলিক সাইট, টেবিল, ফিল্টার, এক্সপোর্টের পাবলিক অংশে কখনো নয়'),
+                label: v === 'public' ? t('পাবলিক — সবাই দেখবে') : t('শুধু-এডমিন (গোপন) — পাবলিক সাইট, টেবিল, ফিল্টার, এক্সপোর্টের পাবলিক অংশে কখনো নয়'),
               }))}
             />
             {f.type === 'phone' && (

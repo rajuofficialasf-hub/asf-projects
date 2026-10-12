@@ -100,11 +100,12 @@ export function RadioGroup({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         aria-describedby={help ? helpId : undefined}
-        sx={{
-          gap: look === 'cards' ? 1 : 0,
-          flexDirection: direction === 'row' ? 'row' : 'column',
-          flexWrap: 'wrap',
-        }}
+        sx={
+          look === 'cards' && direction === 'row'
+            ? // A grid keeps every card the same width; flex wrapping stretched the last row's cards.
+              { gap: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }
+            : { gap: look === 'cards' ? 1 : 0, flexDirection: direction === 'row' ? 'row' : 'column', flexWrap: 'wrap' }
+        }
       >
         {options.map((option) => (
           <FormControlLabel
@@ -117,7 +118,6 @@ export function RadioGroup({
               { m: 0, alignItems: 'flex-start', '& .MuiRadio-root': { mt: 0.25 } },
               look === 'cards' && {
                 pr: 2,
-                flex: direction === 'row' ? '1 1 220px' : undefined,
                 border: 1,
                 borderRadius: 1.5,
                 borderColor: value === option.value ? 'primary.main' : 'divider',

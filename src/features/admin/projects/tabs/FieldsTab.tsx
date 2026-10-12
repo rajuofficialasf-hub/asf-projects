@@ -6,7 +6,7 @@ import { useAuth } from '@/features/housing/hooks/useAuth'
 import { pick } from '@/i18n'
 import { formatBanglaNumber, toBanglaNumber } from '@/lib/banglaNumber'
 import { Badge } from '../../ui/Badge'
-import { Alert, Button, Card, Grid, SelectField, Stack, Text, TextField, useToast, IconButton } from '@/ui'
+import { Alert, Button, Card, Grid, Icon, SelectField, Stack, Text, TextField, useToast, IconButton } from '@/ui'
 import { ConfirmDialog } from '../../ui/ConfirmDialog'
 import { FieldEditorDrawer } from '../FieldEditorDrawer'
 import { FieldPreview } from '../FieldPreview'
@@ -115,7 +115,15 @@ export function FieldsTab({ project, blocked, onChanged }: { project: Project; b
         {blocked && <Alert tone="warning">{t('অন্য ট্যাবে সংরক্ষণ হয়নি এমন পরিবর্তন আছে — আগে সেগুলো সংরক্ষণ বা বাতিল করুন।')}</Alert>}
 
         {/* ---------- সিস্টেম ফিল্ড ---------- */}
-        <Card title={`${t('সিস্টেম ফিল্ড')} 🔒`} description={t('সব প্রকল্পে থাকে; শুধু লেবেল বদলানো যায়। সাল, নাম ও বিভাগ-জেলা-উপজেলা সবসময় আবশ্যক।')}>
+        <Card
+          title={t('সিস্টেম ফিল্ড')}
+          description={
+            <>
+              {t('সব প্রকল্পে থাকে; শুধু লেবেল বদলানো যায়। সাল, নাম ও বিভাগ-জেলা-উপজেলা সবসময় আবশ্যক।')}{' '}
+              {t('প্রতি সারিতে বাংলা লেবেল, ইংরেজি লেবেল ও অবস্থা; ঘর খালি রাখলে ধূসর লেখাটিই লেবেল থাকে।')}
+            </>
+          }
+        >
           <Stack gap={2}>
             <Stack role="list" gap={2}>
               {systemShown.map((f) => {
@@ -144,9 +152,12 @@ export function FieldsTab({ project, blocked, onChanged }: { project: Project; b
                         maxLength={120}
                       />
                       {fixed ? (
-                        <Text size="small" tone="muted">
-                          🔒 {t('আবশ্যক')}
-                        </Text>
+                        <Stack direction="row" gap={0.5} align="center">
+                          <Icon name="lock" size={16} />
+                          <Text size="small" tone="muted" inline>
+                            {t('আবশ্যক')}
+                          </Text>
+                        </Stack>
                       ) : (
                         <SelectField
                           label={t('{name} — অবস্থা', { name: f.label_bn })}
@@ -205,7 +216,7 @@ export function FieldsTab({ project, blocked, onChanged }: { project: Project; b
                 {t('এখনো কোনো কাস্টম ফিল্ড নেই।')}
               </Text>
             ) : (
-              <Stack role="list" gap={2}>
+              <Stack role="list" gap={2} divided>
                 {fields.map((f, i) => (
                   <Stack key={f.id} role="listitem" gap={1}>
                     <Text weight="bold">
@@ -220,7 +231,7 @@ export function FieldsTab({ project, blocked, onChanged }: { project: Project; b
                       {f.show_in_table && <Badge tone="blue">{t('টেবিলে')}</Badge>}
                       {f.show_in_card && <Badge tone="blue">{t('কার্ডে')}</Badge>}
                       {f.filterable && <Badge tone="green">{t('ফিল্টারে')}</Badge>}
-                      {f.visibility === 'admin' && <Badge tone="slate">🔒 {t('শুধু-এডমিন')}</Badge>}
+                      {f.visibility === 'admin' && <Badge tone="slate">{t('শুধু-এডমিন')}</Badge>}
                       {!f.label_en.trim() && <Badge tone="amber">{t('ইংরেজি নেই')}</Badge>}
                       {!f.is_active && <Badge tone="amber">{t('আর্কাইভ')}</Badge>}
                     </Stack>

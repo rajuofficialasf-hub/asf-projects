@@ -7,6 +7,7 @@ import { useDocumentTitle } from '@/lib/useDocumentTitle'
 import { SITE_NAME } from '@/config/site'
 import { useAuth } from '../hooks/useAuth'
 import { LanguageSwitch } from '@/features/admin/ui/LanguageSwitch'
+import { focusFirstInvalid } from '@/features/admin/ui/focusFirstInvalid'
 import { Alert, Button, SignInLayout, Stack, Text, TextField } from '@/ui'
 
 const DEFAULT_AFTER_LOGIN = '/admin'
@@ -39,7 +40,10 @@ export function HousingLoginPage() {
     e.preventDefault()
     if (busy) return
     setTried(true)
-    if (!email.trim() || !password) return
+    if (!email.trim() || !password) {
+      focusFirstInvalid(e.currentTarget as HTMLFormElement)
+      return
+    }
     setBusy(true)
     setError(null)
     try {

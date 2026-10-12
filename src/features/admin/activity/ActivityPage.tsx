@@ -270,13 +270,14 @@ function Entry({ e }: { e: ActivityEntry }) {
             </Text>
             {e.record_id && e.serial_no !== null && (
               <Text size="small" inline>
-                → {project ? lt(project, 'name') : e.project_type} · {t('সিরিয়াল')}{' '}
+                → {project ? lt(project, 'name') : e.project_type} ·{' '}
+                {/* পুরো "সিরিয়াল ৯" লিংক, শুধু অঙ্কটি নয় — এক অঙ্কের লিংক আঙুলে ধরা কঠিন */}
                 {e.action === 'delete' || !project ? (
                   <Text size="small" weight="bold" inline>
-                    {toBanglaNumber(e.serial_no)}
+                    {t('সিরিয়াল {n}', { n: toBanglaNumber(e.serial_no) })}
                   </Text>
                 ) : (
-                  <TextLink to={adminPath(project.key, `${e.serial_no}/edit`)}>{toBanglaNumber(e.serial_no)}</TextLink>
+                  <TextLink to={adminPath(project.key, `${e.serial_no}/edit`)}>{t('সিরিয়াল {n}', { n: toBanglaNumber(e.serial_no) })}</TextLink>
                 )}
                 {e.record_name && (
                   <Text size="small" tone="muted" inline>

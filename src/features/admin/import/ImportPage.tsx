@@ -308,7 +308,7 @@ function Importer({ project, projects, onProject }: { project: Project; projects
       const numeric = f.def?.type === 'money' || f.def?.type === 'number'
       return {
         id: f.id,
-        header: `${f.private ? '🔒 ' : ''}${fieldLabel(f)}`,
+        header: f.private ? t('{name} (গোপন)', { name: fieldLabel(f) }) : fieldLabel(f),
         align: numeric ? 'right' : undefined,
         cell: (r) => {
           const key = f.id.slice(2)
@@ -467,7 +467,7 @@ function Importer({ project, projects, onProject }: { project: Project; projects
                       { value: '', label: t('— উপেক্ষা —') },
                       ...fields.map((f) => ({
                         value: f.id,
-                        label: `${f.private ? '🔒 ' : ''}${fieldLabel(f)}${!update && f.required ? ' *' : update && f.id === 'serial_no' ? ' *' : ''}`,
+                        label: `${f.private ? t('{name} (গোপন)', { name: fieldLabel(f) }) : fieldLabel(f)}${!update && f.required ? ' *' : update && f.id === 'serial_no' ? ' *' : ''}`,
                       })),
                     ]}
                   />

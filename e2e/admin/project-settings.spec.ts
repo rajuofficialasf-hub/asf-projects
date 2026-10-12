@@ -18,11 +18,11 @@ test('a general-tab edit is saved and still there after a reload', async ({ page
 test('publishing waits for the checklist; once published a visitor sees the project', async ({ page, browser, baseURL }) => {
   await loginAs(page, MOCK_ADMIN, DEMO.settings)
   // The demo project has no stat card yet, so the checklist blocks publishing.
-  await expect(page.getByText('✕ অন্তত একটি পরিসংখ্যান কার্ড লাগবে')).toBeVisible()
+  await expect(page.getByText('অন্তত একটি পরিসংখ্যান কার্ড লাগবে', { exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: 'প্রকাশ করুন', exact: true })).toBeDisabled()
 
   await addStatCard(page, 'গণনা')
-  await expect(page.getByText('✕ অন্তত একটি পরিসংখ্যান কার্ড লাগবে')).toHaveCount(0)
+  await expect(page.getByText('অন্তত একটি পরিসংখ্যান কার্ড লাগবে', { exact: true })).toHaveCount(0)
   await publish(page)
 
   await inFreshContext(browser, baseURL, async (visitor) => {

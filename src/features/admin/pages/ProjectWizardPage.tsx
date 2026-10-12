@@ -6,8 +6,9 @@ import { ACCENTS, refreshProjects } from '@/features/projects/registry'
 import { useDocumentTitle } from '@/lib/useDocumentTitle'
 import { keyError, keyFromSlug, photoNameExample, prefixError, slugError, slugify, suggestPrefix, friendlyProjectError } from '../projects/projectRules'
 import { PROJECT_TEMPLATES, buildProjectInput, templateOf, type TemplateKey } from '../projects/projectTemplates'
-import { Alert, Button, Grid, LinkButton, Page, RadioGroup, SelectField, Stack, Text, TextField, TextLink, useToast } from '@/ui'
+import { Alert, Breadcrumbs, Button, Grid, LinkButton, Page, RadioGroup, SelectField, Stack, Text, TextField, useToast } from '@/ui'
 import { Step } from '../ui/Step'
+import { focusFirstInvalid } from '../ui/focusFirstInvalid'
 import { AccentSwatch } from '../ui/AccentSwatch'
 
 type Location = 'single' | 'child' | 'group'
@@ -107,6 +108,7 @@ export function ProjectWizardPage() {
     e.preventDefault()
     setSubmitted(true)
     setServerError(null)
+    if (hasErrors) focusFirstInvalid(e.currentTarget as HTMLFormElement)
     if (hasErrors || !existing || busy) return
     setBusy(true)
     const { project: input, fields } = buildProjectInput({
@@ -140,11 +142,7 @@ export function ProjectWizardPage() {
       title={t('নতুন প্রকল্প')}
       documentTitle={false}
       description={t('খসড়া হিসেবে তৈরি হবে — প্রকাশ না করা পর্যন্ত দর্শকেরা দেখতে পান না। পরে সব বদলানো যাবে (key ছাড়া)।')}
-      breadcrumbs={
-        <Text size="small" tone="muted">
-          <TextLink to="/admin/projects">{t('প্রকল্পসমূহ')}</TextLink> / {t('নতুন প্রকল্প')}
-        </Text>
-      }
+      breadcrumbs={<Breadcrumbs label={t('প্রকল্পসমূহ')} items={[{ label: t('প্রকল্পসমূহ'), to: '/admin/projects' }, { label: t('নতুন প্রকল্প') }]} />}
     >
       <Stack gap={3}>
         {loadError && <Alert tone="error">{loadError}</Alert>}

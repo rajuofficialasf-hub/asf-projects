@@ -15,7 +15,8 @@ import { fieldErrorMessage, fieldSpec, parseField, resolveFields, type FieldDef 
 import { processImage } from '@/features/housing/utils/imageProcessing'
 import { revokeUploadItems, type UploadItem } from '@/features/housing/utils/uploadItems'
 import { projectPath } from '@/features/projects/registry'
-import { Alert, Button, Card, Grid, RadioGroup, Stack, Text, TextField, useToast } from '@/ui'
+import { ActionBar, Alert, Button, Card, Grid, RadioGroup, Stack, Text, TextField, useToast } from '@/ui'
+import { focusFirstInvalid } from '../ui/focusFirstInvalid'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { FieldInput } from '../ui/FieldInput'
 import { GeoSelect, type GeoValue } from '../ui/GeoSelect'
@@ -271,6 +272,7 @@ export function RecordForm({ project, record, onSaved, onCancel }: Props) {
     setErrors(errs)
     if (Object.keys(errs).length) {
       toast.error(t('ফর্মে ভুল আছে, লাল চিহ্নিত ঘরগুলো দেখুন'))
+      focusFirstInvalid(e.currentTarget as HTMLFormElement)
       return
     }
     if (privBlocked) {
@@ -462,11 +464,11 @@ export function RecordForm({ project, record, onSaved, onCancel }: Props) {
     <form onSubmit={(e) => void submit(e)} noValidate>
       <Stack gap={3}>
         {/* ---------- সিরিয়াল ---------- */}
-        <Card title={t('সিরিয়াল নম্বর')}>
+        <Card title={isEdit ? undefined : t('সিরিয়াল নম্বর')}>
           {isEdit ? (
             <Stack direction="row" wrap align="center" gap={1.5}>
               <Text weight="bold" tabular>
-                {toBanglaNumber(current?.serial_no ?? 0)}
+                {t('সিরিয়াল {n}', { n: toBanglaNumber(current?.serial_no ?? 0) })}
               </Text>
               <Text size="caption" tone="muted">
                 {mainAdmin ? t('লক করা — সাধারণ এডিটে বদলায় না') : t('লক করা — সিরিয়াল বদলাতে পারেন শুধু মূল এডমিন')}
@@ -562,7 +564,7 @@ export function RecordForm({ project, record, onSaved, onCancel }: Props) {
 
         {/* ---------- গোপন ---------- */}
         {customPrivate.length > 0 && (
-          <Card title={`🔒 ${t('শুধু এডমিন তথ্য')}`} description={t('পাবলিক সাইট, তালিকা, ফিল্টার বা পাবলিক এক্সপোর্টে কখনো দেখায় না।')}>
+          <Card title={t('শুধু এডমিন তথ্য')} description={t('পাবলিক সাইট, তালিকা, ফিল্টার বা পাবলিক এক্সপোর্টে কখনো দেখায় না।')}>
             <Stack gap={2}>
               {priv.status === 'loading' && (
                 <Text size="caption" tone="muted">
@@ -599,8 +601,8 @@ export function RecordForm({ project, record, onSaved, onCancel }: Props) {
           </Text>
         )}
 
-        {/* ---------- বাটন ---------- */}
-        <Stack direction="row" wrap align="center" gap={1.5}>
+        {/* ---------- বাটন (লম্বা ফর্মে নিচে আটকে থাকে) ---------- */}
+        <ActionBar label={t('সংরক্ষণ')}>
           <Button type="submit" disabled={disabled || privBlocked}>
             {busy ?? (isEdit ? t('সংরক্ষণ করুন') : t('{title} — যোগ করুন', { title: lt(project, 'name') }))}
           </Button>
@@ -610,7 +612,7 @@ export function RecordForm({ project, record, onSaved, onCancel }: Props) {
           <Text size="caption" tone="muted">
             {t('* আবশ্যক')}
           </Text>
-        </Stack>
+        </ActionBar>
       </Stack>
 
       {/* ---------- ডায়ালগ ---------- */}

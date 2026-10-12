@@ -69,11 +69,10 @@ export function GeoSelect({ value, onChange, errors = {}, disabled, union = fals
         options={[{ value: '', label: value.district ? t('বাছুন') : t('আগে জেলা') }, ...getUpazilas(value.division, value.district).map((u) => ({ value: u.name, label: gn(u.name) }))]}
       />
       {union && (
-        <div>
-          <label htmlFor={unionId}>
-            <Text size="small" tone="muted">
-              {`${unionLabel ?? t('ইউনিয়ন/পৌরসভা')}${unionRequired ? ' *' : ''}`}
-            </Text>
+        <div className="relative">
+          {/* পাশের MUI ঘরগুলোর মতো লেবেল ঘরের ওপরের রেখায় বসে */}
+          <label htmlFor={unionId} className={`absolute -top-2 left-2.5 z-10 bg-white px-1 text-xs leading-4 font-semibold ${errors.union_name ? 'text-red-600' : 'text-slate-500'}`}>
+            {`${unionLabel ?? t('ইউনিয়ন/পৌরসভা')}${unionRequired ? ' *' : ''}`}
           </label>
           <UnionCombobox
             id={unionId}

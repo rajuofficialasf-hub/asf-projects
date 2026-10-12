@@ -744,7 +744,7 @@ Object.assign(EN, {
   'হোমের লেবেল (ইংরেজি, ঐচ্ছিক)': 'Home label (English, optional)',
   'হোমের লেবেল (বাংলা, ঐচ্ছিক)': 'Home label (Bangla, optional)',
   '১ থেকে ২০০০ এর মধ্যে পূর্ণসংখ্যা': 'A whole number from 1 to 2000',
-  '🔒 শুধু-এডমিন (গোপন) — পাবলিক সাইট, টেবিল, ফিল্টার, এক্সপোর্টের পাবলিক অংশে কখনো নয়': '🔒 Admin only (private) — never on the public site, table, filters or the public part of exports',
+  'শুধু-এডমিন (গোপন) — পাবলিক সাইট, টেবিল, ফিল্টার, এক্সপোর্টের পাবলিক অংশে কখনো নয়': 'Admin only (private) — never on the public site, table, filters or the public part of exports',
 
   // ---------------------------------------------------------------- ইউনিয়নের কম্বোবক্স (M-ধাপ ৯)
   '«{v}» এই উপজেলার ইউনিয়ন-তালিকায় নেই। বানান ঠিক থাকলে রেখে দিন (পৌরসভা বা নতুন ইউনিয়ন হতে পারে) — সংরক্ষণ আটকাবে না।':
@@ -786,7 +786,7 @@ Object.assign(EN, {
   'সব': 'All',
   'হ্যাঁ, এক বানানে আনুন': 'Yes, merge',
   '১০০ অক্ষরের মধ্যে': 'Up to 100 characters',
-  '🔒 গোপন কলামসহ — ফাইলের নামে "-private"; ফাইলটি কাউকে পাঠাবেন না': '🔒 With private columns — the file name gets "-private"; do not share the file',
+  'গোপন কলামসহ — ফাইলের নামে "-private"; ফাইলটি কাউকে পাঠাবেন না': 'With private columns — the file name gets "-private"; do not share the file',
 
   // ---------------------------------------------------------------- জেনেরিক ইম্পোর্ট (M-ধাপ ১১)
   '"সিরিয়াল ধরে আপডেট" এর নিয়ম': 'Rules for "update by serial"',
@@ -896,6 +896,12 @@ Object.assign(EN, {
   'পাসওয়ার্ড বদল': 'Password changed',
   'ভূমিকা বদল': 'Role changed',
   'সার্ভার কমান্ড': 'Server command',
+  '{name} (গোপন)': '{name} (private)',
+  'গোপন': 'private',
+  'প্রতি সারিতে বাংলা লেবেল, ইংরেজি লেবেল ও অবস্থা; ঘর খালি রাখলে ধূসর লেখাটিই লেবেল থাকে।': 'Each row: Bengali label, English label and status. Leave a box empty to keep the grey text as the label.',
+  'প্রকাশের আগে যা লাগবে': 'Needed before publishing',
+  'মনে রাখুন': 'Keep in mind',
+  'গ্রুপ: {name}': 'Group: {name}',
   'আপনার প্রকল্পগুলোতে ছবি রাখা হয় না': 'Your projects don\'t keep photos',
   'প্রকল্পের সেটিংসে ছবির মোড চালু থাকলে এখানে ছবি আপলোড করা যাবে।': 'Once a project\'s photo mode is on in its settings, you can upload photos here.',
   'তালিকায় ফিরুন': 'Back to the list',

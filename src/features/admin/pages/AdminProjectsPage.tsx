@@ -140,6 +140,7 @@ export function AdminProjectsPage() {
           const idx = siblings.findIndex((x) => x.key === p.key)
           const check = publishChecklist(p, projects)
           const busy = busyKey === p.key
+          const parent = p.parent_key ? projects.find((x) => x.key === p.parent_key) : undefined
           return (
             <Stack key={p.key} role="listitem" gap={0}>
               <Card accent={!!p.parent_key}>
@@ -151,6 +152,12 @@ export function AdminProjectsPage() {
                       {p.is_group && <Badge tone="blue">{t('গ্রুপ')}</Badge>}
                       {!p.show_on_home && <Badge>{t('হোমে নেই')}</Badge>}
                     </Stack>
+                    {/* উপ-প্রকল্পের কার্ডের সবুজ রেখার মানে এখানে লেখা */}
+                    {parent && (
+                      <Text size="caption" tone="muted">
+                        {t('গ্রুপ: {name}', { name: lt(parent, 'name') })}
+                      </Text>
+                    )}
                     <Text size="caption" tone="muted">
                       <Text size="caption" tone="muted" mono inline>
                         {projectPath(p, projects)}

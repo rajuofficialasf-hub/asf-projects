@@ -15,7 +15,7 @@ import { FieldsTab } from '../projects/tabs/FieldsTab'
 import { StatsTab } from '../projects/tabs/StatsTab'
 import { AdminNotFound } from '../ui/AdminNotFound'
 import { Badge } from '../ui/Badge'
-import { Alert, Breadcrumbs, Button, Card, Checkbox, Grid, LinkButton, LoadingState, Page, RadioGroup, SelectField, Stack, Tabs, Text, TextField, useToast } from '@/ui'
+import { ActionBar, Alert, Breadcrumbs, Button, Card, Checkbox, Grid, LinkButton, LoadingState, Page, RadioGroup, SelectField, Stack, Tabs, Text, TextField, useToast } from '@/ui'
 import { AccentSwatch } from '../ui/AccentSwatch'
 
 type Tab = 'general' | 'fields' | 'stats' | 'photos' | 'display'
@@ -231,20 +231,27 @@ export function ProjectSettingsPage() {
       }
     >
       <Stack gap={3}>
-        {(check.blocking.length > 0 || check.warnings.length > 0) && (
-          <Stack gap={0.5}>
-            {!project.is_published &&
-              check.blocking.map((b) => (
-                <Text key={b} size="small" tone="error">
-                  ✕ {b}
-                </Text>
+        {!project.is_published && check.blocking.length > 0 && (
+          <Alert tone="warning" title={t('প্রকাশের আগে যা লাগবে')}>
+            <Stack role="list" gap={0.5}>
+              {check.blocking.map((b) => (
+                <Stack key={b} role="listitem">
+                  <Text size="small">{b}</Text>
+                </Stack>
               ))}
-            {check.warnings.map((w) => (
-              <Text key={w} size="small" tone="warning">
-                ⚠ {w}
-              </Text>
-            ))}
-          </Stack>
+            </Stack>
+          </Alert>
+        )}
+        {check.warnings.length > 0 && (
+          <Alert tone="info" title={t('মনে রাখুন')}>
+            <Stack role="list" gap={0.5}>
+              {check.warnings.map((w) => (
+                <Stack key={w} role="listitem">
+                  <Text size="small">{w}</Text>
+                </Stack>
+              ))}
+            </Stack>
+          </Alert>
         )}
 
         {conflict && (
@@ -284,11 +291,11 @@ export function ProjectSettingsPage() {
                     <TextField label={t('বাংলা নাম')} required error={errors.name_bn ?? undefined} value={form.name_bn} onChange={(v) => set('name_bn', v)} maxLength={120} />
                     <TextField label={t('ইংরেজি নাম')} required error={errors.name_en ?? undefined} value={form.name_en} onChange={(v) => set('name_en', v)} maxLength={120} />
                     <TextField label={t('ছোট বর্ণনা (বাংলা)')} hint={t('হোমের কার্ডে')} error={errors.summary_bn ?? undefined} rows={2} value={form.summary_bn} onChange={(v) => set('summary_bn', v)} maxLength={300} />
-                    <TextField label={t('ছোট বর্ণনা (ইংরেজি)')} error={errors.summary_en ?? undefined} rows={2} value={form.summary_en} onChange={(v) => set('summary_en', v)} maxLength={300} />
+                    <TextField label={t('ছোট বর্ণনা (ইংরেজি)')} hint={t('হোমের কার্ডে')} error={errors.summary_en ?? undefined} rows={2} value={form.summary_en} onChange={(v) => set('summary_en', v)} maxLength={300} />
                     <TextField label={t('পরিচিতি (বাংলা)')} hint={t('প্রকল্পের পেইজে, নামের নিচে')} error={errors.description_bn ?? undefined} rows={4} value={form.description_bn} onChange={(v) => set('description_bn', v)} maxLength={2000} />
-                    <TextField label={t('পরিচিতি (ইংরেজি)')} error={errors.description_en ?? undefined} rows={4} value={form.description_en} onChange={(v) => set('description_en', v)} maxLength={2000} />
+                    <TextField label={t('পরিচিতি (ইংরেজি)')} hint={t('প্রকল্পের পেইজে, নামের নিচে')} error={errors.description_en ?? undefined} rows={4} value={form.description_en} onChange={(v) => set('description_en', v)} maxLength={2000} />
                     <TextField label={t('একক শব্দ (বাংলা)')} hint={t('যেমন "ঘর", "উপকারভোগী" — মানচিত্র ও পরিসংখ্যানে')} error={errors.unit_bn ?? undefined} value={form.unit_bn} onChange={(v) => set('unit_bn', v)} maxLength={40} />
-                    <TextField label={t('একক শব্দ (ইংরেজি)')} error={errors.unit_en ?? undefined} value={form.unit_en} onChange={(v) => set('unit_en', v)} maxLength={40} />
+                    <TextField label={t('একক শব্দ (ইংরেজি)')} hint={t('যেমন "ঘর", "উপকারভোগী" — মানচিত্র ও পরিসংখ্যানে')} error={errors.unit_en ?? undefined} value={form.unit_en} onChange={(v) => set('unit_en', v)} maxLength={40} />
                   </Grid>
                 </Card>
 
@@ -432,7 +439,7 @@ export function ProjectSettingsPage() {
             )}
 
             {serverError && <Alert tone="error">{serverError}</Alert>}
-            <Stack direction="row" gap={1.5} align="center" wrap>
+            <ActionBar label={t('সংরক্ষণ')}>
               <Button type="submit" disabled={busy || !dirty || hasErrors}>
                 {busy ? t('সংরক্ষণ হচ্ছে…') : t('সংরক্ষণ করুন')}
               </Button>
@@ -444,7 +451,7 @@ export function ProjectSettingsPage() {
                   {t('সংরক্ষণ হয়নি এমন পরিবর্তন আছে')}
                 </Text>
               )}
-            </Stack>
+            </ActionBar>
           </Stack>
         </form>
         )}

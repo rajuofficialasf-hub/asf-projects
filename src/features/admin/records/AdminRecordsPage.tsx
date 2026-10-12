@@ -371,7 +371,7 @@ function RecordsManager({ project }: { project: Project }) {
           onChange={(v) => setWithPrivate(v === 'true')}
           options={[false, true].map((v) => ({
             value: String(v),
-            label: v ? tr('🔒 গোপন কলামসহ — ফাইলের নামে "-private"; ফাইলটি কাউকে পাঠাবেন না') : tr('গোপন কলাম ছাড়া (সাধারণ)'),
+            label: v ? tr('গোপন কলামসহ — ফাইলের নামে "-private"; ফাইলটি কাউকে পাঠাবেন না') : tr('গোপন কলাম ছাড়া (সাধারণ)'),
           }))}
         />
       </ConfirmDialog>
