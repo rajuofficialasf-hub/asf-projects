@@ -1,6 +1,7 @@
 import { lt, t } from '@/i18n'
 import { toBanglaNumber } from '@/lib/banglaNumber'
 import type { HousingRecord, PhotoKind, Project } from '@/backend'
+import { NoPhotoIcon } from '@/components/NoPhotoIcon'
 import { fieldSpec, fieldValue } from '@/features/projects/fields'
 import { fieldHeader, photoLabel, type ListLayout } from './listColumns'
 import { PlaceText, Thumb, ViewButton } from './ProjectTable'
@@ -53,11 +54,7 @@ export function RecordCardList({ project, layout, records, ordinal, onOpen }: Pr
           })}
           {kinds.length > 0 && !kinds.some((k) => r[`${k}_photo_url`] || r[`${k}_thumb_url`]) ? (
             <p className="mt-auto flex items-center gap-1.5 pt-3 text-xs text-slate-600">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 shrink-0 text-slate-500" aria-hidden="true">
-                <rect x="3" y="5" width="18" height="14" rx="2" />
-                <circle cx="9" cy="10" r="1.5" />
-                <path d="m21 16-5-5-8 8" />
-              </svg>
+              <NoPhotoIcon className="h-4 w-4 shrink-0 text-slate-500" />
               {t('এখনো ছবি যোগ হয়নি')}
             </p>
           ) : null}

@@ -4,6 +4,7 @@ import { formatBanglaNumber } from '@/lib/banglaNumber'
 import { useDocumentTitle } from '@/lib/useDocumentTitle'
 import { useCountUp } from '@/features/housing/hooks/useCountUp'
 import { ProjectCardGrid } from '@/features/projects/home/ProjectCardGrid'
+import { homeProjects } from '@/features/projects/home/homeProjects'
 import { useProjectsOverview } from '@/features/projects/home/useProjectsOverview'
 
 /**
@@ -15,8 +16,8 @@ export function HomePage() {
   useDocumentTitle() // শুধু সাইটের নাম
   const overview = useProjectsOverview()
   const g = overview.status === 'ready' ? overview.data.global : null
-  // "মোট প্রকল্প" = শীর্ষ-স্তরের প্রকাশিত প্রকল্প (নিচের কার্ডের সংখ্যার সাথে মেলে); উপ-প্রকল্প আলাদা প্রকল্প হিসেবে গোনা হয় না
-  const projectCount = overview.status === 'ready' ? overview.data.projects.filter((p) => p.is_published && !p.parent_key).length : null
+  // "মোট প্রকল্প" = নিচের কার্ডগুলোই (শীর্ষ-স্তরের প্রকাশিত প্রকল্প); উপ-প্রকল্প আলাদা প্রকল্প হিসেবে গোনা হয় না
+  const projectCount = overview.status === 'ready' ? homeProjects(overview.data).length : null
 
   return (
     <>

@@ -8,6 +8,7 @@ import { getHousingApi, HousingApiError, type HousingRecord, type Project } from
 import type { FieldDef } from '@/features/projects/fields'
 import { useUnionData } from '@/features/geo/unions'
 import { EmptyState } from '@/components/EmptyState'
+import { NoPhotoIcon } from '@/components/NoPhotoIcon'
 import { ErrorNotice } from '@/features/housing/components/ErrorNotice'
 import { PhotoCompare } from '@/features/housing/components/PhotoCompare'
 import { photoSrc } from '@/features/housing/utils/imagePath'
@@ -394,11 +395,7 @@ function DetailSkeleton({ photos }: { photos: boolean }) {
 function NoPhotos() {
   return (
     <p className="flex items-center gap-2 rounded-lg border border-dashed border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-600">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 shrink-0 text-slate-500" aria-hidden="true">
-        <rect x="3" y="5" width="18" height="14" rx="2" />
-        <circle cx="9" cy="10" r="1.5" />
-        <path d="m21 16-5-5-8 8" />
-      </svg>
+      <NoPhotoIcon className="h-5 w-5 shrink-0 text-slate-500" />
       {tr('এই উপকারভোগীর কোনো ছবি নেই।')}
     </p>
   )

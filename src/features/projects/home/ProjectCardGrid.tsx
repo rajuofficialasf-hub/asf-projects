@@ -4,6 +4,7 @@ import { EmptyState } from '@/components/EmptyState'
 import { ErrorNotice } from '@/features/housing/components/ErrorNotice'
 import type { OverviewState } from './useProjectsOverview'
 import { ProjectCard, ProjectCardSkeleton } from './ProjectCard'
+import { homeProjects } from './homeProjects'
 
 /**
  * হোমের প্রকল্প-গ্রিড (M-ধাপ ১৫): ফোনে ১ কলাম, md-এ ২, xl-এ ৩; কার্ড কম হলে সারি মাঝখানে (একটি কার্ড বাঁয়ে একা পড়ে থাকে না)।
@@ -45,7 +46,7 @@ const CELL = 'w-full min-w-0 md:w-[calc((100%-1.5rem)/2)] xl:w-[calc((100%-3rem)
 
 function Grid({ data }: { data: ProjectOverview }) {
   const shown = data.projects.filter((p) => p.is_published)
-  const top = shown.filter((p) => !p.parent_key && p.show_on_home)
+  const top = homeProjects(data)
   if (!top.length) return <EmptyState className="mx-auto mt-10 max-w-xl">{t('এখনো কোনো প্রকল্প প্রকাশিত হয়নি।')}</EmptyState>
   return (
     <ul className={GRID}>
