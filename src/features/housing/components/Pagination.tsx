@@ -33,7 +33,7 @@ export function Pagination({ meta, onPageChange, disabled = false }: Props) {
   const items = pageItems(page, total_pages)
 
   const btn =
-    'inline-flex h-10 min-w-10 items-center justify-center rounded-md border px-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40'
+    'inline-flex h-11 min-w-11 items-center justify-center rounded-md border px-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40'
   const idle = 'border-slate-300 bg-white text-slate-700 hover:border-brand-400 hover:text-brand-700'
   const active = 'border-brand-700 bg-brand-700 text-white'
 
@@ -43,45 +43,48 @@ export function Pagination({ meta, onPageChange, disabled = false }: Props) {
         {t('মোট {total} টির মধ্যে {from}–{to} দেখানো হচ্ছে', { total: formatBanglaNumber(total), from: toBanglaNumber(from), to: toBanglaNumber(to) })}
       </p>
 
-      <div className="flex flex-wrap items-center justify-center gap-1.5">
-        <button
-          type="button"
-          className={`${btn} ${idle}`}
-          disabled={disabled || page <= 1}
-          onClick={() => onPageChange(page - 1)}
-          aria-label={t('আগের পেইজ')}
-        >
-          {t('‹ আগের')}
-        </button>
-        {items.map((it, i) =>
-          it === '…' ? (
-            <span key={`e${i}`} className="px-1 text-slate-400" aria-hidden="true">
-              …
-            </span>
-          ) : (
-            <button
-              key={it}
-              type="button"
-              className={`${btn} ${it === page ? active : idle}`}
-              disabled={disabled}
-              aria-current={it === page ? 'page' : undefined}
-              aria-label={t('পেইজ {n}', { n: toBanglaNumber(it) })}
-              onClick={() => it !== page && onPageChange(it)}
-            >
-              {toBanglaNumber(it)}
-            </button>
-          ),
-        )}
-        <button
-          type="button"
-          className={`${btn} ${idle}`}
-          disabled={disabled || page >= total_pages}
-          onClick={() => onPageChange(page + 1)}
-          aria-label={t('পরের পেইজ')}
-        >
-          {t('পরের ›')}
-        </button>
-      </div>
+      {/* এক পেইজেই সব — নিষ্ক্রিয় আগের/পরের আর একটি "১" দেখানোর মানে নেই */}
+      {total_pages > 1 && (
+        <div className="flex flex-wrap items-center justify-center gap-1.5">
+          <button
+            type="button"
+            className={`${btn} ${idle}`}
+            disabled={disabled || page <= 1}
+            onClick={() => onPageChange(page - 1)}
+            aria-label={t('আগের পেইজ')}
+          >
+            {t('‹ আগের')}
+          </button>
+          {items.map((it, i) =>
+            it === '…' ? (
+              <span key={`e${i}`} className="px-1 text-slate-400" aria-hidden="true">
+                …
+              </span>
+            ) : (
+              <button
+                key={it}
+                type="button"
+                className={`${btn} ${it === page ? active : idle}`}
+                disabled={disabled}
+                aria-current={it === page ? 'page' : undefined}
+                aria-label={t('পেইজ {n}', { n: toBanglaNumber(it) })}
+                onClick={() => it !== page && onPageChange(it)}
+              >
+                {toBanglaNumber(it)}
+              </button>
+            ),
+          )}
+          <button
+            type="button"
+            className={`${btn} ${idle}`}
+            disabled={disabled || page >= total_pages}
+            onClick={() => onPageChange(page + 1)}
+            aria-label={t('পরের পেইজ')}
+          >
+            {t('পরের ›')}
+          </button>
+        </div>
+      )}
     </nav>
   )
 }

@@ -16,7 +16,7 @@ interface Props {
 /**
  * ফোন/ট্যাবের কার্ড-তালিকা (lg এর নিচে; sm+ এ ২ কলাম) — ঘর নির্মাণে আগের হুবহু: ক্রম · সাল, নাম, পিতা/স্বামী, ঠিকানা,
  * নিচে দুটি ছবি পাশাপাশি। কাস্টম "কার্ডে" চালু ফিল্ড ঠিকানার নিচে (টাকা ৳)। শুধু-পরের-ছবি প্রকল্পে একটিই ছবি,
- * পূর্ণ-চওড়া ৪:৩; ছবিহীন প্রকল্পে ছবি নেই।
+ * পূর্ণ-চওড়া ৪:৩; ছবিহীন প্রকল্পে ছবি নেই। রেকর্ডে এখনো কোনো ছবি না থাকলে দুটি খালি বাক্সের বদলে এক লাইনের নোট।
  */
 export function RecordCardList({ project, layout, records, ordinal, onOpen }: Props) {
   const yearDef = layout.columns.find((c) => c.kind === 'field' && c.def.key === 'year')
@@ -29,7 +29,7 @@ export function RecordCardList({ project, layout, records, ordinal, onOpen }: Pr
         <li key={r.id} className="flex flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-600">
                 {t('ক্রম')} {ordinal(i)} · {yearLabel} {toBanglaNumber(r.year)}
               </p>
               <h3 className="mt-0.5 text-[17px] leading-snug font-semibold text-slate-900">{r.name}</h3>
@@ -51,7 +51,17 @@ export function RecordCardList({ project, layout, records, ordinal, onOpen }: Pr
               </p>
             )
           })}
-          {kinds.length === 2 && (
+          {kinds.length > 0 && !kinds.some((k) => r[`${k}_photo_url`] || r[`${k}_thumb_url`]) ? (
+            <p className="mt-auto flex items-center gap-1.5 pt-3 text-xs text-slate-600">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 shrink-0 text-slate-500" aria-hidden="true">
+                <rect x="3" y="5" width="18" height="14" rx="2" />
+                <circle cx="9" cy="10" r="1.5" />
+                <path d="m21 16-5-5-8 8" />
+              </svg>
+              {t('এখনো ছবি যোগ হয়নি')}
+            </p>
+          ) : null}
+          {kinds.length === 2 && kinds.some((k) => r[`${k}_photo_url`] || r[`${k}_thumb_url`]) && (
             <div className="mt-auto grid grid-cols-2 gap-3 pt-3">
               {kinds.map((kind) => (
                 <div key={kind}>
@@ -61,7 +71,7 @@ export function RecordCardList({ project, layout, records, ordinal, onOpen }: Pr
               ))}
             </div>
           )}
-          {kinds.length === 1 && (
+          {kinds.length === 1 && (r[`${kinds[0]}_photo_url`] || r[`${kinds[0]}_thumb_url`]) && (
             <div className="mt-auto pt-3">
               <p className="mb-1 text-xs font-medium text-slate-500">{photoLabel(project, kinds[0])}</p>
               <Thumb record={r} kind={kinds[0]} label={photoLabel(project, kinds[0])} onOpen={onOpen} size="lg" />

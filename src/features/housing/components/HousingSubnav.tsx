@@ -40,7 +40,7 @@ export function HousingSubnav({ variant = 'light', group }: Props) {
           end={l.end}
           className={({ isActive }) =>
             [
-              'shrink-0 rounded-full border px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors',
+              'inline-flex min-h-11 shrink-0 items-center rounded-full border px-4 text-sm font-medium whitespace-nowrap transition-colors sm:min-h-10',
               isActive ? s.active : s.idle,
             ].join(' ')
           }

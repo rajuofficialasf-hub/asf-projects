@@ -187,21 +187,34 @@ export function ProjectListPage({ project }: Props) {
   )
 }
 
+/** লোডের কাঠামো আসল তালিকার মতো: বড় পর্দায় টেবিলের সারি, ফোন/ট্যাবে কার্ড */
 function TableSkeleton() {
   const rows = Array.from({ length: 8 }, (_, i) => i)
   return (
-    <div className="mt-4 animate-pulse space-y-2" aria-busy="true" aria-label={t('তালিকা লোড হচ্ছে')}>
-      <div className="h-10 rounded-lg bg-brand-50" />
-      {rows.map((i) => (
-        <div key={i} className="flex items-center gap-3 rounded-lg border border-slate-100 bg-white p-3">
-          <div className="h-4 w-8 rounded bg-slate-200" />
-          <div className="h-4 w-12 rounded bg-slate-200" />
-          <div className="h-4 flex-1 rounded bg-slate-200" />
-          <div className="hidden h-4 w-40 rounded bg-slate-200 md:block" />
-          <div className="h-12 w-12 rounded-md bg-slate-200" />
-          <div className="h-12 w-12 rounded-md bg-slate-200" />
-        </div>
-      ))}
+    <div className="mt-4 animate-pulse" role="status" aria-label={t('তালিকা লোড হচ্ছে')}>
+      <div className="hidden space-y-2 lg:block">
+        <div className="h-10 rounded-lg bg-brand-50" />
+        {rows.map((i) => (
+          <div key={i} className="flex items-center gap-3 rounded-lg border border-slate-100 bg-white p-3">
+            <div className="h-4 w-8 rounded bg-slate-200" />
+            <div className="h-4 w-12 rounded bg-slate-200" />
+            <div className="h-4 flex-1 rounded bg-slate-200" />
+            <div className="h-4 w-40 rounded bg-slate-200" />
+            <div className="h-12 w-12 rounded-md bg-slate-200" />
+            <div className="h-12 w-12 rounded-md bg-slate-200" />
+          </div>
+        ))}
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:hidden">
+        {rows.slice(0, 4).map((i) => (
+          <div key={i} className="rounded-xl border border-slate-200 bg-white p-4">
+            <div className="h-3 w-24 rounded bg-slate-200" />
+            <div className="mt-2 h-5 w-40 rounded bg-slate-200" />
+            <div className="mt-3 h-4 w-48 rounded bg-slate-200" />
+            <div className="mt-2 h-4 w-32 rounded bg-slate-200" />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
