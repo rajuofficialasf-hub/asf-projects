@@ -182,14 +182,17 @@ export function ProjectSettingsPage() {
     setDeleteError(null)
     try {
       await getProjectsApi().delete(project.key)
-      await refreshProjects({ includeDrafts: true })
-      toast.success(t('«{name}» মুছে ফেলা হয়েছে', { name: lt(project, 'name') }))
-      navigate('/admin/projects')
     } catch (err) {
       setDeleteError(friendlyProjectError(err))
-    } finally {
       setBusy(false)
+      return
     }
+    // মোছা হয়ে গেছে: রেজিস্ট্রি নতুন করে আনতে না পারলেও ডায়ালগে আটকে রাখা যায় না (আবার চাপলে "পাওয়া যায়নি" হত)।
+    // প্রকল্পসমূহের পাতা নিজের তালিকা সার্ভার থেকে আনে; পাশের মেনু তখন পরের মেলানো পর্যন্ত পুরনো থাকতে পারে
+    await refreshProjects({ includeDrafts: true }).catch(() => undefined)
+    toast.success(t('«{name}» মুছে ফেলা হয়েছে', { name: lt(project, 'name') }))
+    setBusy(false)
+    navigate('/admin/projects')
   }
 
   const TAB_LABELS: Record<Tab, string> = { general: t('সাধারণ'), fields: t('ফিল্ড'), stats: t('পরিসংখ্যান'), photos: t('ছবি'), display: t('প্রদর্শন') }
