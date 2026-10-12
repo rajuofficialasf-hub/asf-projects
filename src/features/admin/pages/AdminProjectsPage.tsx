@@ -1,17 +1,15 @@
 import { lt, t } from '@/i18n'
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router'
 import { getProjectsApi, HousingApiError, type Project, type ProjectOverview } from '@/backend'
-import { useToast } from '@/components/useToast'
 import { projectPath, refreshProjects } from '@/features/projects/registry'
-import { ErrorNotice } from '@/features/housing/components/ErrorNotice'
 import { formatBanglaNumber } from '@/lib/banglaNumber'
 import { useDocumentTitle } from '@/lib/useDocumentTitle'
 import { friendlyProjectError, isStaleEdit } from '../projects/projectRules'
 import { publishChecklist } from '../projects/publishChecklist'
 import { UnpublishDialog } from '../projects/UnpublishDialog'
+import { Button, Card, Checkbox, LinkButton, LoadingState, Page, Stack, Text, TextLink, useToast, IconButton } from '@/ui'
 import { Badge } from '../ui/Badge'
-import { card, smallButton } from '../ui/styles'
+import { ErrorNotice } from '../ui/ErrorNotice'
 
 type Data = { projects: Project[]; totals: Record<string, number> }
 
@@ -84,20 +82,16 @@ export function AdminProjectsPage() {
 
   if (error && !data) {
     return (
-      <section className="px-4 py-8 sm:px-6">
-        <h1 className="text-2xl font-bold text-slate-900">{t('প্রকল্পসমূহ')}</h1>
-        <div className="mt-6">
-          <ErrorNotice title={t('প্রকল্পের তালিকা লোড করা যায়নি')} error={error} />
-        </div>
-      </section>
+      <Page title={t('প্রকল্পসমূহ')} documentTitle={false}>
+        <ErrorNotice title={t('প্রকল্পের তালিকা লোড করা যায়নি')} error={error} />
+      </Page>
     )
   }
   if (!data) {
     return (
-      <section className="px-4 py-8 sm:px-6" aria-busy="true">
-        <h1 className="text-2xl font-bold text-slate-900">{t('প্রকল্পসমূহ')}</h1>
-        <div className="mt-6 h-64 animate-pulse rounded-2xl bg-slate-200" />
-      </section>
+      <Page title={t('প্রকল্পসমূহ')} documentTitle={false}>
+        <LoadingState label={t('লোড হচ্ছে…')} />
+      </Page>
     )
   }
 
@@ -130,82 +124,84 @@ export function AdminProjectsPage() {
   }
 
   return (
-    <section className="px-4 py-8 sm:px-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">{t('প্রকল্পসমূহ')}</h1>
-          <p className="mt-1 text-sm text-slate-500">{t('নতুন প্রকল্প সবসময় খসড়া হিসেবে তৈরি হয়; প্রকাশ না করা পর্যন্ত দর্শকেরা দেখতে পান না।')}</p>
-        </div>
-        <Link to="/admin/projects/new" className="inline-flex h-11 items-center gap-1.5 rounded-md bg-brand-700 px-5 text-sm font-semibold text-white hover:bg-brand-600">
-          <span aria-hidden="true">+</span> {t('নতুন প্রকল্প')}
-        </Link>
-      </div>
-
-      <ul className={`${card} mt-6 divide-y divide-slate-100 !p-0`}>
+    <Page
+      title={t('প্রকল্পসমূহ')}
+      documentTitle={false}
+      description={t('নতুন প্রকল্প সবসময় খসড়া হিসেবে তৈরি হয়; প্রকাশ না করা পর্যন্ত দর্শকেরা দেখতে পান না।')}
+      actions={
+        <LinkButton to="/admin/projects/new" startIcon="add">
+          {t('নতুন প্রকল্প')}
+        </LinkButton>
+      }
+    >
+      <Stack role="list" gap={1.5}>
         {ordered.map((p) => {
           const siblings = ordered.filter((x) => (x.parent_key ?? null) === (p.parent_key ?? null))
           const idx = siblings.findIndex((x) => x.key === p.key)
           const check = publishChecklist(p, projects)
           const busy = busyKey === p.key
+          const parent = p.parent_key ? projects.find((x) => x.key === p.parent_key) : undefined
           return (
-            <li key={p.key} className={`flex flex-col gap-3 px-4 py-4 sm:px-6 lg:flex-row lg:items-center ${p.parent_key ? 'bg-slate-50/60 lg:pl-12' : ''}`}>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Link to={`/admin/projects/${encodeURIComponent(p.key)}`} className="text-base font-bold text-slate-900 hover:text-brand-700">
-                    {lt(p, 'name')}
-                  </Link>
-                  {p.is_published ? <Badge tone="green">{t('প্রকাশিত')}</Badge> : <Badge tone="amber">{t('খসড়া')}</Badge>}
-                  {p.is_group && <Badge tone="blue">{t('গ্রুপ')}</Badge>}
-                  {!p.show_on_home && <Badge>{t('হোমে নেই')}</Badge>}
-                </div>
-                <p className="mt-1 text-xs text-slate-500">
-                  <span className="font-mono">{projectPath(p, projects)}</span> · <span className="font-mono">{p.key}</span> ·{' '}
-                  {t('{n}টি রেকর্ড', { n: formatBanglaNumber(totals[p.key] ?? 0) })}
-                </p>
-                {!p.is_published && check.blocking.length > 0 && (
-                  <p className="mt-1 text-xs text-amber-800">{t('প্রকাশের আগে: {list}', { list: check.blocking.join(' · ') })}</p>
-                )}
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <button type="button" className={smallButton} disabled={busy || idx <= 0} onClick={() => move(p, -1)} aria-label={t('উপরে সরান')} title={t('উপরে সরান')}>
-                  ↑
-                </button>
-                <button type="button" className={smallButton} disabled={busy || idx < 0 || idx >= siblings.length - 1} onClick={() => move(p, 1)} aria-label={t('নিচে সরান')} title={t('নিচে সরান')}>
-                  ↓
-                </button>
-                <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 accent-brand-700"
-                    checked={p.show_on_home}
-                    disabled={busy}
-                    onChange={(e) => void run(p.key, () => getProjectsApi().update(p.key, { show_on_home: e.target.checked }, { expectedUpdatedAt: p.updated_at }), t('সংরক্ষিত'))}
-                  />
-                  {t('হোমে দেখান')}
-                </label>
-                {p.is_published ? (
-                  <button type="button" className={smallButton} disabled={busy} onClick={() => askUnpublish(p)}>
-                    {t('অপ্রকাশ করুন')}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className={`${smallButton} border-brand-600 text-brand-700`}
-                    disabled={busy || check.blocking.length > 0}
-                    title={check.blocking.join(' · ') || undefined}
-                    onClick={() => void setPublished(p, true)}
-                  >
-                    {t('প্রকাশ করুন')}
-                  </button>
-                )}
-                <Link to={`/admin/projects/${encodeURIComponent(p.key)}`} className={smallButton}>
-                  {t('সেটিংস')}
-                </Link>
-              </div>
-            </li>
+            <Stack key={p.key} role="listitem" gap={0}>
+              <Card accent={!!p.parent_key}>
+                <Stack direction="row" gap={2} align="center" justify="between" wrap>
+                  <Stack gap={0.5}>
+                    <Stack direction="row" gap={1} align="center" wrap>
+                      <TextLink to={`/admin/projects/${encodeURIComponent(p.key)}`}>{lt(p, 'name')}</TextLink>
+                      {p.is_published ? <Badge tone="green">{t('প্রকাশিত')}</Badge> : <Badge tone="amber">{t('খসড়া')}</Badge>}
+                      {p.is_group && <Badge tone="blue">{t('গ্রুপ')}</Badge>}
+                      {!p.show_on_home && <Badge>{t('হোমে নেই')}</Badge>}
+                    </Stack>
+                    {/* উপ-প্রকল্পের কার্ডের সবুজ রেখার মানে এখানে লেখা */}
+                    {parent && (
+                      <Text size="caption" tone="muted">
+                        {t('গ্রুপ: {name}', { name: lt(parent, 'name') })}
+                      </Text>
+                    )}
+                    <Text size="caption" tone="muted">
+                      <Text size="caption" tone="muted" mono inline>
+                        {projectPath(p, projects)}
+                      </Text>{' '}
+                      ·{' '}
+                      <Text size="caption" tone="muted" mono inline>
+                        {p.key}
+                      </Text>{' '}
+                      · {t('{n}টি রেকর্ড', { n: formatBanglaNumber(totals[p.key] ?? 0) })}
+                    </Text>
+                    {!p.is_published && check.blocking.length > 0 && (
+                      <Text size="caption" tone="warning">
+                        {t('প্রকাশের আগে: {list}', { list: check.blocking.join(' · ') })}
+                      </Text>
+                    )}
+                  </Stack>
+                  <Stack direction="row" gap={1} align="center" wrap>
+                    <IconButton icon="up" label={t('উপরে সরান')} disabled={busy || idx <= 0} onClick={() => move(p, -1)} />
+                    <IconButton icon="down" label={t('নিচে সরান')} disabled={busy || idx < 0 || idx >= siblings.length - 1} onClick={() => move(p, 1)} />
+                    <Checkbox
+                      label={t('হোমে দেখান')}
+                      checked={p.show_on_home}
+                      disabled={busy}
+                      onChange={(checked) => void run(p.key, () => getProjectsApi().update(p.key, { show_on_home: checked }, { expectedUpdatedAt: p.updated_at }), t('সংরক্ষিত'))}
+                    />
+                    {p.is_published ? (
+                      <Button variant="secondary" size="small" disabled={busy} onClick={() => askUnpublish(p)}>
+                        {t('অপ্রকাশ করুন')}
+                      </Button>
+                    ) : (
+                      <Button variant="primary" size="small" disabled={busy || check.blocking.length > 0} title={check.blocking.join(' · ') || undefined} onClick={() => void setPublished(p, true)}>
+                        {t('প্রকাশ করুন')}
+                      </Button>
+                    )}
+                    <LinkButton to={`/admin/projects/${encodeURIComponent(p.key)}`} variant="secondary">
+                      {t('সেটিংস')}
+                    </LinkButton>
+                  </Stack>
+                </Stack>
+              </Card>
+            </Stack>
           )
         })}
-      </ul>
+      </Stack>
 
       {confirm && (
         <UnpublishDialog
@@ -220,6 +216,6 @@ export function AdminProjectsPage() {
           }}
         />
       )}
-    </section>
+    </Page>
   )
 }

@@ -3,6 +3,8 @@ import { formatBanglaNumber } from '@/lib/banglaNumber'
 import { candidatesFor, geoFixKey } from '@/features/geo/geoMatch'
 import { gnUnion, unionsOf, type UnionData } from '@/features/geo/unions'
 import type { ImportRow, UnresolvedGeo } from './importAnalyze'
+import { Badge } from '../ui/Badge'
+import { Card, Stack, Text, SelectField } from '@/ui'
 
 const LEVEL = { division: 'বিভাগ', district: 'জেলা', upazila: 'উপজেলা', union: 'ইউনিয়ন' } as const
 
@@ -22,51 +24,58 @@ export function GeoFixPanel({ items, rows, fixes, unions, onFix }: { items: Unre
     const key = geoFixKey(it.level, it.raw, it.parent)
     const show = (s: string) => (it.level === 'union' ? gnUnion(district, it.parent, s) : gn(s))
     return (
-      <li key={it.key} className="flex flex-wrap items-center gap-2 rounded-md bg-white px-3 py-2 text-sm">
-        <span className={`rounded px-1.5 text-xs ${it.optional ? 'bg-yellow-100 text-yellow-900' : 'bg-amber-100 text-amber-900'}`}>{t(LEVEL[it.level])}</span>
-        <span className="font-medium text-slate-800">"{it.raw}"</span>
-        <span className="text-xs text-slate-500">
+      <Stack key={it.key} role="listitem" direction="row" wrap align="center" gap={1}>
+        <Badge tone={it.optional ? 'slate' : 'amber'}>{t(LEVEL[it.level])}</Badge>
+        <Text size="small" weight="medium" inline>
+          "{it.raw}"
+        </Text>
+        <Text size="caption" tone="muted" inline>
           ({t('{n} সারি', { n: formatBanglaNumber(it.count) })}
           {it.parent ? `, ${gn(it.parent)}` : ''})
-        </span>
-        <span className="text-slate-400">→</span>
-        <select className="h-9 min-w-[12rem] rounded-md border border-slate-300 bg-white px-2 text-sm" value={fixes[key] ?? ''} onChange={(e) => onFix(key, e.target.value)} aria-label={t('"{raw}" এর সঠিক {level}', { raw: it.raw, level: t(LEVEL[it.level]) })}>
-          <option value="">{it.optional ? t('— যেমন লেখা তেমন রাখুন —') : t('— বেছে নিন —')}</option>
-          {it.suggestions.length > 0 && (
-            <optgroup label={t('পরামর্শ')}>
-              {it.suggestions.map((s) => (
-                <option key={`s-${s}`} value={s}>
-                  {show(s)}
-                </option>
-              ))}
-            </optgroup>
-          )}
-          {options.length > 0 && (
-            <optgroup label={t('সম্পূর্ণ তালিকা')}>
-              {options.map((o) => (
-                <option key={o} value={o}>
-                  {show(o)}
-                </option>
-              ))}
-            </optgroup>
-          )}
-        </select>
-      </li>
+        </Text>
+        <Text tone="muted" inline>
+          →
+        </Text>
+        <SelectField
+          hideLabel
+          size="small"
+          label={t('"{raw}" এর সঠিক {level}', { raw: it.raw, level: t(LEVEL[it.level]) })}
+          value={fixes[key] ?? ''}
+          onChange={(v) => onFix(key, v)}
+          options={[
+            { value: '', label: it.optional ? t('— যেমন লেখা তেমন রাখুন —') : t('— বেছে নিন —') },
+            ...it.suggestions.map((s) => ({ value: s, label: show(s), group: t('পরামর্শ') })),
+            ...options.map((o) => ({ value: o, label: show(o), group: t('সম্পূর্ণ তালিকা') })),
+          ]}
+        />
+      </Stack>
     )
   }
   return (
     <>
       {required.length > 0 && (
-        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <p className="text-sm font-semibold text-amber-900">{t('ভৌগোলিক নাম মেলেনি — সঠিক নাম বেছে দিন ({n} টি স্বতন্ত্র মান)', { n: formatBanglaNumber(required.length) })}</p>
-          <ul className="mt-3 space-y-2">{required.map(item)}</ul>
-        </div>
+        <Card tone="warning">
+          <Stack gap={1.5}>
+            <Text size="small" weight="bold" tone="warning">
+              {t('ভৌগোলিক নাম মেলেনি — সঠিক নাম বেছে দিন ({n} টি স্বতন্ত্র মান)', { n: formatBanglaNumber(required.length) })}
+            </Text>
+            <Stack gap={1} role="list">
+              {required.map(item)}
+            </Stack>
+          </Stack>
+        </Card>
       )}
       {optional.length > 0 && (
-        <div className="mt-4 rounded-xl border border-yellow-200 bg-yellow-50 p-4">
-          <p className="text-sm font-semibold text-yellow-900">{t('ইউনিয়ন তালিকায় নেই ({n} টি) — ঐচ্ছিক: ঠিক থাকলে রেখে দিন, নইলে তালিকা থেকে বাছুন', { n: formatBanglaNumber(optional.length) })}</p>
-          <ul className="mt-3 space-y-2">{optional.map(item)}</ul>
-        </div>
+        <Card tone="warning">
+          <Stack gap={1.5}>
+            <Text size="small" weight="bold" tone="warning">
+              {t('ইউনিয়ন তালিকায় নেই ({n} টি) — ঐচ্ছিক: ঠিক থাকলে রেখে দিন, নইলে তালিকা থেকে বাছুন', { n: formatBanglaNumber(optional.length) })}
+            </Text>
+            <Stack gap={1} role="list">
+              {optional.map(item)}
+            </Stack>
+          </Stack>
+        </Card>
       )}
     </>
   )

@@ -1,6 +1,5 @@
 import { lt, t } from '@/i18n'
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router'
 import {
   getHousingApi,
   getProjectsApi,
@@ -10,15 +9,18 @@ import {
   type ProjectOverviewItem,
 } from '@/backend'
 import { projectPath, useProjects } from '@/features/projects/registry'
-import { ErrorNotice } from '@/features/housing/components/ErrorNotice'
-import { ACTION_CLASS, ACTION_LABEL, formatDateTime } from '@/features/housing/utils/activityLabels'
+import { formatDateTime } from '@/features/housing/utils/activityLabels'
+import { ActionBadge } from '../ui/ActionBadge'
+import { actorLabel } from '../ui/actorLabel'
 import { adminPath, useRecordProjects } from '@/features/housing/utils/housingProjects'
 import { canEditProject, useAdminUser } from '../adminUser'
 import { formatBanglaNumber, toBanglaNumber } from '@/lib/banglaNumber'
 import { formatTaka } from '@/lib/money'
 import { useDocumentTitle } from '@/lib/useDocumentTitle'
+import { Button, Card, Grid, LinkButton, LoadingState, Page, Stack, StatList, Text, TextLink } from '@/ui'
 import { Badge } from '../ui/Badge'
-import { card } from '../ui/styles'
+import { ErrorNotice } from '../ui/ErrorNotice'
+import { NoProjectsNotice } from '../ui/NoProjectsNotice'
 
 type State =
   | { status: 'loading' }
@@ -63,27 +65,21 @@ export function AdminDashboardPage() {
 
   if (state.status === 'loading') {
     return (
-      <section className="px-4 py-8 sm:px-6" aria-busy="true">
-        <h1 className="text-2xl font-bold text-slate-900">{t('ড্যাশবোর্ড')}</h1>
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-40 animate-pulse rounded-2xl bg-slate-200" />
-          ))}
-        </div>
-      </section>
+      <Page title={t('ড্যাশবোর্ড')} documentTitle={false}>
+        <LoadingState label={t('লোড হচ্ছে…')} />
+      </Page>
     )
   }
   if (state.status === 'error') {
     return (
-      <section className="px-4 py-8 sm:px-6">
-        <h1 className="text-2xl font-bold text-slate-900">{t('ড্যাশবোর্ড')}</h1>
-        <div className="mt-6">
+      <Page title={t('ড্যাশবোর্ড')} documentTitle={false}>
+        <Stack gap={1.5} align="start">
           <ErrorNotice title={t('ড্যাশবোর্ড লোড করা যায়নি')} error={state.error} />
-          <button type="button" onClick={() => setReload((n) => n + 1)} className="mt-3 inline-flex h-11 items-center rounded-md border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 hover:border-brand-400">
+          <Button variant="secondary" onClick={() => setReload((n) => n + 1)}>
             {t('আবার চেষ্টা করুন')}
-          </button>
-        </div>
-      </section>
+          </Button>
+        </Stack>
+      </Page>
     )
   }
 
@@ -96,111 +92,115 @@ export function AdminDashboardPage() {
   const orphans = items.filter((x) => x.parent_key && !items.some((p) => p.key === x.parent_key))
 
   return (
-    <section className="px-4 py-8 sm:px-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">{t('ড্যাশবোর্ড')}</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {t('প্রকাশিত: {p}টি প্রকল্প · {n} জন উপকারভোগী · {d}টি জেলা', {
-              p: toBanglaNumber(overview.global.projects),
-              n: formatBanglaNumber(overview.global.total),
-              d: toBanglaNumber(overview.global.districts),
-            })}
-          </p>
-        </div>
-        {settings && (
-          <Link to="/admin/projects/new" className="inline-flex h-11 items-center gap-1.5 rounded-md bg-brand-700 px-5 text-sm font-semibold text-white hover:bg-brand-600">
-            <span aria-hidden="true">+</span> {t('নতুন প্রকল্প')}
-          </Link>
-        )}
-      </div>
+    <Page
+      title={t('ড্যাশবোর্ড')}
+      documentTitle={false}
+      description={t('প্রকাশিত: {p}টি প্রকল্প · {n} জন উপকারভোগী · {d}টি জেলা', {
+        p: toBanglaNumber(overview.global.projects),
+        n: formatBanglaNumber(overview.global.total),
+        d: toBanglaNumber(overview.global.districts),
+      })}
+      actions={
+        settings && (
+          <LinkButton to="/admin/projects/new" startIcon="add">
+            {t('নতুন প্রকল্প')}
+          </LinkButton>
+        )
+      }
+    >
+      <Stack gap={4}>
+        {items.length === 0 && <NoProjectsNotice />}
+        <Grid columns={{ xs: 1, md: 2, lg: 3 }} gap={2}>
+          {[...ordered, ...orphans].map((item) => {
+            const money = moneyTotal(item)
+            const project = projects.find((p) => p.key === item.key)
+            const draft = !item.is_published
+            return (
+              <Card
+                key={item.key}
+                eyebrow={item.is_group ? t('প্রকল্প-গ্রুপ') : item.parent_key ? t('উপ-প্রকল্প') : t('একক প্রকল্প')}
+                title={lt(item, 'name')}
+                description={
+                  <Text size="caption" tone="muted" mono>
+                    {item.key}
+                  </Text>
+                }
+                actions={draft ? <Badge tone="amber">{t('খসড়া')}</Badge> : <Badge tone="green">{t('প্রকাশিত')}</Badge>}
+              >
+                <Stack gap={2}>
+                  <StatList
+                    items={[
+                      { label: t('রেকর্ড'), value: formatBanglaNumber(item.stats.total) },
+                      { label: t('মোট টাকা'), value: money === null ? '—' : formatTaka(money) },
+                      item.is_group || item.photo_mode === 'none' || item.without_photo === null
+                        ? { label: t('ছবি বাকি'), value: '—' }
+                        : { label: t('ছবি বাকি'), value: formatBanglaNumber(item.without_photo), tone: item.without_photo > 0 ? 'warning' : 'default' },
+                    ]}
+                  />
+                  <Stack direction="row" gap={1} wrap>
+                    {recordKeys.has(item.key) && (
+                      <LinkButton to={adminPath(item.key)} variant="secondary">
+                        {t('রেকর্ড')}
+                      </LinkButton>
+                    )}
+                    {settings && (
+                      <LinkButton to={`/admin/projects/${encodeURIComponent(item.key)}`} variant="secondary">
+                        {t('সেটিংস')}
+                      </LinkButton>
+                    )}
+                    {project && (
+                      <LinkButton to={projectPath(project, projects)} variant="secondary">
+                        {draft ? t('প্রিভিউ') : t('পাবলিক পেইজ')}
+                      </LinkButton>
+                    )}
+                  </Stack>
+                </Stack>
+              </Card>
+            )
+          })}
+        </Grid>
 
-      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {[...ordered, ...orphans].map((item) => {
-          const money = moneyTotal(item)
-          const project = projects.find((p) => p.key === item.key)
-          const draft = !item.is_published
-          return (
-            <article key={item.key} className={`${card} flex flex-col ${item.parent_key ? 'md:border-l-4 md:border-l-brand-200' : ''}`}>
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-xs text-slate-400">{item.is_group ? t('প্রকল্প-গ্রুপ') : item.parent_key ? t('উপ-প্রকল্প') : t('একক প্রকল্প')}</p>
-                  <h2 className="truncate text-base font-bold text-slate-900" title={lt(item, 'name')}>
-                    {lt(item, 'name')}
-                  </h2>
-                  <p className="font-mono text-xs text-slate-400">{item.key}</p>
-                </div>
-                {draft ? <Badge tone="amber">{t('খসড়া')}</Badge> : <Badge tone="green">{t('প্রকাশিত')}</Badge>}
-              </div>
-              <dl className="mt-4 grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-lg bg-slate-50 px-2 py-2">
-                  <dt className="text-xs text-slate-500">{t('রেকর্ড')}</dt>
-                  <dd className="text-lg font-bold text-slate-900 tabular-nums">{formatBanglaNumber(item.stats.total)}</dd>
-                </div>
-                <div className="rounded-lg bg-slate-50 px-2 py-2">
-                  <dt className="text-xs text-slate-500">{t('মোট টাকা')}</dt>
-                  <dd className="truncate text-sm font-bold text-slate-900 tabular-nums">{money === null ? '—' : formatTaka(money)}</dd>
-                </div>
-                <div className="rounded-lg bg-slate-50 px-2 py-2">
-                  <dt className="text-xs text-slate-500">{t('ছবি বাকি')}</dt>
-                  <dd className={`text-lg font-bold tabular-nums ${item.without_photo ? 'text-amber-700' : 'text-slate-900'}`}>
-                    {item.is_group || item.photo_mode === 'none' || item.without_photo === null ? '—' : formatBanglaNumber(item.without_photo)}
-                  </dd>
-                </div>
-              </dl>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {recordKeys.has(item.key) && (
-                  <Link to={adminPath(item.key)} className="inline-flex min-h-11 items-center rounded-md border border-slate-300 px-3 text-sm font-medium text-slate-700 hover:border-brand-400 hover:text-brand-700">
-                    {t('রেকর্ড')}
-                  </Link>
-                )}
-                {settings && (
-                  <Link to={`/admin/projects/${encodeURIComponent(item.key)}`} className="inline-flex min-h-11 items-center rounded-md border border-slate-300 px-3 text-sm font-medium text-slate-700 hover:border-brand-400 hover:text-brand-700">
-                    {t('সেটিংস')}
-                  </Link>
-                )}
-                {project && (
-                  <Link to={projectPath(project, projects)} className="inline-flex min-h-11 items-center rounded-md border border-slate-300 px-3 text-sm font-medium text-slate-700 hover:border-brand-400 hover:text-brand-700">
-                    {draft ? t('প্রিভিউ') : t('পাবলিক পেইজ')}
-                  </Link>
-                )}
-              </div>
-            </article>
-          )
-        })}
-      </div>
-
-      <div className={`${card} mt-8`}>
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-base font-bold text-slate-900">{t('সাম্প্রতিক কাজ')}</h2>
-          <Link to="/admin/activity" className="inline-flex min-h-11 items-center text-sm font-medium text-brand-700 hover:underline">
-            {t('সব দেখুন')}
-          </Link>
-        </div>
-        {activity.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-500">{t('কোনো এন্ট্রি নেই।')}</p>
-        ) : (
-          <ul className="mt-3 divide-y divide-slate-100">
-            {activity.map((e) => {
-              const p = projects.find((x) => x.key === e.project_type)
-              return (
-                <li key={e.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 text-sm">
-                  <time dateTime={e.at} className="text-xs text-slate-500 tabular-nums">
-                    {formatDateTime(e.at)}
-                  </time>
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ACTION_CLASS[e.action] ?? 'bg-slate-100 text-slate-700'}`}>
-                    {ACTION_LABEL[e.action] ? t(ACTION_LABEL[e.action]) : e.action}
-                  </span>
-                  <span className="truncate text-slate-700">{e.actor_email ?? t('অজানা')}</span>
-                  {p && <span className="text-slate-500">· {lt(p, 'name')}</span>}
-                  {e.serial_no !== null && <span className="text-slate-500">· {t('সিরিয়াল')} {toBanglaNumber(e.serial_no)}</span>}
-                  {e.record_name && <span className="truncate text-slate-500">({e.record_name})</span>}
-                </li>
-              )
-            })}
-          </ul>
-        )}
-      </div>
-    </section>
+        <Card title={t('সাম্প্রতিক কাজ')} actions={<TextLink to="/admin/activity">{t('সব দেখুন')}</TextLink>}>
+          {activity.length === 0 ? (
+            <Text size="small" tone="muted">
+              {t('কোনো এন্ট্রি নেই।')}
+            </Text>
+          ) : (
+            <Stack role="list" gap={1.5}>
+              {activity.map((e) => {
+                const p = projects.find((x) => x.key === e.project_type)
+                return (
+                  <Stack key={e.id} role="listitem" direction="row" gap={1} align="center" wrap>
+                    <Text size="caption" tone="muted" tabular inline>
+                      <time dateTime={e.at}>{formatDateTime(e.at)}</time>
+                    </Text>
+                    <ActionBadge action={e.action} />
+                    <Text size="small" inline truncate>
+                      {actorLabel(e.actor_email)}
+                    </Text>
+                    {p && (
+                      <Text size="small" tone="muted" inline>
+                        · {lt(p, 'name')}
+                      </Text>
+                    )}
+                    {e.serial_no !== null && (
+                      <Text size="small" tone="muted" inline>
+                        · {t('সিরিয়াল')} {toBanglaNumber(e.serial_no)}
+                      </Text>
+                    )}
+                    {/* প্রকল্পের সেটিং বদলে record_name = প্রকল্পের নাম, যা আগেই দেখানো — তাই শুধু রেকর্ড/ফিল্ডের নাম */}
+                    {e.record_name && (e.serial_no !== null || e.action.startsWith('field_')) && (
+                      <Text size="small" tone="muted" inline truncate>
+                        ({e.record_name})
+                      </Text>
+                    )}
+                  </Stack>
+                )
+              })}
+            </Stack>
+          )}
+        </Card>
+      </Stack>
+    </Page>
   )
 }

@@ -1,17 +1,20 @@
 import { gn, lt, t } from '@/i18n'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { useSearchParams } from 'react-router'
 import { useDocumentTitle } from '@/lib/useDocumentTitle'
 import { formatBanglaNumber, toBanglaNumber } from '@/lib/banglaNumber'
 import { DEFAULT_PAGE_SIZE, getHousingApi, HousingApiError, type ActivityEntry, type ActivityListParams, type Page, type Project } from '@/backend'
 import { FIELD_VALUE_SPECS, formatField, resolveFields, type FieldDef } from '@/features/projects/fields'
 import { useProject, useProjects } from '@/features/projects/registry'
 import { canEditProject, useAdminUser } from '../adminUser'
-import { ErrorNotice } from '@/features/housing/components/ErrorNotice'
-import { Pagination } from '@/features/housing/components/Pagination'
-import { ACTION_CLASS, ACTION_LABEL, formatDateTime } from '@/features/housing/utils/activityLabels'
+import { ErrorNotice } from '../ui/ErrorNotice'
+import { Pagination } from '../ui/Pagination'
+import { ACTION_LABEL, formatDateTime } from '@/features/housing/utils/activityLabels'
+import { ActionBadge } from '../ui/ActionBadge'
+import { actorLabel } from '../ui/actorLabel'
 import { adminPath } from '@/features/housing/utils/housingProjects'
 import { photoSlotLabel } from '../records/recordColumns'
+import { Button, Card, EmptyState, FilterPanel, Grid, Icon, LoadingState, Page as UiPage, SelectField, Stack, Text, TextField, TextLink } from '@/ui'
 
 /** রেকর্ডের কলাম যা ফিল্ড-সংজ্ঞায় নেই (বা পুরনো লগে) — বাংলা লেবেল */
 const RECORD_COL: Record<string, string> = {
@@ -164,83 +167,89 @@ export function ActivityPage() {
     return out
   }, [projects])
 
-  const sel = 'h-9 rounded-md border border-slate-300 bg-white px-2 text-sm'
+
+  // ইমেইল-ঘরের লেখা নিজের state-এ থাকে; URL শুধু ঘর ছাড়লে বা Enter চাপলে বদলায়
+  const [actor, setActor] = useState(sp.get('actor') ?? '')
   const data = state.status === 'error' ? null : state.data
 
   return (
-    <section className="container-page py-8 sm:py-10">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">{t('একটিভিটি লগ')}</h1>
-          <p className="mt-1 text-sm text-slate-500">{t('প্রতিটি রেকর্ড যোগ/সম্পাদনা/মোছা, ছবি ও সিরিয়াল বদল, লগইন, ইম্পোর্ট — কে, কখন, কী বদলেছে।')}</p>
-        </div>
-        {sp.get('record') && (
-          <button type="button" onClick={() => setParam('record', '')} className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 hover:border-red-300 hover:text-red-700">
+    <UiPage
+      title={t('একটিভিটি লগ')}
+      description={t('প্রতিটি রেকর্ড যোগ/সম্পাদনা/মোছা, ছবি ও সিরিয়াল বদল, লগইন, ইম্পোর্ট — কে, কখন, কী বদলেছে।')}
+      documentTitle={false}
+      actions={
+        sp.get('record') && (
+          <Button variant="secondary" size="small" onClick={() => setParam('record', '')}>
             {t('একটি রেকর্ডের ইতিহাস দেখানো হচ্ছে — সব দেখুন')}
-          </button>
-        )}
-      </div>
+          </Button>
+        )
+      }
+    >
+      <Stack gap={2}>
+        {/* ---------- ফিল্টার (রেকর্ড-তালিকার মতো একই প্যানেল) ---------- */}
+        <FilterPanel
+          label={t('ফিল্টার')}
+          activeCount={FILTER_KEYS.filter((k) => sp.get(k)).length}
+          onClear={() => {
+            setActor('')
+            setSp(new URLSearchParams(), { replace: true })
+          }}
+          clearLabel={t('ফিল্টার মুছুন')}
+        >
+          <Grid columns={{ xs: 1, sm: 2, lg: 5 }}>
+            <SelectField
+              label={t('কাজের ধরন')}
+              size="small"
+              value={sp.get('action') ?? ''}
+              onChange={(v) => setParam('action', v)}
+              options={[{ value: '', label: t('সব ধরন') }, ...Object.entries(ACTION_LABEL).map(([k, v]) => ({ value: k, label: t(v) }))]}
+            />
+            <SelectField
+              label={t('প্রকল্প')}
+              size="small"
+              value={sp.get('project') ?? ''}
+              onChange={(v) => setParam('project', v)}
+              options={[{ value: '', label: t('সব প্রকল্প') }, ...projectOptions.map((p) => ({ value: p.key, label: p.label }))]}
+            />
+            <form
+              noValidate
+              onSubmit={(ev) => {
+                ev.preventDefault()
+                setParam('actor', actor.trim())
+              }}
+            >
+              <TextField label={t('কে (ইমেইল)')} type="search" size="small" placeholder={t('ইমেইল লিখে খুঁজুন')} value={actor} onChange={setActor} onBlur={() => setParam('actor', actor.trim())} />
+            </form>
+            <TextField label={t('থেকে')} type="date" size="small" value={sp.get('from') ?? ''} onChange={(v) => setParam('from', v)} />
+            <TextField label={t('পর্যন্ত')} type="date" size="small" value={sp.get('to') ?? ''} onChange={(v) => setParam('to', v)} />
+          </Grid>
+        </FilterPanel>
 
-      {/* ---------- ফিল্টার ---------- */}
-      <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-3">
-        <select className={sel} value={sp.get('action') ?? ''} onChange={(e) => setParam('action', e.target.value)} aria-label={t('কাজের ধরন')}>
-          <option value="">{t('সব ধরন')}</option>
-          {Object.entries(ACTION_LABEL).map(([k, v]) => (
-            <option key={k} value={k}>
-              {t(v)}
-            </option>
-          ))}
-        </select>
-        <select className={sel} value={sp.get('project') ?? ''} onChange={(e) => setParam('project', e.target.value)} aria-label={t('প্রকল্প')}>
-          <option value="">{t('সব প্রকল্প')}</option>
-          {projectOptions.map((p) => (
-            <option key={p.key} value={p.key}>
-              {p.label}
-            </option>
-          ))}
-        </select>
-        <input className={`${sel} w-44`} placeholder={t('কে (ইমেইল)')} defaultValue={sp.get('actor') ?? ''} onBlur={(e) => setParam('actor', e.target.value.trim())} onKeyDown={(e) => e.key === 'Enter' && setParam('actor', (e.target as HTMLInputElement).value.trim())} aria-label={t('ইমেইল')} />
-        <label className="flex items-center gap-1 text-xs text-slate-600">
-          {t('থেকে')} <input type="date" className={sel} value={sp.get('from') ?? ''} onChange={(e) => setParam('from', e.target.value)} />
-        </label>
-        <label className="flex items-center gap-1 text-xs text-slate-600">
-          {t('পর্যন্ত')} <input type="date" className={sel} value={sp.get('to') ?? ''} onChange={(e) => setParam('to', e.target.value)} />
-        </label>
-        {['action', 'project', 'actor', 'from', 'to', 'record'].some((k) => sp.get(k)) && (
-          <button type="button" onClick={() => setSp(new URLSearchParams(), { replace: true })} className="ml-auto text-xs text-slate-600 underline-offset-2 hover:underline">
-            {t('ফিল্টার মুছুন')}
-          </button>
+        {state.status === 'error' && <ErrorNotice title={t('লগ লোড করা যায়নি')} error={state.error} />}
+        {state.status === 'loading' && !data && <LoadingState label={t('লোড হচ্ছে…')} />}
+        {data && data.meta.total === 0 && (
+          <Card>
+            <EmptyState title={t('কোনো এন্ট্রি নেই।')} />
+          </Card>
         )}
-      </div>
-
-      {state.status === 'error' && (
-        <div className="mt-4">
-          <ErrorNotice title={t('লগ লোড করা যায়নি')} error={state.error} />
-        </div>
-      )}
-      {state.status === 'loading' && !data && (
-        <div className="mt-4 animate-pulse space-y-2" aria-busy="true">
-          {Array.from({ length: 8 }, (_, i) => (
-            <div key={i} className="h-12 rounded-lg bg-slate-200" />
-          ))}
-        </div>
-      )}
-      {data && data.meta.total === 0 && <p className="mt-4 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500">{t('কোনো এন্ট্রি নেই।')}</p>}
-      {data && data.meta.total > 0 && (
-        <>
-          <ol className={`mt-4 space-y-2 ${state.status === 'loading' ? 'opacity-60' : ''}`}>
-            {data.data.map((e) => (
-              <Entry key={e.id} e={e} />
-            ))}
-          </ol>
-          <div className="mt-5">
+        {data && data.meta.total > 0 && (
+          <>
+            <Card padding="none">
+              <Stack role="list" gap={0} divided>
+                {data.data.map((e) => (
+                  <Entry key={e.id} e={e} />
+                ))}
+              </Stack>
+            </Card>
             <Pagination meta={data.meta} onPageChange={(p) => setParam('page', p <= 1 ? '' : String(p))} disabled={state.status === 'loading'} />
-          </div>
-        </>
-      )}
-    </section>
+          </>
+        )}
+      </Stack>
+    </UiPage>
   )
 }
+
+const FILTER_KEYS = ['action', 'project', 'actor', 'from', 'to', 'record'] as const
 
 const isConfig = (a: string) => a.startsWith('project_') || a.startsWith('field_')
 
@@ -249,46 +258,62 @@ function Entry({ e }: { e: ActivityEntry }) {
   const defs = useMemo(() => (project ? resolveFields(project, { includePrivate: true, includeArchived: true }) : []), [project])
   const config = isConfig(e.action)
   return (
-    <li className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <time dateTime={e.at} className="text-xs text-slate-500 tabular-nums">
-          {formatDateTime(e.at)}
-        </time>
-        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ACTION_CLASS[e.action] ?? 'bg-slate-100 text-slate-700'}`}>{ACTION_LABEL[e.action] ? t(ACTION_LABEL[e.action]) : e.action}</span>
-        <span className="text-slate-700">
-          <span className="font-medium">{e.actor_email ?? t('অজানা')}</span>
-        </span>
-        {e.record_id && e.serial_no !== null && (
-          <span className="text-slate-700">
-            → {project ? lt(project, 'name') : e.project_type} · {t('সিরিয়াল')}{' '}
-            {e.action === 'delete' || !project ? (
-              <span className="font-semibold">{toBanglaNumber(e.serial_no)}</span>
-            ) : (
-              <Link to={adminPath(project.key, `${e.serial_no}/edit`)} className="font-semibold text-brand-700 hover:underline">
-                {toBanglaNumber(e.serial_no)}
-              </Link>
+    <Stack role="listitem" padding={2}>
+        <Stack gap={1}>
+          <Stack direction="row" gap={1.5} wrap align="center">
+            <Text size="caption" tone="muted" tabular inline>
+              <time dateTime={e.at}>{formatDateTime(e.at)}</time>
+            </Text>
+            <ActionBadge action={e.action} />
+            <Text size="small" weight="medium" inline>
+              {actorLabel(e.actor_email)}
+            </Text>
+            {e.record_id && e.serial_no !== null && (
+              <Text size="small" inline>
+                → {project ? lt(project, 'name') : e.project_type} ·{' '}
+                {/* পুরো "সিরিয়াল ৯" লিংক, শুধু অঙ্কটি নয় — এক অঙ্কের লিংক আঙুলে ধরা কঠিন */}
+                {e.action === 'delete' || !project ? (
+                  <Text size="small" weight="bold" inline>
+                    {t('সিরিয়াল {n}', { n: toBanglaNumber(e.serial_no) })}
+                  </Text>
+                ) : (
+                  <TextLink to={adminPath(project.key, `${e.serial_no}/edit`)}>{t('সিরিয়াল {n}', { n: toBanglaNumber(e.serial_no) })}</TextLink>
+                )}
+                {e.record_name && (
+                  <Text size="small" tone="muted" inline>
+                    {' '}
+                    ({e.record_name})
+                  </Text>
+                )}{' '}
+                <TextLink to={`/admin/activity?record=${e.record_id}`}>{t('ইতিহাস')}</TextLink>
+              </Text>
             )}
-            {e.record_name && <span className="text-slate-600"> ({e.record_name})</span>}
-            <Link to={`/admin/activity?record=${e.record_id}`} className="ml-2 text-xs text-slate-500 hover:text-brand-700 hover:underline">
-              {t('ইতিহাস')}
-            </Link>
-          </span>
-        )}
-        {!e.record_id && config && e.project_type && (
-          <span className="text-slate-700">
-            → {project ? lt(project, 'name') : e.project_type}
-            {e.action.startsWith('field_') && e.record_name && <span className="text-slate-600"> · {t('ফিল্ড «{name}»', { name: e.record_name })}</span>}
-            {e.action !== 'project_delete' && (
-              <Link to={`/admin/projects/${encodeURIComponent(e.project_type)}${e.action.startsWith('field_') ? '?tab=fields' : ''}`} className="ml-2 text-xs text-slate-500 hover:text-brand-700 hover:underline">
-                {t('সেটিংস')}
-              </Link>
+            {!e.record_id && config && e.project_type && (
+              <Text size="small" inline>
+                → {project ? lt(project, 'name') : e.project_type}
+                {e.action.startsWith('field_') && e.record_name && (
+                  <Text size="small" tone="muted" inline>
+                    {' '}
+                    · {t('ফিল্ড «{name}»', { name: e.record_name })}
+                  </Text>
+                )}
+                {e.action !== 'project_delete' && (
+                  <>
+                    {' '}
+                    <TextLink to={`/admin/projects/${encodeURIComponent(e.project_type)}${e.action.startsWith('field_') ? '?tab=fields' : ''}`}>{t('সেটিংস')}</TextLink>
+                  </>
+                )}
+              </Text>
             )}
-          </span>
-        )}
-        {!e.record_id && !config && project && <span className="text-slate-600">· {lt(project, 'name')}</span>}
-      </div>
-      <Details e={e} project={project ?? null} defs={defs} />
-    </li>
+            {!e.record_id && !config && project && (
+              <Text size="small" tone="muted" inline>
+                · {lt(project, 'name')}
+              </Text>
+            )}
+          </Stack>
+          <Details e={e} project={project ?? null} defs={defs} />
+        </Stack>
+    </Stack>
   )
 }
 
@@ -324,48 +349,65 @@ function Details({ e, project, defs }: { e: ActivityEntry; project: Project | nu
     const config = isConfig(e.action)
     const cols = e.action.startsWith('project_') ? PROJECT_COL : FIELD_COL
     return (
-      <ul className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600">
+      <Stack role="list" direction="row" gap={2} wrap>
         {Object.entries(changes).map(([field, v]) => {
           const { label, def } = config ? { label: cols[field] ? t(cols[field]) : field, def: null } : recordChange(field, project, defs)
           return (
-            <li key={field}>
-              <span className="font-medium text-slate-700">{label}:</span>{' '}
-              {field.endsWith('_photo') && !config ? (
-                <>
-                  {v.old ? t('ছিল') : t('ছিল না')} → <span className="text-slate-900">{v.new ? t('আছে') : t('নেই')}</span>
-                </>
-              ) : (
-                <>
-                  <span className="line-through">{fmt(v.old, def)}</span> → <span className="text-slate-900">{fmt(v.new, def)}</span>
-                </>
-              )}
-            </li>
+            <Stack role="listitem" key={field}>
+              <Text size="caption" tone="muted">
+                <Text size="caption" weight="medium" inline>
+                  {label}:
+                </Text>{' '}
+                {field.endsWith('_photo') && !config ? (
+                  <>
+                    {v.old ? t('ছিল') : t('ছিল না')} →{' '}
+                    <Text size="caption" inline>
+                      {v.new ? t('আছে') : t('নেই')}
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <s>{fmt(v.old, def)}</s> →{' '}
+                    <Text size="caption" inline>
+                      {fmt(v.new, def)}
+                    </Text>
+                  </>
+                )}
+              </Text>
+            </Stack>
           )
         })}
-      </ul>
+      </Stack>
     )
   }
   if (e.action === 'create' || e.action === 'delete') {
     return (
-      <p className="mt-1 text-xs text-slate-600">
+      <Text size="caption" tone="muted">
         {[d.year && t('সাল {n}', { n: toBanglaNumber(String(d.year)) }), d.upazila && `${gn(String(d.upazila))}, ${gn(String(d.district))}, ${gn(String(d.division))}`, d.address && String(d.address)].filter(Boolean).join(' · ')}
-      </p>
+      </Text>
     )
   }
   if (e.action === 'private_update') {
     const keys = Array.isArray(d.fields) ? (d.fields as string[]) : []
     return (
-      <p className="mt-1 text-xs text-slate-600">
-        🔒 {keys.map((k) => recordChange(`extra.${k}`, project, defs).label).join(', ')} <span className="text-slate-400">({t('মান লগে রাখা হয় না')})</span>
-      </p>
+      <Text size="caption" tone="muted">
+        <Icon name="lock" size={14} /> {keys.map((k) => recordChange(`extra.${k}`, project, defs).label).join(', ')} ({t('মান লগে রাখা হয় না')})
+      </Text>
     )
   }
   if (e.action === 'category_merge') {
     const fieldLabel = recordChange(`extra.${String(d.field ?? '')}`, project, defs).label
     return (
-      <p className="mt-1 text-xs text-slate-600">
-        <span className="font-medium text-slate-700">{fieldLabel}:</span> «{String(d.from ?? '')}» → <span className="text-slate-900">«{String(d.to ?? '')}»</span> · {t('{n}টি রেকর্ড', { n: formatBanglaNumber(Number(d.records ?? 0)) })}
-      </p>
+      <Text size="caption" tone="muted">
+        <Text size="caption" weight="medium" inline>
+          {fieldLabel}:
+        </Text>{' '}
+        «{String(d.from ?? '')}» →{' '}
+        <Text size="caption" inline>
+          «{String(d.to ?? '')}»
+        </Text>{' '}
+        · {t('{n}টি রেকর্ড', { n: formatBanglaNumber(Number(d.records ?? 0)) })}
+      </Text>
     )
   }
   if ((e.action === 'project_create' || e.action === 'field_create' || e.action === 'project_delete' || e.action === 'field_delete') && d.snapshot) {
@@ -373,15 +415,19 @@ function Details({ e, project, defs }: { e: ActivityEntry; project: Project | nu
     const parts = e.action.startsWith('field_')
       ? [s.type && fmt(s.type), s.visibility && fmt(s.visibility), s.key && `key: ${String(s.key)}`]
       : [s.slug && `/${String(s.slug)}`, s.photo_mode && fmt(s.photo_mode), s.is_published === false && t('খসড়া')]
-    return <p className="mt-1 text-xs text-slate-600">{parts.filter(Boolean).join(' · ')}</p>
+    return (
+      <Text size="caption" tone="muted">
+        {parts.filter(Boolean).join(' · ')}
+      </Text>
+    )
   }
   if (['import_run', 'photo_bulk_run', 'records_export'].includes(e.action)) {
     return (
-      <p className="mt-1 text-xs text-slate-600">
+      <Text size="caption" tone="muted">
         {Object.entries(d)
           .map(([k, v]) => `${IMPORT_KEYS[k] ? t(IMPORT_KEYS[k]) : k}: ${typeof v === 'number' ? formatBanglaNumber(v) : typeof v === 'boolean' ? (v ? t('হ্যাঁ') : t('না')) : String(v)}`)
           .join(' · ')}
-      </p>
+      </Text>
     )
   }
   return null

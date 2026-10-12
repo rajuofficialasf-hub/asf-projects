@@ -1,6 +1,6 @@
 import { Route, Routes } from 'react-router'
 import { SiteLayout } from '@/app/layout/SiteLayout'
-import { adminRoutes, projectRoutes } from '@/app/routes/appRoutes'
+import { adminRoute, legacyAdminRoute, projectRoutes } from '@/app/routes/appRoutes'
 import { ConfigAwareNotFound, RegistryAuthSync } from '@/app/routes/routeGuards'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ToastProvider } from '@/components/Toast'
@@ -9,8 +9,8 @@ import { LanguageProvider } from '@/i18n'
 import { HomePage } from '@/pages/HomePage'
 
 /**
- * সাইটের রুট টেবিল (পরিকল্পনা §৪): স্থির রাউট (`/`, `/admin/*`, পুরনো `/housing/admin/*`), রেজিস্ট্রি থেকে তৈরি প্রকল্পের
- * রাউট, আর `*` = ConfigAwareNotFound। LanguageProvider ভাষা বদলালে সব remount করে (রেজিস্ট্রি মডিউলে থাকে, হারায় না)।
+ * সাইটের রুট টেবিল (docs/plans/2026-10-06-1224-refactor-complete-move-to-own-stack-plan.md §৪): `/admin/*` নিজের লেআউটে (SiteLayout-এর বাইরে); বাকি সব SiteLayout-এ — স্থির রাউট
+ * (`/`, পুরনো `/housing/admin/*`), রেজিস্ট্রি থেকে তৈরি প্রকল্পের রাউট, আর `*` = ConfigAwareNotFound। LanguageProvider ভাষা বদলালে সব remount করে (রেজিস্ট্রি মডিউলে থাকে, হারায় না)।
  */
 export default function App() {
   return (
@@ -29,10 +29,11 @@ function AppRoutes() {
   const projects = useProjects()
   return (
     <Routes>
+      {adminRoute}
       <Route element={<SiteLayout />}>
         <Route index element={<HomePage />} />
         {projectRoutes(projects)}
-        {adminRoutes}
+        {legacyAdminRoute}
         <Route path="*" element={<ConfigAwareNotFound />} />
       </Route>
     </Routes>

@@ -12,6 +12,8 @@ import { inFreshContext } from '../support/projects'
 const TIN = 'টিনের ঘর নির্মাণ'
 const SEMI = 'সেমিপাকা ঘর নির্মাণ'
 const GATE = 'এই অংশ শুধু মূল এডমিনের'
+// প্রকল্পের সেটিংস এডমিনেরও কাজ, তাই প্রকল্পের ইউজারের জন্য আলাদা শিরোনাম
+const SETTINGS_GATE = 'এই অংশ এডমিনদের জন্য'
 
 /** Calls the API from inside the page, with the page's session and Origin. */
 function api(page: Page, path: string, method: 'GET' | 'PATCH' | 'POST' = 'GET', body?: unknown) {
@@ -110,7 +112,7 @@ test('a project user sees no settings, no users page and no delete', async ({ pa
   await page.goto('/admin/users')
   await expect(page.getByRole('heading', { name: GATE })).toBeVisible()
   await page.goto('/admin/projects')
-  await expect(page.getByRole('heading', { name: GATE })).toBeVisible()
+  await expect(page.getByRole('heading', { name: SETTINGS_GATE })).toBeVisible()
 })
 
 test("the server refuses a project user's write in another project, an emptied value and a serial change", async ({ page }) => {

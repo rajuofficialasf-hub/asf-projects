@@ -1,6 +1,5 @@
 import { lt, pick, t } from '@/i18n'
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
-import { useToast } from '@/components/useToast'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { toBanglaNumber } from '@/lib/banglaNumber'
 import { getHousingApi, getProjectsApi } from '@/backend'
 import {
@@ -12,13 +11,16 @@ import {
   type Project,
 } from '@/backend'
 import { isValidGeo, nfc } from '@/features/geo/geo'
-import { GeoSelect, type GeoValue } from '@/features/geo/GeoSelect'
-import { FIELD_INPUT_CLASS, fieldErrorMessage, fieldSpec, parseField, resolveFields, type FieldDef } from '@/features/projects/fields'
+import { fieldErrorMessage, fieldSpec, parseField, resolveFields, type FieldDef } from '@/features/projects/fields'
 import { processImage } from '@/features/housing/utils/imageProcessing'
 import { revokeUploadItems, type UploadItem } from '@/features/housing/utils/uploadItems'
-import { ConfirmDialog } from '@/features/housing/components/ConfirmDialog'
-import { PhotoField } from '@/features/housing/components/PhotoField'
 import { projectPath } from '@/features/projects/registry'
+import { ActionBar, Alert, Button, Card, Grid, RadioGroup, Stack, Text, TextField, useToast } from '@/ui'
+import { focusFirstInvalid } from '../ui/focusFirstInvalid'
+import { ConfirmDialog } from '../ui/ConfirmDialog'
+import { FieldInput } from '../ui/FieldInput'
+import { GeoSelect, type GeoValue } from '../ui/GeoSelect'
+import { PhotoField } from '../ui/PhotoField'
 import { photoKindsOf, photoSlotLabel } from './recordColumns'
 import { isMainAdmin, useAdminUser } from '../adminUser'
 
@@ -51,8 +53,6 @@ type ErrorKey = Exclude<keyof Values, 'custom' | 'serialMode'> | `custom.${strin
 type Errors = Partial<Record<ErrorKey, string>>
 
 const CURRENT_YEAR = new Date().getFullYear()
-
-const inputClass = FIELD_INPUT_CLASS
 
 function initial(record: HousingRecord | null | undefined, custom: readonly FieldDef[]): Values {
   // ভৌগোলিক মান NFC করে নেওয়া হয়, নইলে ডাটাবেসের ভিন্ন Unicode রূপে <select> এর option মিলবে না
@@ -272,6 +272,7 @@ export function RecordForm({ project, record, onSaved, onCancel }: Props) {
     setErrors(errs)
     if (Object.keys(errs).length) {
       toast.error(t('ফর্মে ভুল আছে, লাল চিহ্নিত ঘরগুলো দেখুন'))
+      focusFirstInvalid(e.currentTarget as HTMLFormElement)
       return
     }
     if (privBlocked) {
@@ -356,7 +357,7 @@ export function RecordForm({ project, record, onSaved, onCancel }: Props) {
         toast.success(isEdit ? t('সিরিয়াল {n} সংরক্ষিত হয়েছে', { n: toBanglaNumber(saved.serial_no) }) : t('নতুন রেকর্ড যোগ হয়েছে (সিরিয়াল {n})', { n: toBanglaNumber(saved.serial_no) }))
         onSaved(saved)
       } else if (photoFail) {
-        toast.info(
+        toast.show(
           t('রেকর্ড সংরক্ষিত (সিরিয়াল {n}), কিন্তু কিছু ছবি আপলোড হয়নি — ব্যর্থ ছবি আবার বেছে "সংরক্ষণ করুন" চাপুন', { n: toBanglaNumber(saved.serial_no) }),
         )
       }
@@ -419,168 +420,200 @@ export function RecordForm({ project, record, onSaved, onCancel }: Props) {
   const disabled = busy !== null
   const label = (d: FieldDef | undefined, fallback: string) => (d ? `${lt(d, 'label')}${d.required ? ' *' : ''}` : fallback)
   const customField = (d: FieldDef) => {
-    const id = `f-x-${d.key}`
     const err = liveErrors[`custom.${d.key}`]
     const help = pick(d.help_bn, d.help_en)
-    const { Input } = fieldSpec(d.type)
     const lockedPrivate = d.source === 'private' && privBlocked
     return (
-      <Field key={d.key} id={id} label={label(d, d.key)} error={err} help={help} className={d.type === 'long_text' ? 'sm:col-span-2' : ''}>
-        <Input
-          id={id}
-          def={d}
-          value={values.custom[d.key] ?? ''}
-          onChange={(v) => setCustom(d.key, v)}
-          disabled={disabled || lockedPrivate}
-          invalid={!!err}
-          describedBy={help ? `${id}-help` : undefined}
-          suggestions={suggestions[d.key]}
-          className={d.type === 'long_text' ? `${inputClass} h-auto py-2` : inputClass}
-        />
-      </Field>
+      <FieldInput
+        key={d.key}
+        def={d}
+        label={label(d, d.key)}
+        value={values.custom[d.key] ?? ''}
+        onChange={(v) => setCustom(d.key, v)}
+        disabled={disabled || lockedPrivate}
+        error={err}
+        hint={help || undefined}
+        suggestions={suggestions[d.key]}
+      />
+    )
+  }
+  // লম্বা লেখার ঘর পুরো সারি জুড়ে; বাকিগুলো দুই কলামের গ্রিডে, ক্রম অপরিবর্তিত
+  const customFields = (list: readonly FieldDef[]) => {
+    const runs: FieldDef[][] = []
+    for (const d of list) {
+      const last = runs[runs.length - 1]
+      if (d.type !== 'long_text' && last && last[0]!.type !== 'long_text') last.push(d)
+      else runs.push([d])
+    }
+    return (
+      <Stack gap={2}>
+        {runs.map((run) =>
+          run[0]!.type === 'long_text' ? (
+            customField(run[0]!)
+          ) : (
+            <Grid key={run[0]!.key} columns={{ xs: 1, sm: 2 }}>
+              {run.map(customField)}
+            </Grid>
+          ),
+        )}
+      </Stack>
     )
   }
 
   return (
-    <form onSubmit={(e) => void submit(e)} noValidate className="space-y-6">
-      {/* ---------- সিরিয়াল ---------- */}
-      <section className="rounded-xl border border-slate-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-slate-800">{t('সিরিয়াল নম্বর')}</h2>
-        {isEdit ? (
-          <div className="mt-2 flex flex-wrap items-center gap-3">
-            <span className="rounded-md bg-slate-100 px-3 py-1.5 text-lg font-bold text-brand-800 tabular-nums">
-              {toBanglaNumber(current?.serial_no ?? 0)}
-            </span>
-            <span className="text-xs text-slate-500">{mainAdmin ? t('লক করা — সাধারণ এডিটে বদলায় না') : t('লক করা — সিরিয়াল বদলাতে পারেন শুধু মূল এডমিন')}</span>
-            {mainAdmin && (
-              <button
-                type="button"
+    <form onSubmit={(e) => void submit(e)} noValidate>
+      <Stack gap={3}>
+        {/* ---------- সিরিয়াল ---------- */}
+        <Card title={isEdit ? undefined : t('সিরিয়াল নম্বর')}>
+          {isEdit ? (
+            <Stack direction="row" wrap align="center" gap={1.5}>
+              <Text weight="bold" tabular>
+                {t('সিরিয়াল {n}', { n: toBanglaNumber(current?.serial_no ?? 0) })}
+              </Text>
+              <Text size="caption" tone="muted">
+                {mainAdmin ? t('লক করা — সাধারণ এডিটে বদলায় না') : t('লক করা — সিরিয়াল বদলাতে পারেন শুধু মূল এডমিন')}
+              </Text>
+              {mainAdmin && (
+                <Button variant="text" size="small" disabled={disabled} onClick={() => setSerialDialog(true)}>
+                  {t('সিরিয়াল বদলান…')}
+                </Button>
+              )}
+            </Stack>
+          ) : (
+            <Stack gap={1}>
+              <RadioGroup
+                label={t('সিরিয়াল নম্বর')}
+                hideLabel
+                name="serialMode"
+                value={values.serialMode}
+                onChange={(v) => set('serialMode', v === 'manual' ? 'manual' : 'auto')}
                 disabled={disabled}
-                onClick={() => setSerialDialog(true)}
-                className="ml-auto text-xs font-medium text-amber-800 underline-offset-2 hover:underline disabled:opacity-50"
-              >
-                {t('সিরিয়াল বদলান…')}
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="mt-2 space-y-2">
-            <label className="flex items-center gap-2 text-sm">
-              <input type="radio" name="serialMode" checked={values.serialMode === 'auto'} onChange={() => set('serialMode', 'auto')} disabled={disabled} className="accent-brand-700" />
-              {t('স্বয়ংক্রিয়')}{' '}
-              <span className="text-slate-500">
-                {nextSerial !== null ? t('(পরবর্তী: {n})', { n: toBanglaNumber(nextSerial) }) : t('(পরবর্তী সিরিয়াল সার্ভার দেবে)')}
-              </span>
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="radio" name="serialMode" checked={values.serialMode === 'manual'} onChange={() => set('serialMode', 'manual')} disabled={disabled} className="accent-brand-700" />
-              {t('হাতে দিন')}
-            </label>
-            {values.serialMode === 'manual' && (
-              <Field id="f-serial" label={t('সিরিয়াল')} error={liveErrors.serial}>
-                <input id="f-serial" inputMode="numeric" className={inputClass} value={values.serial} onChange={(e) => set('serial', e.target.value)} disabled={disabled} aria-invalid={!!liveErrors.serial} />
-              </Field>
-            )}
-          </div>
-        )}
-      </section>
-
-      {/* ---------- পরিচয় ও ঠিকানা ---------- */}
-      <section className="grid gap-4 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-2">
-        <Field id="f-year" label={label(yearDef, t('সাল *'))} error={liveErrors.year}>
-          <input id="f-year" inputMode="numeric" className={inputClass} value={values.year} onChange={(e) => set('year', e.target.value)} disabled={disabled} aria-invalid={!!liveErrors.year} />
-        </Field>
-        <Field id="f-name" label={label(nameDef, t('উপকারভোগীর নাম *'))} error={liveErrors.name}>
-          <input id="f-name" className={inputClass} value={values.name} onChange={(e) => set('name', e.target.value)} disabled={disabled} aria-invalid={!!liveErrors.name} maxLength={200} />
-        </Field>
-        {father && (
-          <Field id="f-father" label={label(father, '')} error={liveErrors.father}>
-            <input id="f-father" className={inputClass} value={values.father} onChange={(e) => set('father', e.target.value)} disabled={disabled} aria-invalid={!!liveErrors.father} maxLength={200} />
-          </Field>
-        )}
-        <GeoSelect
-          value={{ division: values.division, district: values.district, upazila: values.upazila, union_name: values.union }}
-          onChange={setGeo}
-          errors={{ division: liveErrors.division, district: liveErrors.district, upazila: liveErrors.upazila, union_name: liveErrors.union }}
-          disabled={disabled}
-          union={!!union}
-          unionRequired={!!union?.required}
-          unionLabel={union ? lt(union, 'label') : undefined}
-        />
-        {address && (
-          <Field id="f-address" label={label(address, '')} error={liveErrors.address} className="sm:col-span-2">
-            <textarea id="f-address" rows={2} className={`${inputClass} h-auto py-2`} value={values.address} onChange={(e) => set('address', e.target.value)} disabled={disabled} aria-invalid={!!liveErrors.address} maxLength={1000} />
-          </Field>
-        )}
-        {kinds.includes('prev') && (
-          <Field id="f-prev-src" label={t('পূর্বের ছবির মূল লিঙ্ক (রেফারেন্স, ঐচ্ছিক)')} error={liveErrors.prevSource}>
-            <input id="f-prev-src" type="url" className={inputClass} value={values.prevSource} onChange={(e) => set('prevSource', e.target.value)} disabled={disabled} placeholder="https://…sharepoint…" />
-          </Field>
-        )}
-        {kinds.includes('current') && (
-          <Field id="f-cur-src" label={t('বর্তমান ছবির মূল লিঙ্ক (রেফারেন্স, ঐচ্ছিক)')} error={liveErrors.currentSource}>
-            <input id="f-cur-src" type="url" className={inputClass} value={values.currentSource} onChange={(e) => set('currentSource', e.target.value)} disabled={disabled} placeholder="https://…sharepoint…" />
-          </Field>
-        )}
-      </section>
-
-      {/* ---------- কাস্টম (পাবলিক) ---------- */}
-      {customPublic.length > 0 && (
-        <section className="rounded-xl border border-slate-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-slate-800">{t('প্রকল্পের তথ্য')}</h2>
-          <div className="mt-3 grid gap-4 sm:grid-cols-2">{customPublic.map(customField)}</div>
-        </section>
-      )}
-
-      {/* ---------- গোপন ---------- */}
-      {customPrivate.length > 0 && (
-        <section className="rounded-xl border border-slate-300 bg-slate-50 p-4" aria-labelledby="f-private-title">
-          <h2 id="f-private-title" className="text-sm font-semibold text-slate-800">
-            🔒 {t('শুধু এডমিন তথ্য')}
-          </h2>
-          <p className="mt-1 text-xs text-slate-500">{t('পাবলিক সাইট, তালিকা, ফিল্টার বা পাবলিক এক্সপোর্টে কখনো দেখায় না।')}</p>
-          {priv.status === 'loading' && <p className="mt-2 text-xs text-slate-500" aria-busy="true">{t('গোপন তথ্য আসছে…')}</p>}
-          {priv.status === 'error' && (
-            <p role="alert" className="mt-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
-              {t('গোপন তথ্য আনা যায়নি ({message}) — পাতা আবার খুলুন; এখন সংরক্ষণ বন্ধ।', { message: priv.message })}
-            </p>
+                options={[
+                  {
+                    value: 'auto',
+                    label: (
+                      <>
+                        {t('স্বয়ংক্রিয়')}{' '}
+                        <Text inline size="small" tone="muted">
+                          {nextSerial !== null ? t('(পরবর্তী: {n})', { n: toBanglaNumber(nextSerial) }) : t('(পরবর্তী সিরিয়াল সার্ভার দেবে)')}
+                        </Text>
+                      </>
+                    ),
+                  },
+                  { value: 'manual', label: t('হাতে দিন') },
+                ]}
+              />
+              {values.serialMode === 'manual' && (
+                <TextField label={t('সিরিয়াল')} inputMode="numeric" value={values.serial} onChange={(v) => set('serial', v)} disabled={disabled} error={liveErrors.serial} />
+              )}
+            </Stack>
           )}
-          <div className="mt-3 grid gap-4 sm:grid-cols-2">{customPrivate.map(customField)}</div>
-        </section>
-      )}
+        </Card>
 
-      {/* ---------- ছবি ---------- */}
-      {kinds.length > 0 && (
-        <section className="grid gap-4 sm:grid-cols-2">
-          {kinds.map((kind) => (
-            <PhotoField
-              key={kind}
-              kind={kind}
-              label={photoSlotLabel(project, kind)}
-              record={current}
-              item={photos[kind]}
-              onChange={(it) => setPhotos((p) => ({ ...p, [kind]: it }))}
-              onDeleteExisting={mainAdmin && isEdit && current?.[`${kind}_photo_url`] ? () => setDeleteKind(kind) : undefined}
-              locked={!mainAdmin}
-              disabled={disabled}
-            />
-          ))}
-        </section>
-      )}
-      {!isEdit && (photos.prev || photos.current) && (
-        <p className="text-xs text-slate-500">{t('রেকর্ড সংরক্ষণের পর ছবি স্বয়ংক্রিয়ভাবে সিরিয়াল-ভিত্তিক পাথে আপলোড হবে।')}</p>
-      )}
+        {/* ---------- পরিচয় ও ঠিকানা ---------- */}
+        <Card>
+          <Stack gap={2}>
+            <Grid columns={{ xs: 1, sm: 2 }}>
+              <TextField label={label(yearDef, t('সাল *'))} inputMode="numeric" value={values.year} onChange={(v) => set('year', v)} disabled={disabled} error={liveErrors.year} />
+              <TextField label={label(nameDef, t('উপকারভোগীর নাম *'))} value={values.name} onChange={(v) => set('name', v)} disabled={disabled} error={liveErrors.name} maxLength={200} />
+              {father && <TextField label={label(father, '')} value={values.father} onChange={(v) => set('father', v)} disabled={disabled} error={liveErrors.father} maxLength={200} />}
+              <GeoSelect
+                value={{ division: values.division, district: values.district, upazila: values.upazila, union_name: values.union }}
+                onChange={setGeo}
+                errors={{ division: liveErrors.division, district: liveErrors.district, upazila: liveErrors.upazila, union_name: liveErrors.union }}
+                disabled={disabled}
+                union={!!union}
+                unionRequired={!!union?.required}
+                unionLabel={union ? lt(union, 'label') : undefined}
+              />
+            </Grid>
+            {address && (
+              <TextField label={label(address, '')} rows={2} value={values.address} onChange={(v) => set('address', v)} disabled={disabled} error={liveErrors.address} maxLength={1000} />
+            )}
+            {(kinds.includes('prev') || kinds.includes('current')) && (
+              <Grid columns={{ xs: 1, sm: 2 }}>
+                {kinds.includes('prev') && (
+                  <TextField
+                    label={t('পূর্বের ছবির মূল লিঙ্ক (রেফারেন্স, ঐচ্ছিক)')}
+                    type="url"
+                    value={values.prevSource}
+                    onChange={(v) => set('prevSource', v)}
+                    disabled={disabled}
+                    error={liveErrors.prevSource}
+                    placeholder="https://…sharepoint…"
+                  />
+                )}
+                {kinds.includes('current') && (
+                  <TextField
+                    label={t('বর্তমান ছবির মূল লিঙ্ক (রেফারেন্স, ঐচ্ছিক)')}
+                    type="url"
+                    value={values.currentSource}
+                    onChange={(v) => set('currentSource', v)}
+                    disabled={disabled}
+                    error={liveErrors.currentSource}
+                    placeholder="https://…sharepoint…"
+                  />
+                )}
+              </Grid>
+            )}
+          </Stack>
+        </Card>
 
-      {/* ---------- বাটন ---------- */}
-      <div className="flex flex-wrap items-center gap-3">
-        <button type="submit" disabled={disabled || privBlocked} className="inline-flex h-11 items-center rounded-md bg-brand-700 px-6 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-50">
-          {busy ?? (isEdit ? t('সংরক্ষণ করুন') : t('{title} — যোগ করুন', { title: lt(project, 'name') }))}
-        </button>
-        <button type="button" onClick={onCancel} disabled={disabled} className="inline-flex h-11 items-center rounded-md border border-slate-300 bg-white px-5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50">
-          {isEdit ? t('ফিরে যান') : t('বাতিল')}
-        </button>
-        <span className="text-xs text-slate-400">{t('* আবশ্যক')}</span>
-      </div>
+        {/* ---------- কাস্টম (পাবলিক) ---------- */}
+        {customPublic.length > 0 && <Card title={t('প্রকল্পের তথ্য')}>{customFields(customPublic)}</Card>}
+
+        {/* ---------- গোপন ---------- */}
+        {customPrivate.length > 0 && (
+          <Card title={t('শুধু এডমিন তথ্য')} description={t('পাবলিক সাইট, তালিকা, ফিল্টার বা পাবলিক এক্সপোর্টে কখনো দেখায় না।')}>
+            <Stack gap={2}>
+              {priv.status === 'loading' && (
+                <Text size="caption" tone="muted">
+                  {t('গোপন তথ্য আসছে…')}
+                </Text>
+              )}
+              {priv.status === 'error' && <Alert tone="error">{t('গোপন তথ্য আনা যায়নি ({message}) — পাতা আবার খুলুন; এখন সংরক্ষণ বন্ধ।', { message: priv.message })}</Alert>}
+              {customFields(customPrivate)}
+            </Stack>
+          </Card>
+        )}
+
+        {/* ---------- ছবি ---------- */}
+        {kinds.length > 0 && (
+          <Grid columns={{ xs: 1, sm: 2 }}>
+            {kinds.map((kind) => (
+              <PhotoField
+                key={kind}
+                kind={kind}
+                label={photoSlotLabel(project, kind)}
+                record={current}
+                item={photos[kind]}
+                onChange={(it) => setPhotos((p) => ({ ...p, [kind]: it }))}
+                onDeleteExisting={mainAdmin && isEdit && current?.[`${kind}_photo_url`] ? () => setDeleteKind(kind) : undefined}
+                locked={!mainAdmin}
+                disabled={disabled}
+              />
+            ))}
+          </Grid>
+        )}
+        {!isEdit && (photos.prev || photos.current) && (
+          <Text size="caption" tone="muted">
+            {t('রেকর্ড সংরক্ষণের পর ছবি স্বয়ংক্রিয়ভাবে সিরিয়াল-ভিত্তিক পাথে আপলোড হবে।')}
+          </Text>
+        )}
+
+        {/* ---------- বাটন (লম্বা ফর্মে নিচে আটকে থাকে) ---------- */}
+        <ActionBar label={t('সংরক্ষণ')}>
+          <Button type="submit" disabled={disabled || privBlocked}>
+            {busy ?? (isEdit ? t('সংরক্ষণ করুন') : t('{title} — যোগ করুন', { title: lt(project, 'name') }))}
+          </Button>
+          <Button variant="secondary" onClick={onCancel} disabled={disabled}>
+            {isEdit ? t('ফিরে যান') : t('বাতিল')}
+          </Button>
+          <Text size="caption" tone="muted">
+            {t('* আবশ্যক')}
+          </Text>
+        </ActionBar>
+      </Stack>
 
       {/* ---------- ডায়ালগ ---------- */}
       <ConfirmDialog
@@ -608,37 +641,22 @@ export function RecordForm({ project, record, onSaved, onCancel }: Props) {
           setNewSerial('')
         }}
       >
-        <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-amber-900">
-          <strong>{t('সতর্কতা:')}</strong> {t('সিরিয়াল এই রেকর্ডের স্থায়ী পরিচয়। বদলালে শেয়ার করা পুরনো লিঙ্ক (')}
-          <code>{`${projectPath(project)}/${current?.serial_no ?? 0}`}</code>{t(') আর কাজ করবে না, এবং পুরনো সিরিয়াল আর কাউকে দেওয়া হবে না।')}
-        </p>
-        <label htmlFor="f-new-serial" className="mt-3 block text-sm font-medium text-slate-700">
-          {t('নতুন সিরিয়াল')}
-        </label>
-        <input id="f-new-serial" inputMode="numeric" className={`${inputClass} mt-1`} value={newSerial} onChange={(e) => setNewSerial(e.target.value)} autoFocus />
-        {newSerial && !newSerialValid && <p className="mt-1 text-xs text-red-700">{t('১ বা তার বেশি, বর্তমানটির থেকে ভিন্ন')}</p>}
+        <Stack gap={2}>
+          <Text size="small" tone="warning">
+            <strong>{t('সতর্কতা:')}</strong> {t('সিরিয়াল এই রেকর্ডের স্থায়ী পরিচয়। বদলালে শেয়ার করা পুরনো লিঙ্ক (')}
+            <code>{`${projectPath(project)}/${current?.serial_no ?? 0}`}</code>
+            {t(') আর কাজ করবে না, এবং পুরনো সিরিয়াল আর কাউকে দেওয়া হবে না।')}
+          </Text>
+          <Stack gap={0.5}>
+            <TextField label={t('নতুন সিরিয়াল')} inputMode="numeric" value={newSerial} onChange={setNewSerial} autoFocus />
+            {newSerial && !newSerialValid && (
+              <Text size="caption" tone="error">
+                {t('১ বা তার বেশি, বর্তমানটির থেকে ভিন্ন')}
+              </Text>
+            )}
+          </Stack>
+        </Stack>
       </ConfirmDialog>
     </form>
-  )
-}
-
-function Field({ id, label, error, help, className = '', children }: { id: string; label: string; error?: string; help?: string; className?: string; children: ReactNode }) {
-  return (
-    <div className={className}>
-      <label htmlFor={id} className="mb-1 block text-xs font-medium text-slate-600">
-        {label}
-      </label>
-      {children}
-      {help && (
-        <p id={`${id}-help`} className="mt-1 text-xs text-slate-500">
-          {help}
-        </p>
-      )}
-      {error && (
-        <p className="mt-1 text-xs text-red-700" role="alert">
-          {error}
-        </p>
-      )}
-    </div>
   )
 }

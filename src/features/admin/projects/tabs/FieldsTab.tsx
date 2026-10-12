@@ -1,14 +1,13 @@
 import { lt, t } from '@/i18n'
 import { useState } from 'react'
 import { getProjectsApi, type CoreFieldKey, type CoreFieldsConfig, type Project, type ProjectField } from '@/backend'
-import { useToast } from '@/components/useToast'
 import { ALWAYS_REQUIRED, FIELD_VALUE_SPECS, SYSTEM_FIELDS } from '@/features/projects/fields'
-import { ConfirmDialog } from '@/features/housing/components/ConfirmDialog'
 import { useAuth } from '@/features/housing/hooks/useAuth'
 import { pick } from '@/i18n'
 import { formatBanglaNumber, toBanglaNumber } from '@/lib/banglaNumber'
 import { Badge } from '../../ui/Badge'
-import { card, inputClass, primaryButton, secondaryButton, selectClass, smallButton } from '../../ui/styles'
+import { Alert, Button, Card, Grid, Icon, SelectField, Stack, Text, TextField, useToast, IconButton } from '@/ui'
+import { ConfirmDialog } from '../../ui/ConfirmDialog'
 import { FieldEditorDrawer } from '../FieldEditorDrawer'
 import { FieldPreview } from '../FieldPreview'
 import { MAX_FIELDS } from '../fieldRules'
@@ -101,127 +100,170 @@ export function FieldsTab({ project, blocked, onChanged }: { project: Project; b
   }
 
   if (project.is_group) {
-    return <p className={`${card} text-sm text-slate-600`}>{t('প্রকল্প-গ্রুপে ফিল্ড থাকে না — ফিল্ড যোগ করুন উপ-প্রকল্পে।')}</p>
+    return (
+      <Card>
+        <Text size="small" tone="muted">
+          {t('প্রকল্প-গ্রুপে ফিল্ড থাকে না — ফিল্ড যোগ করুন উপ-প্রকল্পে।')}
+        </Text>
+      </Card>
+    )
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
-      <div className="space-y-6">
-        {blocked && (
-          <p role="alert" className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-            {t('অন্য ট্যাবে সংরক্ষণ হয়নি এমন পরিবর্তন আছে — আগে সেগুলো সংরক্ষণ বা বাতিল করুন।')}
-          </p>
-        )}
+    <Grid columns={{ xs: 1, lg: 2 }} gap={3}>
+      <Stack gap={3}>
+        {blocked && <Alert tone="warning">{t('অন্য ট্যাবে সংরক্ষণ হয়নি এমন পরিবর্তন আছে — আগে সেগুলো সংরক্ষণ বা বাতিল করুন।')}</Alert>}
 
         {/* ---------- সিস্টেম ফিল্ড ---------- */}
-        <section className={card}>
-          <h2 className="text-base font-bold text-slate-900">{t('সিস্টেম ফিল্ড')} 🔒</h2>
-          <p className="mt-1 text-sm text-slate-500">{t('সব প্রকল্পে থাকে; শুধু লেবেল বদলানো যায়। সাল, নাম ও বিভাগ-জেলা-উপজেলা সবসময় আবশ্যক।')}</p>
-          <ul className="mt-4 divide-y divide-slate-100">
-            {systemShown.map((f) => {
-              const c = core[f.key] ?? {}
-              const fixed = ALWAYS_REQUIRED.includes(f.key)
-              const status = statusOf(core, f.key, f.required)
-              return (
-                <li key={f.key} className="grid gap-2 py-3 sm:grid-cols-[1fr_1fr_10rem] sm:items-center">
-                  <input className={inputClass} value={c.label_bn ?? ''} placeholder={f.label_bn} aria-label={t('{name} — বাংলা লেবেল', { name: f.label_bn })} onChange={(e) => setCoreField(f.key, { label_bn: e.target.value })} maxLength={120} />
-                  <input className={inputClass} value={c.label_en ?? ''} placeholder={f.label_en} aria-label={t('{name} — ইংরেজি লেবেল', { name: f.label_bn })} onChange={(e) => setCoreField(f.key, { label_en: e.target.value })} maxLength={120} />
-                  {fixed ? (
-                    <span className="text-sm text-slate-500">🔒 {t('আবশ্যক')}</span>
-                  ) : (
-                    <select
-                      className={selectClass}
-                      value={status}
-                      aria-label={t('{name} — অবস্থা', { name: f.label_bn })}
-                      onChange={(e) => {
-                        const v = e.target.value as Status
-                        setCoreField(f.key, { required: v === 'required' ? true : v === 'optional' ? false : undefined, enabled: v === 'off' ? false : undefined })
-                      }}
-                    >
-                      <option value="required">{t('আবশ্যক')}</option>
-                      <option value="optional">{t('ঐচ্ছিক')}</option>
-                      {f.key !== 'union_name' && <option value="off">{t('বন্ধ')}</option>}
-                    </select>
-                  )}
-                </li>
-              )
-            })}
-          </ul>
-          {project.geo_depth !== 'union' && <p className="mt-2 text-xs text-slate-500">{t('ইউনিয়ন চালু করতে "সাধারণ" ট্যাবে ঠিকানার স্তর "ইউনিয়ন পর্যন্ত" করুন।')}</p>}
-          <div className="mt-4 flex flex-wrap gap-2">
-            <button type="button" className={primaryButton} disabled={busy || blocked || !coreDirty} onClick={() => void saveCore()}>
-              {t('সিস্টেম ফিল্ড সংরক্ষণ')}
-            </button>
-            <button type="button" className={secondaryButton} disabled={busy || !coreDirty} onClick={() => setCore(structuredClone(project.core_fields ?? {}))}>
-              {t('পরিবর্তন বাতিল')}
-            </button>
-          </div>
-        </section>
+        <Card
+          title={t('সিস্টেম ফিল্ড')}
+          description={
+            <>
+              {t('সব প্রকল্পে থাকে; শুধু লেবেল বদলানো যায়। সাল, নাম ও বিভাগ-জেলা-উপজেলা সবসময় আবশ্যক।')}{' '}
+              {t('প্রতি সারিতে বাংলা লেবেল, ইংরেজি লেবেল ও অবস্থা; ঘর খালি রাখলে ধূসর লেখাটিই লেবেল থাকে।')}
+            </>
+          }
+        >
+          <Stack gap={2}>
+            <Stack role="list" gap={2}>
+              {systemShown.map((f) => {
+                const c = core[f.key] ?? {}
+                const fixed = ALWAYS_REQUIRED.includes(f.key)
+                const status = statusOf(core, f.key, f.required)
+                return (
+                  <Stack key={f.key} role="listitem">
+                    <Grid columns={{ xs: 1, sm: 3 }} gap={1}>
+                      <TextField
+                        label={t('{name} — বাংলা লেবেল', { name: f.label_bn })}
+                        hideLabel
+                        size="small"
+                        value={c.label_bn ?? ''}
+                        placeholder={f.label_bn}
+                        onChange={(v) => setCoreField(f.key, { label_bn: v })}
+                        maxLength={120}
+                      />
+                      <TextField
+                        label={t('{name} — ইংরেজি লেবেল', { name: f.label_bn })}
+                        hideLabel
+                        size="small"
+                        value={c.label_en ?? ''}
+                        placeholder={f.label_en}
+                        onChange={(v) => setCoreField(f.key, { label_en: v })}
+                        maxLength={120}
+                      />
+                      {fixed ? (
+                        <Stack direction="row" gap={0.5} align="center">
+                          <Icon name="lock" size={16} />
+                          <Text size="small" tone="muted" inline>
+                            {t('আবশ্যক')}
+                          </Text>
+                        </Stack>
+                      ) : (
+                        <SelectField
+                          label={t('{name} — অবস্থা', { name: f.label_bn })}
+                          hideLabel
+                          size="small"
+                          value={status}
+                          onChange={(value) => {
+                            const v = value as Status
+                            setCoreField(f.key, { required: v === 'required' ? true : v === 'optional' ? false : undefined, enabled: v === 'off' ? false : undefined })
+                          }}
+                          options={[
+                            { value: 'required', label: t('আবশ্যক') },
+                            { value: 'optional', label: t('ঐচ্ছিক') },
+                            ...(f.key !== 'union_name' ? [{ value: 'off', label: t('বন্ধ') }] : []),
+                          ]}
+                        />
+                      )}
+                    </Grid>
+                  </Stack>
+                )
+              })}
+            </Stack>
+            {project.geo_depth !== 'union' && (
+              <Text size="caption" tone="muted">
+                {t('ইউনিয়ন চালু করতে "সাধারণ" ট্যাবে ঠিকানার স্তর "ইউনিয়ন পর্যন্ত" করুন।')}
+              </Text>
+            )}
+            <Stack direction="row" gap={1} wrap>
+              <Button disabled={busy || blocked || !coreDirty} onClick={() => void saveCore()}>
+                {t('সিস্টেম ফিল্ড সংরক্ষণ')}
+              </Button>
+              <Button variant="secondary" disabled={busy || !coreDirty} onClick={() => setCore(structuredClone(project.core_fields ?? {}))}>
+                {t('পরিবর্তন বাতিল')}
+              </Button>
+            </Stack>
+          </Stack>
+        </Card>
 
         {/* ---------- কাস্টম ফিল্ড ---------- */}
-        <section className={card}>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-base font-bold text-slate-900">{t('কাস্টম ফিল্ড')}</h2>
-            <button type="button" className={primaryButton} disabled={busy || blocked || fields.length >= MAX_FIELDS} onClick={() => void openEditor(null)}>
-              <span aria-hidden="true">+</span> {t('ফিল্ড যোগ করুন')}
-            </button>
-          </div>
-          {fields.length >= MAX_FIELDS && <p className="mt-2 text-xs text-amber-800">{t('একটি প্রকল্পে সর্বোচ্চ {n}টি ফিল্ড', { n: toBanglaNumber(MAX_FIELDS) })}</p>}
-          {fields.length === 0 ? (
-            <p className="mt-4 text-sm text-slate-500">{t('এখনো কোনো কাস্টম ফিল্ড নেই।')}</p>
-          ) : (
-            <ul className="mt-4 divide-y divide-slate-100">
-              {fields.map((f, i) => (
-                <li key={f.id} className={`flex flex-col gap-2 py-3 lg:flex-row lg:items-center ${f.is_active ? '' : 'opacity-60'}`}>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-slate-900">
-                      {lt(f, 'label')} <span className="font-mono text-xs font-normal text-slate-400">{f.key}</span>
-                    </p>
-                    <div className="mt-1 flex flex-wrap gap-1">
+        <Card
+          title={t('কাস্টম ফিল্ড')}
+          actions={
+            <Button startIcon="add" disabled={busy || blocked || fields.length >= MAX_FIELDS} onClick={() => void openEditor(null)}>
+              {t('ফিল্ড যোগ করুন')}
+            </Button>
+          }
+        >
+          <Stack gap={2}>
+            {fields.length >= MAX_FIELDS && (
+              <Text size="caption" tone="warning">
+                {t('একটি প্রকল্পে সর্বোচ্চ {n}টি ফিল্ড', { n: toBanglaNumber(MAX_FIELDS) })}
+              </Text>
+            )}
+            {fields.length === 0 ? (
+              <Text size="small" tone="muted">
+                {t('এখনো কোনো কাস্টম ফিল্ড নেই।')}
+              </Text>
+            ) : (
+              <Stack role="list" gap={2} divided>
+                {fields.map((f, i) => (
+                  <Stack key={f.id} role="listitem" gap={1}>
+                    <Text weight="bold">
+                      {lt(f, 'label')}{' '}
+                      <Text size="caption" tone="muted" mono inline>
+                        {f.key}
+                      </Text>
+                    </Text>
+                    <Stack direction="row" gap={0.5} wrap>
                       <Badge>{pick(FIELD_VALUE_SPECS[f.type].label_bn, FIELD_VALUE_SPECS[f.type].label_en)}</Badge>
                       {f.required && <Badge tone="red">{t('আবশ্যক')}</Badge>}
                       {f.show_in_table && <Badge tone="blue">{t('টেবিলে')}</Badge>}
                       {f.show_in_card && <Badge tone="blue">{t('কার্ডে')}</Badge>}
                       {f.filterable && <Badge tone="green">{t('ফিল্টারে')}</Badge>}
-                      {f.visibility === 'admin' && <Badge tone="slate">🔒 {t('শুধু-এডমিন')}</Badge>}
+                      {f.visibility === 'admin' && <Badge tone="slate">{t('শুধু-এডমিন')}</Badge>}
                       {!f.label_en.trim() && <Badge tone="amber">{t('ইংরেজি নেই')}</Badge>}
                       {!f.is_active && <Badge tone="amber">{t('আর্কাইভ')}</Badge>}
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button type="button" className={smallButton} disabled={busy || blocked || i === 0} onClick={() => move(i, -1)} aria-label={t('উপরে সরান')} title={t('উপরে সরান')}>
-                      ↑
-                    </button>
-                    <button type="button" className={smallButton} disabled={busy || blocked || i === fields.length - 1} onClick={() => move(i, 1)} aria-label={t('নিচে সরান')} title={t('নিচে সরান')}>
-                      ↓
-                    </button>
-                    <button type="button" className={smallButton} disabled={busy || blocked} onClick={() => void openEditor(f)}>
-                      {t('সম্পাদনা')}
-                    </button>
-                    <button
-                      type="button"
-                      className={smallButton}
-                      disabled={busy || blocked}
-                      onClick={() => void run(() => getProjectsApi().updateField(f.id, { is_active: !f.is_active }), f.is_active ? t('আর্কাইভ করা হয়েছে') : t('ফেরত আনা হয়েছে'))}
-                    >
-                      {f.is_active ? t('আর্কাইভ') : t('ফেরত আনুন')}
-                    </button>
-                    {mainAdmin && (
-                      <button type="button" className={`${smallButton} text-red-700`} disabled={busy || blocked} onClick={() => void askDelete(f)}>
-                        {t('মুছুন')}
-                      </button>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </div>
+                    </Stack>
+                    <Stack direction="row" gap={1} wrap>
+                      <IconButton icon="up" label={t('উপরে সরান')} disabled={busy || blocked || i === 0} onClick={() => move(i, -1)} />
+                      <IconButton icon="down" label={t('নিচে সরান')} disabled={busy || blocked || i === fields.length - 1} onClick={() => move(i, 1)} />
+                      <Button variant="secondary" size="small" disabled={busy || blocked} onClick={() => void openEditor(f)}>
+                        {t('সম্পাদনা')}
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="small"
+                        disabled={busy || blocked}
+                        onClick={() => void run(() => getProjectsApi().updateField(f.id, { is_active: !f.is_active }), f.is_active ? t('আর্কাইভ করা হয়েছে') : t('ফেরত আনা হয়েছে'))}
+                      >
+                        {f.is_active ? t('আর্কাইভ') : t('ফেরত আনুন')}
+                      </Button>
+                      {mainAdmin && (
+                        <Button variant="danger-text" size="small" disabled={busy || blocked} onClick={() => void askDelete(f)}>
+                          {t('মুছুন')}
+                        </Button>
+                      )}
+                    </Stack>
+                  </Stack>
+                ))}
+              </Stack>
+            )}
+          </Stack>
+        </Card>
+      </Stack>
 
-      <aside className="xl:sticky xl:top-20 xl:self-start">
-        <FieldPreview project={project} />
-      </aside>
+      <FieldPreview project={project} />
 
       {editor && (
         <FieldEditorDrawer
@@ -251,9 +293,9 @@ export function FieldsTab({ project, blocked, onChanged }: { project: Project; b
               void run(() => getProjectsApi().updateField(f.id, { is_active: false }), t('আর্কাইভ করা হয়েছে')).then(() => setDeleting(null))
             }}
           >
-            <p className="text-sm text-slate-700">
+            <Text size="small">
               {t('{n}টি রেকর্ডে মান আছে — মোছা যাবে না, আর্কাইভ করুন। আর্কাইভ করা ফিল্ডে নতুন মান দেওয়া যায় না, পুরনো মান থেকে যায়, পরে ফেরত আনা যায়।', { n: formatBanglaNumber(deleting.usage) })}
-            </p>
+            </Text>
           </ConfirmDialog>
         ) : (
           <ConfirmDialog
@@ -268,9 +310,9 @@ export function FieldsTab({ project, blocked, onChanged }: { project: Project; b
               void run(() => getProjectsApi().deleteField(f.id), t('মুছে ফেলা হয়েছে')).then(() => setDeleting(null))
             }}
           >
-            <p className="text-sm text-slate-700">{t('কোনো রেকর্ডে এই ফিল্ডের মান নেই, তাই পুরোপুরি মুছে ফেলা যায়। এটি ফেরানো যায় না।')}</p>
+            <Text size="small">{t('কোনো রেকর্ডে এই ফিল্ডের মান নেই, তাই পুরোপুরি মুছে ফেলা যায়। এটি ফেরানো যায় না।')}</Text>
           </ConfirmDialog>
         ))}
-    </div>
+    </Grid>
   )
 }

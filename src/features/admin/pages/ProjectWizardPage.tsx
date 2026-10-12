@@ -1,15 +1,15 @@
 import { lt, pick, t } from '@/i18n'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { useNavigate } from 'react-router'
 import { getProjectsApi, HousingApiError, type GeoDepth, type PhotoMode, type Project } from '@/backend'
-import { useToast } from '@/components/useToast'
 import { ACCENTS, refreshProjects } from '@/features/projects/registry'
 import { useDocumentTitle } from '@/lib/useDocumentTitle'
 import { keyError, keyFromSlug, photoNameExample, prefixError, slugError, slugify, suggestPrefix, friendlyProjectError } from '../projects/projectRules'
 import { PROJECT_TEMPLATES, buildProjectInput, templateOf, type TemplateKey } from '../projects/projectTemplates'
-import { Field } from '../ui/Field'
+import { Alert, Breadcrumbs, Button, Grid, LinkButton, Page, RadioGroup, SelectField, Stack, Text, TextField, useToast } from '@/ui'
 import { Step } from '../ui/Step'
-import { inputClass, primaryButton, secondaryButton, selectClass } from '../ui/styles'
+import { focusFirstInvalid } from '../ui/focusFirstInvalid'
+import { AccentSwatch } from '../ui/AccentSwatch'
 
 type Location = 'single' | 'child' | 'group'
 
@@ -108,6 +108,7 @@ export function ProjectWizardPage() {
     e.preventDefault()
     setSubmitted(true)
     setServerError(null)
+    if (hasErrors) focusFirstInvalid(e.currentTarget as HTMLFormElement)
     if (hasErrors || !existing || busy) return
     setBusy(true)
     const { project: input, fields } = buildProjectInput({
@@ -137,192 +138,166 @@ export function ProjectWizardPage() {
   }
 
   return (
-    <section className="px-4 py-8 sm:px-6">
-      <p className="text-sm text-slate-500">
-        <Link to="/admin/projects" className="hover:text-brand-700">
-          {t('প্রকল্পসমূহ')}
-        </Link>{' '}
-        / {t('নতুন প্রকল্প')}
-      </p>
-      <h1 className="mt-1 text-2xl font-bold text-slate-900">{t('নতুন প্রকল্প')}</h1>
-      <p className="mt-1 text-sm text-slate-500">{t('খসড়া হিসেবে তৈরি হবে — প্রকাশ না করা পর্যন্ত দর্শকেরা দেখতে পান না। পরে সব বদলানো যাবে (key ছাড়া)।')}</p>
-      {loadError && (
-        <p role="alert" className="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-          {loadError}
-        </p>
-      )}
+    <Page
+      title={t('নতুন প্রকল্প')}
+      documentTitle={false}
+      description={t('খসড়া হিসেবে তৈরি হবে — প্রকাশ না করা পর্যন্ত দর্শকেরা দেখতে পান না। পরে সব বদলানো যাবে (key ছাড়া)।')}
+      breadcrumbs={<Breadcrumbs label={t('প্রকল্পসমূহ')} items={[{ label: t('প্রকল্পসমূহ'), to: '/admin/projects' }, { label: t('নতুন প্রকল্প') }]} />}
+    >
+      <Stack gap={3}>
+        {loadError && <Alert tone="error">{loadError}</Alert>}
 
-      <form onSubmit={(e) => void submit(e)} noValidate className="mt-6 max-w-3xl space-y-5">
-        <Step n={1} title={t('টেমপ্লেট')} hint={t('শুধু শুরুর সেটিং — তৈরির পর ফিল্ড, কার্ড সব বদলানো যায়')}>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {PROJECT_TEMPLATES.map((x) => (
-              <label key={x.key} className={`flex cursor-pointer gap-3 rounded-xl border p-3 ${template === x.key ? 'border-brand-600 bg-brand-50 ring-1 ring-brand-600' : 'border-slate-200 hover:border-brand-300'}`}>
-                <input type="radio" name="tpl" className="mt-1 h-4 w-4 accent-brand-700" checked={template === x.key} onChange={() => chooseTemplate(x.key)} />
-                <span>
-                  <span className="block text-sm font-semibold text-slate-900">{pick(x.label_bn, x.label_en)}</span>
-                  <span className="mt-0.5 block text-xs text-slate-500">{pick(x.hint_bn, x.hint_en)}</span>
-                </span>
-              </label>
-            ))}
-          </div>
-        </Step>
+        <form onSubmit={(e) => void submit(e)} noValidate>
+          <Stack gap={3}>
+            <Step n={1} title={t('টেমপ্লেট')} hint={t('শুধু শুরুর সেটিং — তৈরির পর ফিল্ড, কার্ড সব বদলানো যায়')}>
+              <RadioGroup
+                label={t('টেমপ্লেট')}
+                hideLabel
+                look="cards"
+                direction="row"
+                name="tpl"
+                value={template}
+                onChange={(v) => chooseTemplate(v as TemplateKey)}
+                options={PROJECT_TEMPLATES.map((x) => ({ value: x.key, label: pick(x.label_bn, x.label_en), hint: pick(x.hint_bn, x.hint_en) }))}
+              />
+            </Step>
 
-        <Step n={2} title={t('অবস্থান')}>
-          <div className="grid gap-2">
-            {(
-              [
-                ['single', t('একক প্রকল্প'), t('নিজের পেইজ, যেমন /self-reliance')],
-                ['child', t('কোনো গ্রুপের উপ-প্রকল্প'), t('যেমন ঘর নির্মাণের ভেতরে "ঘর মেরামত" — /housing/…')],
-                ['group', t('নতুন প্রকল্প-গ্রুপ'), t('কয়েকটি প্রকল্পের ছাতা; নিজের রেকর্ড থাকে না')],
-              ] as const
-            ).map(([v, label, hint]) => (
-              <label key={v} className={`flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border p-3 ${location === v ? 'border-brand-600 bg-brand-50' : 'border-slate-200'}`}>
-                <input type="radio" name="loc" className="mt-1 h-4 w-4 accent-brand-700" checked={location === v} onChange={() => chooseLocation(v)} />
-                <span>
-                  <span className="block text-sm font-semibold text-slate-900">{label}</span>
-                  <span className="block text-xs text-slate-500">{hint}</span>
-                </span>
-              </label>
-            ))}
-          </div>
-          {location === 'child' && (
-            <Field label={t('গ্রুপ')} required error={show(errors.parent)}>
-              {(p) => (
-                <select {...p} className={selectClass} value={parentKey} onChange={(e) => setParentKey(e.target.value)}>
-                  <option value="">{t('— বাছাই করুন —')}</option>
-                  {groups.map((g) => (
-                    <option key={g.key} value={g.key}>
-                      {lt(g, 'name')} (/{g.slug})
-                    </option>
-                  ))}
-                </select>
+            <Step n={2} title={t('অবস্থান')}>
+              <RadioGroup
+                label={t('অবস্থান')}
+                hideLabel
+                look="cards"
+                name="loc"
+                value={location}
+                onChange={(v) => chooseLocation(v as Location)}
+                options={(
+                  [
+                    ['single', t('একক প্রকল্প'), t('নিজের পেইজ, যেমন /self-reliance')],
+                    ['child', t('কোনো গ্রুপের উপ-প্রকল্প'), t('যেমন ঘর নির্মাণের ভেতরে "ঘর মেরামত" — /housing/…')],
+                    ['group', t('নতুন প্রকল্প-গ্রুপ'), t('কয়েকটি প্রকল্পের ছাতা; নিজের রেকর্ড থাকে না')],
+                  ] as const
+                ).map(([v, label, hint]) => ({ value: v, label, hint }))}
+              />
+              {location === 'child' && (
+                <SelectField
+                  label={t('গ্রুপ')}
+                  required
+                  error={show(errors.parent) ?? undefined}
+                  value={parentKey}
+                  onChange={setParentKey}
+                  options={[
+                    { value: '', label: t('— বাছাই করুন —') },
+                    ...groups.map((g) => ({ value: g.key, label: `${lt(g, 'name')} (/${g.slug})` })),
+                  ]}
+                />
               )}
-            </Field>
-          )}
-        </Step>
+            </Step>
 
-        <Step n={3} title={t('নাম')} hint={t('দুই ভাষাতেই আবশ্যক — ইংরেজি মোডে ইংরেজি নাম দেখায়')}>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label={t('বাংলা নাম')} required error={show(errors.nameBn)}>
-              {(p) => <input {...p} className={inputClass} value={nameBn} onChange={(e) => setNameBn(e.target.value)} placeholder={t('যেমন স্বাবলম্বী প্রকল্প')} maxLength={120} />}
-            </Field>
-            <Field label={t('ইংরেজি নাম')} required error={show(errors.nameEn)}>
-              {(p) => <input {...p} className={inputClass} value={nameEn} onChange={(e) => setNameEn(e.target.value)} placeholder="Self-Reliance Project" maxLength={120} />}
-            </Field>
-          </div>
-        </Step>
+            <Step n={3} title={t('নাম')} hint={t('দুই ভাষাতেই আবশ্যক — ইংরেজি মোডে ইংরেজি নাম দেখায়')}>
+              <Grid columns={{ xs: 1, sm: 2 }} gap={2}>
+                <TextField label={t('বাংলা নাম')} required error={show(errors.nameBn) ?? undefined} value={nameBn} onChange={setNameBn} placeholder={t('যেমন স্বাবলম্বী প্রকল্প')} maxLength={120} />
+                <TextField label={t('ইংরেজি নাম')} required error={show(errors.nameEn) ?? undefined} value={nameEn} onChange={setNameEn} placeholder="Self-Reliance Project" maxLength={120} />
+              </Grid>
+            </Step>
 
-        <Step n={4} title={t('URL ও key')}>
-          <Field
-            label={t('URL অংশ (slug)')}
-            required
-            error={effectiveSlug || submitted ? errors.slug : null}
-            help={t('ইংরেজি নাম থেকে নিজে তৈরি হয়; চাইলে ছোট করুন। প্রকাশের পর আর বদলানো যায় না (শেয়ার করা লিংক ভাঙবে)।')}
-          >
-            {(p) => (
-              <input
-                {...p}
-                className={`${inputClass} font-mono`}
+            <Step n={4} title={t('URL ও key')}>
+              <TextField
+                mono
+                label={t('URL অংশ (slug)')}
+                required
+                error={(effectiveSlug || submitted ? errors.slug : null) ?? undefined}
+                hint={t('ইংরেজি নাম থেকে নিজে তৈরি হয়; চাইলে ছোট করুন। প্রকাশের পর আর বদলানো যায় না (শেয়ার করা লিংক ভাঙবে)।')}
                 value={effectiveSlug}
-                onChange={(e) => {
+                onChange={(value) => {
                   setSlugTouched(true)
-                  setSlug(e.target.value.toLowerCase())
+                  setSlug(value.toLowerCase())
                 }}
                 placeholder="self-reliance"
                 maxLength={60}
               />
-            )}
-          </Field>
-          <p className="text-sm text-slate-600">
-            {t('পেইজের ঠিকানা:')} <span className="font-mono font-semibold text-slate-900">{urlPreview}</span>
-          </p>
-          <div className="rounded-lg bg-slate-50 px-3 py-2 text-sm">
-            <span className="text-slate-500">{t('স্থায়ী key:')}</span> <span className="font-mono font-semibold text-slate-900">{key || '—'}</span>{' '}
-            <span className="text-xs text-amber-800">{t('(পরে বদলানো যাবে না — সিরিয়াল, ছবির পাথ ও লগ এর ওপর নির্ভর করে)')}</span>
-            {errors.key && (effectiveSlug || submitted) && (
-              <p role="alert" className="mt-1 text-xs font-medium text-red-700">
-                {errors.key}
-              </p>
-            )}
-          </div>
-        </Step>
+              <Text size="small" tone="muted">
+                {t('পেইজের ঠিকানা:')}{' '}
+                <Text size="small" weight="bold" mono inline>
+                  {urlPreview}
+                </Text>
+              </Text>
+              <Stack gap={1}>
+                <Text size="small">
+                  <Text size="small" tone="muted" inline>
+                    {t('স্থায়ী key:')}
+                  </Text>{' '}
+                  <Text size="small" weight="bold" mono inline>
+                    {key || '—'}
+                  </Text>{' '}
+                  <Text size="caption" tone="warning" inline>
+                    {t('(পরে বদলানো যাবে না — সিরিয়াল, ছবির পাথ ও লগ এর ওপর নির্ভর করে)')}
+                  </Text>
+                </Text>
+                {errors.key && (effectiveSlug || submitted) && <Alert tone="error">{errors.key}</Alert>}
+              </Stack>
+            </Step>
 
-        {!isGroup && (
-          <Step n={5} title={t('ছবি ও ঠিকানা')}>
-            <Field label={t('ছবি মোড')}>
-              {(p) => (
-                <select {...p} className={selectClass} value={photoMode} onChange={(e) => setPhotoMode(e.target.value as PhotoMode)}>
-                  {PHOTO_MODES.map((m) => (
-                    <option key={m.value} value={m.value}>
-                      {t(m.label)}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </Field>
-            <Field
-              label={t('ছবির ফাইল-প্রিফিক্স')}
-              required
-              error={submitted || prefixTouched ? errors.prefix : null}
-              help={t('বাল্ক ছবি আপলোডে ফাইলনাম চেনার জন্য। উদাহরণ (সিরিয়াল ১২): {example}', { example: photoNameExample(effectivePrefix, photoMode) })}
-            >
-              {(p) => (
-                <input
-                  {...p}
-                  className={`${inputClass} font-mono`}
+            {!isGroup && (
+              <Step n={5} title={t('ছবি ও ঠিকানা')}>
+                <SelectField
+                  label={t('ছবি মোড')}
+                  value={photoMode}
+                  onChange={(value) => setPhotoMode(value as PhotoMode)}
+                  options={PHOTO_MODES.map((m) => ({ value: m.value, label: t(m.label) }))}
+                />
+                <TextField
+                  mono
+                  label={t('ছবির ফাইল-প্রিফিক্স')}
+                  required
+                  error={(submitted || prefixTouched ? errors.prefix : null) ?? undefined}
+                  hint={t('বাল্ক ছবি আপলোডে ফাইলনাম চেনার জন্য। উদাহরণ (সিরিয়াল ১২): {example}', { example: photoNameExample(effectivePrefix, photoMode) })}
                   value={effectivePrefix}
-                  onChange={(e) => {
+                  onChange={(value) => {
                     setPrefixTouched(true)
-                    setPrefix(e.target.value.toLowerCase())
+                    setPrefix(value.toLowerCase())
                   }}
                   maxLength={16}
                 />
-              )}
-            </Field>
-            <Field label={t('ঠিকানা কোন স্তর পর্যন্ত')}>
-              {(p) => (
-                <select {...p} className={selectClass} value={geoDepth} onChange={(e) => setGeoDepth(e.target.value as GeoDepth)}>
-                  <option value="upazila">{t('উপজেলা পর্যন্ত')}</option>
-                  <option value="union">{t('ইউনিয়ন পর্যন্ত (ইউনিয়ন আবশ্যক নয়)')}</option>
-                </select>
-              )}
-            </Field>
-          </Step>
-        )}
+                <SelectField
+                  label={t('ঠিকানা কোন স্তর পর্যন্ত')}
+                  value={geoDepth}
+                  onChange={(value) => setGeoDepth(value as GeoDepth)}
+                  options={[
+                    { value: 'upazila', label: t('উপজেলা পর্যন্ত') },
+                    { value: 'union', label: t('ইউনিয়ন পর্যন্ত (ইউনিয়ন আবশ্যক নয়)') },
+                  ]}
+                />
+              </Step>
+            )}
 
-        {/* আইকন বাছাই নেই (ব্যবহারকারীর সিদ্ধান্ত, ২০২৬-১০-০৭) — ডাটাবেসের icon কলামে টেমপ্লেটের মানই যায়, কোথাও দেখানো হয় না */}
-        <Step n={isGroup ? 5 : 6} title={t('রং')}>
-          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t('রং')}>
-            {(Object.keys(ACCENTS) as (keyof typeof ACCENTS)[]).map((k) => (
-              <button
-                key={k}
-                type="button"
-                role="radio"
-                aria-checked={accent === k}
-                onClick={() => setAccent(k)}
-                className={`inline-flex min-h-11 items-center gap-2 rounded-lg border px-3 text-sm ${accent === k ? 'border-brand-600 ring-1 ring-brand-600' : 'border-slate-200'}`}
-              >
-                <span className={`h-7 w-7 rounded-md bg-gradient-to-br ${ACCENTS[k].gradient}`} aria-hidden="true" />
-                {pick(ACCENTS[k].label_bn, ACCENTS[k].label_en)}
-              </button>
-            ))}
-          </div>
-        </Step>
+            {/* আইকন বাছাই নেই (ব্যবহারকারীর সিদ্ধান্ত, ২০২৬-১০-০৭) — ডাটাবেসের icon কলামে টেমপ্লেটের মানই যায়, কোথাও দেখানো হয় না */}
+            <Step n={isGroup ? 5 : 6} title={t('রং')}>
+              <RadioGroup
+                label={t('রং')}
+                hideLabel
+                look="cards"
+                direction="row"
+                value={accent}
+                onChange={setAccent}
+                options={(Object.keys(ACCENTS) as (keyof typeof ACCENTS)[]).map((k) => ({
+                  value: k,
+                  label: <AccentSwatch accent={k} />,
+                }))}
+              />
+            </Step>
 
-        {(serverError || (submitted && hasErrors)) && (
-          <p role="alert" className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-            {serverError ?? t('উপরের লাল চিহ্নিত ঘরগুলো ঠিক করুন।')}
-          </p>
-        )}
-        <div className="flex flex-wrap gap-3">
-          <button type="submit" className={primaryButton} disabled={busy || !existing}>
-            {busy ? t('তৈরি হচ্ছে…') : t('খসড়া হিসেবে তৈরি করুন')}
-          </button>
-          <Link to="/admin/projects" className={secondaryButton}>
-            {t('বাতিল')}
-          </Link>
-        </div>
-      </form>
-    </section>
+            {(serverError || (submitted && hasErrors)) && <Alert tone="error">{serverError ?? t('উপরের লাল চিহ্নিত ঘরগুলো ঠিক করুন।')}</Alert>}
+            <Stack direction="row" gap={1.5} wrap>
+              <Button type="submit" disabled={busy || !existing}>
+                {busy ? t('তৈরি হচ্ছে…') : t('খসড়া হিসেবে তৈরি করুন')}
+              </Button>
+              <LinkButton to="/admin/projects" variant="secondary">
+                {t('বাতিল')}
+              </LinkButton>
+            </Stack>
+          </Stack>
+        </form>
+      </Stack>
+    </Page>
   )
 }

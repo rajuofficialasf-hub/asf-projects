@@ -28,6 +28,12 @@ export const ACTION_LABEL: Record<string, string> = {
   field_restore: 'ফিল্ড ফেরত',
   field_delete: 'ফিল্ড মুছে ফেলা',
   admin_user_update: 'ইউজার যোগ/বদল',
+  // সার্ভারের কমান্ড (npm run admin) যা লেখে
+  admin_create: 'ইউজার তৈরি',
+  admin_disable: 'ইউজার বন্ধ',
+  admin_enable: 'ইউজার চালু',
+  admin_password_set: 'পাসওয়ার্ড বদল',
+  admin_role_set: 'ভূমিকা বদল',
 }
 
 export const ACTION_CLASS: Record<string, string> = {

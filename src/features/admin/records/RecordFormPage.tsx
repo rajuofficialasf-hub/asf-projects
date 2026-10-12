@@ -1,12 +1,14 @@
 import { lt, t } from '@/i18n'
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 import { toBanglaNumber } from '@/lib/banglaNumber'
 import { useDocumentTitle } from '@/lib/useDocumentTitle'
-import { NotFoundPage } from '@/pages/NotFoundPage'
 import { getHousingApi, HousingApiError, type HousingRecord } from '@/backend'
-import { ErrorNotice } from '@/features/housing/components/ErrorNotice'
 import { adminPath, useRecordProjectByKey } from '@/features/housing/utils/housingProjects'
+import { Alert, Breadcrumbs, LinkButton, LoadingState, Page } from '@/ui'
+import { AdminNotFound } from '../ui/AdminNotFound'
+import { NoRecordProject } from './NoRecordProject'
+import { ErrorNotice } from '../ui/ErrorNotice'
 import { RecordForm } from './RecordForm'
 
 interface Props {
@@ -41,32 +43,34 @@ export function RecordFormPage({ mode }: Props) {
     }
   }, [needLoad, projectType, serialNo])
 
-  if (!project || !projectType || (mode === 'edit' && !needLoad)) return <NotFoundPage />
+  if (!project || !projectType) return <NoRecordProject projectKey={key} />
+  if (mode === 'edit' && !needLoad) return <AdminNotFound />
   const listPath = adminPath(projectType)
   const current = loaded && loaded.serial === serialNo ? loaded : null
 
   return (
-    <section className="container-page py-8 sm:py-10">
-      <p className="text-sm text-slate-500">
-        <Link to={listPath} className="hover:text-brand-700">
-          {lt(project, 'name')}
-        </Link>{' '}
-        / {mode === 'new' ? t('নতুন রেকর্ড') : t('সিরিয়াল {n} সম্পাদনা', { n: toBanglaNumber(serialNo) })}
-      </p>
-      <h1 className="mt-1 mb-6 text-2xl font-bold text-slate-900">{mode === 'new' ? t('নতুন উপকারভোগী যোগ করুন') : t('রেকর্ড সম্পাদনা')}</h1>
-
+    <Page
+      title={mode === 'new' ? t('নতুন উপকারভোগী যোগ করুন') : t('রেকর্ড সম্পাদনা')}
+      documentTitle={false}
+      breadcrumbs={
+        <Breadcrumbs
+          label={t('{title} — রেকর্ড', { title: lt(project, 'name') })}
+          items={[{ label: lt(project, 'name'), to: listPath }, { label: mode === 'new' ? t('নতুন রেকর্ড') : t('সিরিয়াল {n} সম্পাদনা', { n: toBanglaNumber(serialNo) }) }]}
+        />
+      }
+    >
       {mode === 'new' && (
         <RecordForm project={project} onSaved={() => navigate(listPath)} onCancel={() => navigate(listPath)} />
       )}
 
-      {mode === 'edit' && !current && (
-        <div className="animate-pulse space-y-3" aria-busy="true">
-          <div className="h-16 rounded-xl bg-slate-200" />
-          <div className="h-64 rounded-xl bg-slate-200" />
-        </div>
+      {mode === 'edit' && !current && <LoadingState label={t('লোড হচ্ছে…')} />}
+      {mode === 'edit' && current?.status === 'error' && current.error.code === 'NOT_FOUND' && (
+        <Alert tone="warning" title={t('রেকর্ড পাওয়া যায়নি')} action={<LinkButton to={listPath} variant="text">{t('তালিকায় ফিরুন')}</LinkButton>}>
+          {t('এই সিরিয়ালে কোনো রেকর্ড নেই। হয়তো মুছে ফেলা হয়েছে বা সিরিয়াল বদলেছে।')}
+        </Alert>
       )}
-      {mode === 'edit' && current?.status === 'error' && (
-        <ErrorNotice title={current.error.code === 'NOT_FOUND' ? t('রেকর্ড পাওয়া যায়নি') : t('রেকর্ড লোড করা যায়নি')} error={current.error} />
+      {mode === 'edit' && current?.status === 'error' && current.error.code !== 'NOT_FOUND' && (
+        <ErrorNotice title={t('রেকর্ড লোড করা যায়নি')} error={current.error} />
       )}
       {mode === 'edit' && current?.status === 'ready' && (
         <RecordForm
@@ -80,6 +84,6 @@ export function RecordFormPage({ mode }: Props) {
           onCancel={() => navigate(listPath)}
         />
       )}
-    </section>
+    </Page>
   )
 }

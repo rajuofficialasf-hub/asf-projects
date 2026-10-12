@@ -2,8 +2,10 @@ import { gn, lt, t } from '@/i18n'
 import type { Project } from '@/backend'
 import { fieldSpec, resolveFields, type FieldDef, type FieldValue } from '@/features/projects/fields'
 import { toBanglaNumber } from '@/lib/banglaNumber'
-import { card } from '../ui/styles'
 import { MAX_TABLE_COLUMNS, tableColumns } from './fieldRules'
+
+/** পাবলিক সাইটের সাদা কার্ড: প্রিভিউ ইচ্ছা করে পাবলিক চেহারাতেই দেখায় */
+const card = 'rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6'
 
 /** নমুনা মান (দেখানোর জন্য) — নাম/ঠিকানা আসল সাইটের মতোই বাংলায় থাকে, ভূগোল gn() দিয়ে */
 const SAMPLE = {
@@ -80,7 +82,7 @@ export function FieldPreview({ project }: { project: Project }) {
                 <p className="mb-1 text-xs font-medium text-slate-600">
                   {lt(f, 'label')}
                   {f.required && <span className="text-red-600"> *</span>}
-                  {f.visibility === 'admin' && <span className="ml-1">🔒</span>}
+                  {f.visibility === 'admin' && <span className="ml-1 text-xs font-normal text-slate-500">({t('গোপন')})</span>}
                 </p>
                 <I def={f} value={fieldSpec(f.type).toInput(sampleValue(f), f)} onChange={() => {}} disabled />
               </div>
