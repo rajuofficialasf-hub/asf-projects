@@ -20,7 +20,7 @@ interface Props {
   selected: Set<string>
   onToggle: (id: string) => void
   onToggleAll: (ids: string[], checked: boolean) => void
-  /** না দিলে মোছার বোতাম নেই (সাধারণ এডমিন — প্রশ্ন ১৬) */
+  /** না দিলে মোছার বোতাম নেই (সাধারণ এডমিন — প্রশ্ন ১৬); নির্বাচনের চেকবক্সও তখন নেই, কারণ বাল্ক কাজ শুধু মোছা */
   onDelete?: (record: HousingRecord) => void
 }
 
@@ -63,13 +63,16 @@ export function AdminRecordsTable({ project, layout, records, page, pageSize, bu
   )
 
   // চেকবক্সের নাম শুধু স্ক্রিন-রিডারের জন্য (লেবেল লুকানো), যাতে সারিতে "… নির্বাচন" লেখা না দেখায়
-  const columns: DataTableColumn<HousingRecord>[] = [
-    {
+  const selectable = !!onDelete
+  const rowCheckbox = (r: HousingRecord) => <Checkbox hideLabel label={t('{name} নির্বাচন', { name: r.name })} checked={selected.has(r.id)} onChange={() => onToggle(r.id)} />
+  const selectColumn: DataTableColumn<HousingRecord> = {
       id: 'select',
       header: <Checkbox hideLabel label={t('এই পেইজের সব নির্বাচন')} checked={allChecked} indeterminate={someChecked} onChange={(checked) => onToggleAll(ids, checked)} />,
       headerText: '',
-      cell: (r) => <Checkbox hideLabel label={t('{name} নির্বাচন', { name: r.name })} checked={selected.has(r.id)} onChange={() => onToggle(r.id)} />,
-    },
+      cell: rowCheckbox,
+  }
+  const columns: DataTableColumn<HousingRecord>[] = [
+    ...(selectable ? [selectColumn] : []),
     {
       id: 'ordinal',
       header: t('ক্রম'),
@@ -126,19 +129,15 @@ export function AdminRecordsTable({ project, layout, records, page, pageSize, bu
     { id: 'actions', header: t('কাজ'), cell: (r) => <Actions record={r} onDelete={onDelete} /> },
   ]
 
-  // ফোনের কার্ডে আগের মতো শুধু পরিচয়, ঠিকানা (বিভাগ ছাড়া), "মোবাইল কার্ডে" চালু ফিল্ড, ছবি ও কাজ — টেবিলের সব কলাম নয়
+  // ফোনের কার্ড: নাম শিরোনামে, পাশে চেকবক্স ও এডিট; নিচে সিরিয়াল, সাল, ঠিকানা (বিভাগ ছাড়া), "মোবাইল কার্ডে" চালু ফিল্ড ও ছবি
   const byId = new Map(columns.map((c) => [c.id, c]))
   const pick = (id: string) => byId.get(id)
   const phoneColumns: DataTableColumn<HousingRecord>[] = [
-    pick('select'),
-    pick('ordinal'),
     pick('serial'),
     pick('year'),
-    pick('name'),
     { id: 'place', header: t('ঠিকানা'), cell: (r: HousingRecord) => place(r, false) },
     ...layout.cardFields.map((d): DataTableColumn<HousingRecord> => ({ id: `card-${d.key}`, header: lt(d, 'label'), cell: (r) => <Value def={d} r={r} /> })),
     ...(kinds.length ? [{ id: 'photos', header: t('ছবি'), cell: (r: HousingRecord) => thumbs(r) }] : []),
-    pick('actions'),
   ].filter((c): c is DataTableColumn<HousingRecord> => !!c)
 
   return (
@@ -148,6 +147,13 @@ export function AdminRecordsTable({ project, layout, records, page, pageSize, bu
         rows={records}
         columns={columns}
         phoneColumns={phoneColumns}
+        phoneTitle={(r) => r.name}
+        phoneActions={(r) => (
+          <>
+            {selectable && rowCheckbox(r)}
+            <Actions record={r} onDelete={onDelete} />
+          </>
+        )}
         phoneFooter={
           layout.moneyFields.length > 0 ? (
             <Text size="small" weight="medium" tabular>

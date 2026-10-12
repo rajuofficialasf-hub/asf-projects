@@ -5,7 +5,7 @@ import { toBanglaNumber } from '@/lib/banglaNumber'
 import { getAdminUsersApi, HousingApiError, type AdminRole, type AdminUserInput, type AdminUserRow, type Project, type ProjectKey } from '@/backend'
 import { childrenOf, topLevelProjects, useProjects } from '@/features/projects/registry'
 import { formatDateTime } from '@/features/housing/utils/activityLabels'
-import { Alert, Breadcrumbs, Button, Card, Checkbox, DataTable, FieldGroup, Grid, Page, RadioGroup, Stack, Text, TextField } from '@/ui'
+import { Alert, Button, Card, Checkbox, DataTable, FieldGroup, Grid, Page, RadioGroup, Stack, Text, TextField } from '@/ui'
 import { Badge } from '../ui/Badge'
 import { ErrorNotice } from '../ui/ErrorNotice'
 
@@ -148,7 +148,6 @@ export function AdminUsersPage() {
     <Page
       title={t('ইউজার')}
       description={t('প্রকল্পের ইউজার নিজের প্রকল্পে রেকর্ড যোগ ও এডিট, ইম্পোর্ট আর নতুন ছবি দিতে পারেন। থাকা ছবি বদল, মান ফাঁকা করা, সিরিয়াল বদল আর প্রকল্পের সেটিংস পারেন এডমিন ও মূল এডমিন। মোছা আর ইউজার সামলানো শুধু মূল এডমিনের কাজ।')}
-      breadcrumbs={<Breadcrumbs label={t('এডমিন')} items={[{ label: t('এডমিন'), to: '/admin' }, { label: t('ইউজার') }]} />}
       documentTitle={false}
     >
       <Stack gap={4}>

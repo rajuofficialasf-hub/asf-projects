@@ -1,19 +1,36 @@
 import { gn, t } from '@/i18n'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { toBanglaNumber } from '@/lib/banglaNumber'
 import type { ProjectType } from '@/backend'
 import { getDistricts, getDivisions, getUpazilas } from '@/features/geo/geo'
 import { useHousingYears } from '@/features/housing/hooks/useHousingYears'
-import { EMPTY_FILTERS, hasActiveFilters, MAX_SEARCH_LENGTH, type HousingFilters as Filters } from '@/features/housing/utils/filters'
-import { Button, Card, Grid, SelectField, Stack, Text, TextField } from '@/ui'
+import { MAX_SEARCH_LENGTH, type HousingFilters as Filters } from '@/features/housing/utils/filters'
+import { FilterPanel, Grid, SelectField, Stack, TextField } from '@/ui'
 
 const SEARCH_DEBOUNCE_MS = 500
 
 /**
  * এডমিনের রেকর্ড-ফিল্টার (পাবলিক HousingFilters-এর একই আচরণ): সাল (years থেকে), বিভাগ → জেলা → উপজেলা (cascading),
  * নাম খোঁজা (৫০০ms debounce), "ফিল্টার মুছুন"। অবস্থা parent (URL) এ থাকে; এখানে শুধু সার্চ বক্সের অস্থায়ী লেখা।
+ * প্রকল্পের ক্যাটাগরি-ফিল্টার `children` হয়ে একই প্যানেলে বসে; ফোনে পুরো প্যানেল একটি বোতামের পেছনে ভাঁজ থাকে।
  */
-export function RecordFilters({ projectType, value, onChange }: { projectType: ProjectType; value: Filters; onChange: (next: Filters) => void }) {
+export function RecordFilters({
+  projectType,
+  value,
+  onChange,
+  activeCount,
+  onClear,
+  children,
+}: {
+  projectType: ProjectType
+  value: Filters
+  onChange: (next: Filters) => void
+  /** কয়টি ফিল্টার চালু (ক্যাটাগরিসহ) */
+  activeCount: number
+  /** সব ফিল্টার মোছে (ক্যাটাগরিসহ) */
+  onClear: () => void
+  children?: ReactNode
+}) {
   const years = useHousingYears(projectType)
 
   // নামের সার্চ: লোকাল লেখা + debounce; বাইরে থেকে q বদলালে (ফিল্টার মুছুন, Back) রেন্ডারের সময়ই সিঙ্ক
@@ -30,10 +47,14 @@ export function RecordFilters({ projectType, value, onChange }: { projectType: P
     return () => clearTimeout(timer)
   }, [text, value, onChange])
 
-  const active = hasActiveFilters(value)
-
   return (
-    <Card>
+    <FilterPanel
+      label={t('ফিল্টার')}
+      activeCount={activeCount}
+      onClear={onClear}
+      clearLabel={t('ফিল্টার মুছুন')}
+      note={years.status === 'error' ? t('সালের তালিকা লোড হয়নি।') : undefined}
+    >
       <Stack gap={2}>
         <Grid columns={{ xs: 1, sm: 2, lg: 5 }}>
           <SelectField
@@ -78,15 +99,8 @@ export function RecordFilters({ projectType, value, onChange }: { projectType: P
             autoComplete="off"
           />
         </Grid>
-        <Stack direction="row" justify="between" align="center" gap={2} wrap>
-          <Text size="caption" tone="muted">
-            {years.status === 'error' ? t('সালের তালিকা লোড হয়নি।') : active ? t('ফিল্টার প্রয়োগ করা আছে।') : ' '}
-          </Text>
-          <Button variant="secondary" size="small" startIcon="close" disabled={!active} onClick={() => onChange(EMPTY_FILTERS)}>
-            {t('ফিল্টার মুছুন')}
-          </Button>
-        </Stack>
+        {children}
       </Stack>
-    </Card>
+    </FilterPanel>
   )
 }

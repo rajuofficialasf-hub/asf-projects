@@ -5,8 +5,9 @@ import { toBanglaNumber } from '@/lib/banglaNumber'
 import { useDocumentTitle } from '@/lib/useDocumentTitle'
 import { getHousingApi, HousingApiError, type HousingRecord } from '@/backend'
 import { adminPath, useRecordProjectByKey } from '@/features/housing/utils/housingProjects'
-import { Breadcrumbs, LoadingState, Page } from '@/ui'
+import { Alert, Breadcrumbs, LinkButton, LoadingState, Page } from '@/ui'
 import { AdminNotFound } from '../ui/AdminNotFound'
+import { NoRecordProject } from './NoRecordProject'
 import { ErrorNotice } from '../ui/ErrorNotice'
 import { RecordForm } from './RecordForm'
 
@@ -42,7 +43,8 @@ export function RecordFormPage({ mode }: Props) {
     }
   }, [needLoad, projectType, serialNo])
 
-  if (!project || !projectType || (mode === 'edit' && !needLoad)) return <AdminNotFound />
+  if (!project || !projectType) return <NoRecordProject projectKey={key} />
+  if (mode === 'edit' && !needLoad) return <AdminNotFound />
   const listPath = adminPath(projectType)
   const current = loaded && loaded.serial === serialNo ? loaded : null
 
@@ -62,8 +64,13 @@ export function RecordFormPage({ mode }: Props) {
       )}
 
       {mode === 'edit' && !current && <LoadingState label={t('লোড হচ্ছে…')} />}
-      {mode === 'edit' && current?.status === 'error' && (
-        <ErrorNotice title={current.error.code === 'NOT_FOUND' ? t('রেকর্ড পাওয়া যায়নি') : t('রেকর্ড লোড করা যায়নি')} error={current.error} />
+      {mode === 'edit' && current?.status === 'error' && current.error.code === 'NOT_FOUND' && (
+        <Alert tone="warning" title={t('রেকর্ড পাওয়া যায়নি')} action={<LinkButton to={listPath} variant="text">{t('তালিকায় ফিরুন')}</LinkButton>}>
+          {t('এই সিরিয়ালে কোনো রেকর্ড নেই। হয়তো মুছে ফেলা হয়েছে বা সিরিয়াল বদলেছে।')}
+        </Alert>
+      )}
+      {mode === 'edit' && current?.status === 'error' && current.error.code !== 'NOT_FOUND' && (
+        <ErrorNotice title={t('রেকর্ড লোড করা যায়নি')} error={current.error} />
       )}
       {mode === 'edit' && current?.status === 'ready' && (
         <RecordForm

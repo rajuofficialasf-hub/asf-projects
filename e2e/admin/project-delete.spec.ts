@@ -85,7 +85,7 @@ test('a plain admin and a project user get no delete button, and their direct de
 
   await inFreshContext(browser, baseURL, async (editor) => {
     await loginAs(editor, PROJECT_EDITOR, '/admin/projects/tin')
-    await expect(editor.getByRole('heading', { level: 1, name: 'এই অংশ শুধু মূল এডমিনের' })).toBeVisible()
+    await expect(editor.getByRole('heading', { level: 1, name: 'এই অংশ এডমিনদের জন্য' })).toBeVisible()
     await expect(deleteButton(editor)).toHaveCount(0)
     expect((await api(editor, '/projects/tin', 'DELETE')).status).toBe(403)
   })

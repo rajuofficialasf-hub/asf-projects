@@ -21,15 +21,14 @@ async function recordId(page: Page): Promise<string> {
   return id!
 }
 
-test('a plain admin sees no delete button and no bulk delete', async ({ page }) => {
+test('a plain admin sees no delete button, no row selection and no bulk delete', async ({ page }) => {
   await loginAs(page, PLAIN_ADMIN, RECORDS)
   const row = page.getByRole('row', { name: new RegExp(NAME) })
   await expect(row.getByRole('link', { name: 'এডিট' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'ডিলেট' })).toHaveCount(0)
 
-  await row.getByRole('checkbox', { name: `${NAME} নির্বাচন` }).check()
-  await expect(page.getByText('১ টি নির্বাচিত')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'নির্বাচন বাতিল' })).toBeVisible()
+  // Selecting rows only leads to a bulk delete, so a plain admin gets no row checkboxes at all.
+  await expect(page.getByRole('checkbox')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'নির্বাচিতগুলো মুছুন' })).toHaveCount(0)
 })
 

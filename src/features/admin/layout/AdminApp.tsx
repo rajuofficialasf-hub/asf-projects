@@ -21,6 +21,19 @@ import { RoleGate } from './RoleGate'
 
 const SETTINGS_ROLES = ['main_admin', 'admin'] as const
 
+/** প্রকল্পের সেটিংসের দরজা: এডমিন ও মূল এডমিন; প্রকল্পের ইউজার (editor) নয় */
+function SettingsGate({ children }: { children: ReactNode }) {
+  return (
+    <RoleGate
+      allow={SETTINGS_ROLES}
+      title={t('এই অংশ এডমিনদের জন্য')}
+      message={t('প্রকল্পের সেটিংস (ফিল্ড, কার্ড, প্রকাশ) এডমিন ও মূল এডমিন সামলান। আপনি নিজের প্রকল্পের রেকর্ড, ইম্পোর্ট ও ছবি নিয়ে কাজ করতে পারেন।')}
+    >
+      {children}
+    </RoleGate>
+  )
+}
+
 function Lazy({ children }: { children: ReactNode }) {
   return <Suspense fallback={<LoadingState label={t('লোড হচ্ছে…')} />}>{children}</Suspense>
 }
@@ -37,10 +50,17 @@ export default function AdminApp() {
         <Route element={<RequireAdmin />}>
           <Route index element={<Lazy><LazyAdminDashboardPage /></Lazy>} />
           {/* প্রকল্পের সেটিংস: মূল এডমিন ও সাধারণ এডমিন; প্রকল্পের ইউজার (editor) নয় */}
-          <Route path="projects" element={<RoleGate allow={SETTINGS_ROLES}><Lazy><LazyAdminProjectsPage /></Lazy></RoleGate>} />
-          <Route path="projects/new" element={<RoleGate allow={SETTINGS_ROLES}><Lazy><LazyProjectWizardPage /></Lazy></RoleGate>} />
-          <Route path="projects/:key" element={<RoleGate allow={SETTINGS_ROLES}><Lazy><LazyProjectSettingsPage /></Lazy></RoleGate>} />
-          <Route path="users" element={<RoleGate allow={['main_admin']}><Lazy><LazyAdminUsersPage /></Lazy></RoleGate>} />
+          <Route path="projects" element={<SettingsGate><Lazy><LazyAdminProjectsPage /></Lazy></SettingsGate>} />
+          <Route path="projects/new" element={<SettingsGate><Lazy><LazyProjectWizardPage /></Lazy></SettingsGate>} />
+          <Route path="projects/:key" element={<SettingsGate><Lazy><LazyProjectSettingsPage /></Lazy></SettingsGate>} />
+          <Route
+            path="users"
+            element={
+              <RoleGate allow={['main_admin']} title={t('এই অংশ শুধু মূল এডমিনের')} message={t('ইউজার যোগ, ভূমিকা বদল আর প্রকল্প দেওয়া শুধু মূল এডমিন করেন।')}>
+                <Lazy><LazyAdminUsersPage /></Lazy>
+              </RoleGate>
+            }
+          />
           <Route path="records/:key" element={<Lazy><LazyAdminRecordsPage /></Lazy>} />
           <Route path="records/:key/new" element={<Lazy><LazyRecordFormPage mode="new" /></Lazy>} />
           <Route path="records/:key/:serial/edit" element={<Lazy><LazyRecordFormPage mode="edit" /></Lazy>} />

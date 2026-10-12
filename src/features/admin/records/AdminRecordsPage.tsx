@@ -8,10 +8,10 @@ import { useProjects } from '@/features/projects/registry'
 import { downloadText } from '@/features/housing/utils/csvExport'
 import { RecordFilters } from '../ui/RecordFilters'
 import { useHousingList } from '@/features/housing/hooks/useHousingList'
-import { applyFiltersToSearchParams, filtersEqual, filtersFromSearchParams, hasActiveFilters, type HousingFilters as Filters } from '@/features/housing/utils/filters'
+import { applyFiltersToSearchParams, EMPTY_FILTERS, filtersEqual, filtersFromSearchParams, type HousingFilters as Filters } from '@/features/housing/utils/filters'
 import { adminPath, useRecordProjectByKey } from '@/features/housing/utils/housingProjects'
 import { Button, Card, EmptyState, Grid, LinkButton, LoadingState, Page, RadioGroup, SelectField, Stack, Text, useToast } from '@/ui'
-import { AdminNotFound } from '../ui/AdminNotFound'
+import { NoRecordProject } from './NoRecordProject'
 import { Badge } from '../ui/Badge'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { ErrorNotice } from '../ui/ErrorNotice'
@@ -33,7 +33,7 @@ const ascii = (s: string) => s.replace(/[০-৯]/g, (d) => String('০১২৩
 export function AdminRecordsPage() {
   const { key } = useParams()
   const project = useRecordProjectByKey(key)
-  if (!project) return <AdminNotFound />
+  if (!project) return <NoRecordProject projectKey={key} />
   return <RecordsManager key={project.key} project={project} />
 }
 
@@ -173,7 +173,18 @@ function RecordsManager({ project }: { project: Project }) {
     if (failed.length) toast.error(tr('{n} টি মোছা যায়নি — {first}', { n: formatBanglaNumber(failed.length), first: failed[0] }))
   }
 
-  const active = hasActiveFilters(filters) || Object.keys(fieldFilters).length > 0
+  const activeCount = [filters.year !== null, filters.division, filters.district, filters.upazila, filters.q.trim()].filter(Boolean).length + Object.keys(fieldFilters).length
+  const active = activeCount > 0
+  const clearAllFilters = () =>
+    setSearchParams(
+      (prev) => {
+        const sp = applyFiltersToSearchParams(prev, EMPTY_FILTERS)
+        for (const k of [...sp.keys()]) if (k.startsWith('f.')) sp.delete(k)
+        sp.delete('page')
+        return sp
+      },
+      { replace: true },
+    )
   const selectedCount = selected.size
 
   // ---- এক্সপোর্ট ----
@@ -237,9 +248,8 @@ function RecordsManager({ project }: { project: Project }) {
       }
     >
       <Stack gap={2}>
-        <RecordFilters projectType={projectType} value={filters} onChange={setFilters} />
-        {catFilters.length > 0 && (
-          <Card>
+        <RecordFilters projectType={projectType} value={filters} onChange={setFilters} activeCount={activeCount} onClear={clearAllFilters}>
+          {catFilters.length > 0 && (
             <Grid columns={{ xs: 1, sm: 2, md: 3 }}>
               {catFilters.map((f) => {
                 const values = usage?.[f.key] ?? []
@@ -260,8 +270,8 @@ function RecordsManager({ project }: { project: Project }) {
                 )
               })}
             </Grid>
-          </Card>
-        )}
+          )}
+        </RecordFilters>
 
         {categoryFields(project).length > 0 && <CategoryValuesPanel project={project} usage={usage} onChanged={refresh} />}
 

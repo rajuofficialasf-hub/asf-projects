@@ -19,11 +19,11 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-function show(value: HousingFilters = EMPTY_FILTERS) {
+function show(value: HousingFilters = EMPTY_FILTERS, activeCount = 0, onClear = () => {}) {
   const changes: HousingFilters[] = []
   render(
     <UiProvider>
-      <RecordFilters projectType="tin" value={value} onChange={(next) => changes.push(next)} />
+      <RecordFilters projectType="tin" value={value} onChange={(next) => changes.push(next)} activeCount={activeCount} onClear={onClear} />
     </UiProvider>,
   )
   return changes
@@ -56,10 +56,12 @@ describe('admin record filters', () => {
     expect(changes).toEqual([{ ...EMPTY_FILTERS, q: 'রহিমা' }])
   })
 
-  it('clears every filter, and the button is off when nothing is set', () => {
-    const changes = show({ ...EMPTY_FILTERS, year: 2025 })
+  // মোছা এখন পেইজের কাজ (ক্যাটাগরি-ফিল্টারও একসাথে মোছে), তাই বোতাম onClear ডাকে
+  it('asks the page to clear every filter, and the button is off when nothing is set', () => {
+    const onClear = vi.fn()
+    show({ ...EMPTY_FILTERS, year: 2025 }, 1, onClear)
     fireEvent.click(screen.getByRole('button', { name: 'ফিল্টার মুছুন' }))
-    expect(changes).toEqual([EMPTY_FILTERS])
+    expect(onClear).toHaveBeenCalledOnce()
     cleanup()
     show()
     expect(screen.getByRole('button', { name: 'ফিল্টার মুছুন' })).toBeDisabled()
