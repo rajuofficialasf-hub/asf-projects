@@ -8,6 +8,7 @@ import { fieldSpec, fieldValue, type FieldDef } from '@/features/projects/fields
 import { photoSrc } from '@/features/housing/utils/imagePath'
 import { projectPath } from '@/features/housing/utils/housingProjects'
 import { Lightbox, type LightboxImage } from '@/features/housing/components/Lightbox'
+import { KEEP_SCROLL } from '@/lib/keepScroll'
 import { SafeImage } from '@/features/housing/components/SafeImage'
 import { photoLabel, placeParts, type ListLayout } from './listColumns'
 import { RecordCardList } from './RecordCardList'
@@ -181,6 +182,7 @@ export function ViewButton({ record: r, compact = false }: { record: HousingReco
   return (
     <Link
       to={viewPath(r, search)}
+      state={KEEP_SCROLL}
       data-view-serial={r.serial_no}
       className={[
         'inline-flex shrink-0 items-center gap-1 rounded-md border border-brand-600 font-medium whitespace-nowrap text-brand-700 transition hover:bg-brand-600 hover:text-white',

@@ -12,6 +12,7 @@ export const EN: Record<string, string> = {
   'হোম': 'Home',
   'খসড়া — শুধু এডমিন দেখছেন': 'Draft — only admins can see this',
   'প্রধান মেনু': 'Main menu',
+  'মূল অংশে যান': 'Skip to main content',
   'মোবাইল মেনু': 'Mobile menu',
   'মেনু খুলুন': 'Open menu',
   'মেনু বন্ধ করুন': 'Close menu',

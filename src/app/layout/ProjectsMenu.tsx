@@ -38,6 +38,7 @@ export function ProjectsMenu() {
   const { pathname } = useLocation()
   const [open, setOpen] = useState(false)
   const box = useRef<HTMLDivElement>(null)
+  const button = useRef<HTMLButtonElement>(null)
   const menuId = useId()
   const active = items.some((i) => isUnder(pathname, i.to))
 
@@ -47,13 +48,21 @@ export function ProjectsMenu() {
       if (!box.current?.contains(e.target as Node)) setOpen(false)
     }
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false)
+      if (e.key !== 'Escape') return
+      setOpen(false)
+      button.current?.focus()
+    }
+    // Tab দিয়ে মেনুর বাইরে গেলে বন্ধ
+    const onFocusIn = (e: FocusEvent) => {
+      if (!box.current?.contains(e.target as Node)) setOpen(false)
     }
     document.addEventListener('pointerdown', onDown)
     document.addEventListener('keydown', onKey)
+    document.addEventListener('focusin', onFocusIn)
     return () => {
       document.removeEventListener('pointerdown', onDown)
       document.removeEventListener('keydown', onKey)
+      document.removeEventListener('focusin', onFocusIn)
     }
   }, [open])
 
@@ -61,8 +70,8 @@ export function ProjectsMenu() {
   return (
     <div ref={box} className="relative">
       <button
+        ref={button}
         type="button"
-        aria-haspopup="true"
         aria-expanded={open}
         aria-controls={menuId}
         onClick={() => setOpen((v) => !v)}
@@ -85,7 +94,7 @@ export function ProjectsMenu() {
               onClick={() => setOpen(false)}
               aria-current={pathname === i.to ? 'page' : undefined}
               className={[
-                'block px-4 py-2 text-sm hover:bg-brand-50 hover:text-brand-800',
+                'block px-4 py-2.5 text-sm hover:bg-brand-50 hover:text-brand-800',
                 i.depth === 1 ? 'pl-8' : 'font-semibold',
                 isUnder(pathname, i.to) ? 'text-brand-700' : i.depth === 1 ? 'text-slate-600' : '',
               ].join(' ')}
@@ -107,7 +116,7 @@ export function MobileProjectLinks({ onNavigate }: { onNavigate: () => void }) {
   if (!items.length) return null
   return (
     <div className="mt-1 border-t border-brand-700/70 pt-2">
-      <p className="px-3 pb-1 text-xs font-semibold tracking-wide text-brand-50/60 uppercase">{t('প্রকল্পসমূহ')}</p>
+      <p className="px-3 pb-1 text-xs font-semibold tracking-wide text-brand-50/80 uppercase">{t('প্রকল্পসমূহ')}</p>
       {items.map((i) => (
         <Link
           key={i.to}
@@ -115,7 +124,7 @@ export function MobileProjectLinks({ onNavigate }: { onNavigate: () => void }) {
           onClick={onNavigate}
           aria-current={pathname === i.to ? 'page' : undefined}
           className={[
-            'block rounded-md py-2 text-sm font-medium transition-colors',
+            'block rounded-md py-3 text-sm font-medium transition-colors',
             i.depth === 1 ? 'pr-3 pl-7' : 'px-3',
             pathname === i.to ? 'bg-brand-700 text-white' : 'text-brand-50/90 hover:bg-brand-700/60 hover:text-white',
           ].join(' ')}

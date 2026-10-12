@@ -2,6 +2,7 @@ import { getLang, lt, t as tr } from '@/i18n'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type TouchEvent } from 'react'
 import { useLocation, useNavigate, useOutletContext, useParams } from 'react-router'
 import { formatBanglaNumber, toBanglaNumber } from '@/lib/banglaNumber'
+import { KEEP_SCROLL } from '@/lib/keepScroll'
 import { useDialogFocus } from '@/lib/useDialogFocus'
 import { getHousingApi, HousingApiError, type HousingRecord, type Project } from '@/backend'
 import type { FieldDef } from '@/features/projects/fields'
@@ -96,7 +97,7 @@ export function ProjectDetailPage() {
     [location.search, ctx.projectType],
   )
   const listUrl = `${projectPath(ctx.projectType)}${location.search}`
-  const close = useCallback(() => navigate(listUrl, { replace: true }), [navigate, listUrl])
+  const close = useCallback(() => navigate(listUrl, { replace: true, state: KEEP_SCROLL }), [navigate, listUrl])
 
   // ---- আগের/পরের ----
   const [navBusy, setNavBusy] = useState(false)
@@ -112,7 +113,7 @@ export function ProjectDetailPage() {
         if (inList) {
           const ni = idx + dir
           if (ni >= 0 && ni < pageRecords.length) {
-            navigate(urlFor(pageRecords[ni].serial_no, ctx.page), { replace: true })
+            navigate(urlFor(pageRecords[ni].serial_no, ctx.page), { replace: true, state: KEEP_SCROLL })
             return
           }
           const nextPage = ctx.page + dir
@@ -121,14 +122,14 @@ export function ProjectDetailPage() {
           const p = await api.list({ ...ctx.params, page: nextPage })
           if (p.data.length === 0) return
           const target = dir === 1 ? p.data[0] : p.data[p.data.length - 1]
-          navigate(urlFor(target.serial_no, nextPage), { replace: true })
+          navigate(urlFor(target.serial_no, nextPage), { replace: true, state: KEEP_SCROLL })
         } else {
           // সিরিয়াল-ক্রমে fallback (ডিলেট হওয়া সিরিয়াল টপকে)
           setNavBusy(true)
           for (let s = serialNo + dir, tries = 0; s >= 1 && tries < SERIAL_FALLBACK_TRIES; s += dir, tries++) {
             try {
               const r = await api.getBySerial(ctx.projectType, s)
-              navigate(urlFor(r.serial_no, ctx.page), { replace: true })
+              navigate(urlFor(r.serial_no, ctx.page), { replace: true, state: KEEP_SCROLL })
               return
             } catch (err) {
               if (!(HousingApiError.is(err) && err.code === 'NOT_FOUND')) throw err
