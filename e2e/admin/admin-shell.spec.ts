@@ -107,7 +107,7 @@ test('a failed logout says why and keeps the admin open', async ({ page }) => {
     route.fulfill({ status: 500, contentType: 'application/json', body: '{"error":{"code":"INTERNAL_ERROR","message":"লগআউট করা যায়নি"}}' }),
   )
   await (await accountAction(page, 'লগআউট')).click()
-  await expect(page.getByRole('alert').filter({ hasText: /\S/ })).toBeVisible()
+  await expect(page.getByRole('alert').filter({ hasText: 'লগআউট করা যায়নি' })).toBeVisible()
   await expect(page).toHaveURL(/\/admin$/)
   await expect(accountMenu(page)).toBeVisible()
 })
