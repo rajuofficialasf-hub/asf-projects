@@ -451,7 +451,7 @@ export type CardProps = {
   stepAnnounced?: boolean;
   /** A small line above the title, for example the kind of item. */
   eyebrow?: string;
-  /** A coloured bar on the left, for example to mark a child item under its parent. */
+  /** Indented with a coloured bar on the left, for example to mark a child item under its parent. */
   accent?: boolean;
   tone?: "default" | "danger" | "warning";
 };

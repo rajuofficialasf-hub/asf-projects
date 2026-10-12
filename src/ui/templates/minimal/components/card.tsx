@@ -31,7 +31,7 @@ export function Card({
       aria-labelledby={title ? titleId : undefined}
       sx={{
         ...(TONE_BORDER[tone] && { border: 1, borderColor: TONE_BORDER[tone] }),
-        ...(accent && { borderLeft: { md: 4 }, borderLeftColor: { md: 'primary.light' } }),
+        ...(accent && { ml: { md: 4 }, borderLeft: { md: 4 }, borderLeftColor: { md: 'primary.light' } }),
       }}
     >
       {hasHeader && (

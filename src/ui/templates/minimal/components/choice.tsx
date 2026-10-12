@@ -47,7 +47,9 @@ export function Checkbox({ label, checked, onChange, name, hint, disabled, indet
   return (
     <FormControlLabel
       disabled={disabled}
-      sx={{ m: 0, alignItems: 'flex-start', '& .MuiCheckbox-root': { mt: 0.25 } }}
+      // With a hint the box sits by the first line; a single-line label is centred on the box,
+      // so the checkbox lines up with buttons in the same row.
+      sx={hint ? { m: 0, alignItems: 'flex-start', '& .MuiCheckbox-root': { mt: 0.25 } } : { m: 0 }}
       control={
         <MuiCheckbox
           name={name}
